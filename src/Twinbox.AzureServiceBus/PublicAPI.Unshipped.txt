@@ -1,0 +1,36 @@
+#nullable enable
+const Twinbox.AzureServiceBus.AzureServiceBusTransport.TransportName = "azureservicebus" -> string!
+override Twinbox.AzureServiceBus.AzureServiceBusListener.Equals(object? obj) -> bool
+override Twinbox.AzureServiceBus.AzureServiceBusListener.GetHashCode() -> int
+override Twinbox.AzureServiceBus.AzureServiceBusListener.ToString() -> string!
+static Twinbox.AzureServiceBus.AzureServiceBusListener.operator !=(Twinbox.AzureServiceBus.AzureServiceBusListener? left, Twinbox.AzureServiceBus.AzureServiceBusListener? right) -> bool
+static Twinbox.AzureServiceBus.AzureServiceBusListener.operator ==(Twinbox.AzureServiceBus.AzureServiceBusListener? left, Twinbox.AzureServiceBus.AzureServiceBusListener? right) -> bool
+static Twinbox.AzureServiceBusTwinboxBuilderExtensions.UseAzureServiceBus(this Twinbox.TwinboxBuilder! builder, string! connectionString, System.Action<Twinbox.AzureServiceBus.AzureServiceBusOptions!>? configure = null) -> Twinbox.TwinboxBuilder!
+static Twinbox.AzureServiceBusTwinboxBuilderExtensions.UseAzureServiceBus(this Twinbox.TwinboxBuilder! builder, System.Func<System.IServiceProvider!, Azure.Messaging.ServiceBus.ServiceBusClient!>! clientFactory, System.Action<Twinbox.AzureServiceBus.AzureServiceBusOptions!>? configure = null) -> Twinbox.TwinboxBuilder!
+Twinbox.AzureServiceBus.AzureServiceBusListener
+Twinbox.AzureServiceBus.AzureServiceBusListener.<Clone>$() -> Twinbox.AzureServiceBus.AzureServiceBusListener!
+Twinbox.AzureServiceBus.AzureServiceBusListener.AzureServiceBusListener(string! EntityName, string? SubscriptionName) -> void
+Twinbox.AzureServiceBus.AzureServiceBusListener.Deconstruct(out string! EntityName, out string? SubscriptionName) -> void
+Twinbox.AzureServiceBus.AzureServiceBusListener.EntityName.get -> string!
+Twinbox.AzureServiceBus.AzureServiceBusListener.EntityName.init -> void
+Twinbox.AzureServiceBus.AzureServiceBusListener.EntityPath.get -> string!
+Twinbox.AzureServiceBus.AzureServiceBusListener.Equals(Twinbox.AzureServiceBus.AzureServiceBusListener? other) -> bool
+Twinbox.AzureServiceBus.AzureServiceBusListener.SubscriptionName.get -> string?
+Twinbox.AzureServiceBus.AzureServiceBusListener.SubscriptionName.init -> void
+Twinbox.AzureServiceBus.AzureServiceBusOptions
+Twinbox.AzureServiceBus.AzureServiceBusOptions.AzureServiceBusOptions() -> void
+Twinbox.AzureServiceBus.AzureServiceBusOptions.Listen(string! queueName) -> Twinbox.AzureServiceBus.AzureServiceBusOptions!
+Twinbox.AzureServiceBus.AzureServiceBusOptions.Listen(string! topicName, string! subscriptionName) -> Twinbox.AzureServiceBus.AzureServiceBusOptions!
+Twinbox.AzureServiceBus.AzureServiceBusOptions.Listeners.get -> System.Collections.Generic.IReadOnlyList<Twinbox.AzureServiceBus.AzureServiceBusListener!>!
+Twinbox.AzureServiceBus.AzureServiceBusOptions.MaxConcurrentCalls.get -> int
+Twinbox.AzureServiceBus.AzureServiceBusOptions.MaxConcurrentCalls.set -> void
+Twinbox.AzureServiceBus.AzureServiceBusOptions.PrefetchCount.get -> int
+Twinbox.AzureServiceBus.AzureServiceBusOptions.PrefetchCount.set -> void
+Twinbox.AzureServiceBus.AzureServiceBusOptions.UseSessions.get -> bool
+Twinbox.AzureServiceBus.AzureServiceBusOptions.UseSessions.set -> void
+Twinbox.AzureServiceBus.AzureServiceBusTransport
+Twinbox.AzureServiceBus.AzureServiceBusTransport.Dispose() -> void
+Twinbox.AzureServiceBus.AzureServiceBusTransport.DisposeAsync() -> System.Threading.Tasks.ValueTask
+Twinbox.AzureServiceBus.AzureServiceBusTransport.Name.get -> string!
+Twinbox.AzureServiceBus.AzureServiceBusTransport.SendAsync(Twinbox.Transport.TransportMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.AzureServiceBusTwinboxBuilderExtensions

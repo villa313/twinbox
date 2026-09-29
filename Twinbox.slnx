@@ -4,11 +4,13 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Twinbox.Abstractions/Twinbox.Abstractions.csproj" />
+    <Project Path="src/Twinbox.AzureServiceBus/Twinbox.AzureServiceBus.csproj" />
     <Project Path="src/Twinbox.InMemory/Twinbox.InMemory.csproj" />
     <Project Path="src/Twinbox.Testing/Twinbox.Testing.csproj" />
     <Project Path="src/Twinbox/Twinbox.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Twinbox.AzureServiceBus.Tests/Twinbox.AzureServiceBus.Tests.csproj" />
     <Project Path="tests/Twinbox.UnitTests/Twinbox.UnitTests.csproj" />
   </Folder>
 </Solution>
