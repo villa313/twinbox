@@ -30,6 +30,7 @@
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.1.6" />
     <PackageVersion Include="Npgsql" Version="8.0.3" />
+    <PackageVersion Include="MySqlConnector" Version="2.3.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' != 'net8.0'">
@@ -48,6 +49,7 @@
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="6.0.1" />
     <PackageVersion Include="Npgsql" Version="10.0.0" />
+    <PackageVersion Include="MySqlConnector" Version="2.5.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -61,6 +63,9 @@
     <PackageVersion Include="Testcontainers.Nats" Version="4.15.0" />
     <PackageVersion Include="Testcontainers.LocalStack" Version="4.15.0" />
     <PackageVersion Include="Testcontainers.Pulsar" Version="4.15.0" />
+    <PackageVersion Include="Testcontainers.MySql" Version="4.15.0" />
+    <!-- Oracle's provider: Pomelo has no EF Core 10 release. Its net8.0 build targets EF Core 8. -->
+    <PackageVersion Include="MySql.EntityFrameworkCore" Version="10.0.9" />
     <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.21.0" />
     <PackageVersion Include="RabbitMQ.Client" Version="7.2.2" />
     <!-- The first release with a net8.0 build; no advisories are published against it. -->

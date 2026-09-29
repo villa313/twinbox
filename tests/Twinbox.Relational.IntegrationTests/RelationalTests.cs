@@ -119,6 +119,37 @@ public abstract class RelationalTests<TDatabase>(TDatabase database) : IClassFix
     }
 
     [Fact]
+    public async Task CompetingDispatchers_DeliverEachMessageOnce()
+    {
+        const int messageCount = 200;
+        await using var first = await StartAsync("dispatcher-1");
+        await using var second = await StartAsync("dispatcher-2");
+
+        await using (var scope = first.CreateAsyncScope())
+        {
+            var outbox = scope.ServiceProvider.GetRequiredService<IOutbox>();
+            await using var connection = database.Connect();
+            await connection.OpenAsync();
+            await using var transaction = await connection.BeginTransactionAsync();
+            for (var i = 0; i < messageCount; i++)
+            {
+                outbox.Send(new OrderPlaced($"P-{i}"));
+            }
+
+            await outbox.CommitAsync(transaction);
+        }
+
+        await Task.WhenAll(DrainAsync(first), DrainAsync(second));
+
+        var delivered = first.GetRequiredService<InMemoryTransport>().Sent
+            .Concat(second.GetRequiredService<InMemoryTransport>().Sent)
+            .Select(m => m.MessageId)
+            .ToArray();
+        Assert.Equal(messageCount, delivered.Length);
+        Assert.Equal(messageCount, delivered.Distinct().Count());
+    }
+
+    [Fact]
     public void HandlerTransaction_OutsideAHandler_Throws()
     {
         var transaction = new HandlerTransaction();
@@ -127,7 +158,15 @@ public abstract class RelationalTests<TDatabase>(TDatabase database) : IClassFix
         Assert.Throws<InvalidOperationException>(() => transaction.Connection);
     }
 
-    private async Task<ServiceProvider> StartAsync()
+    private static async Task DrainAsync(IServiceProvider services)
+    {
+        var dispatcher = services.GetRequiredService<IOutboxDispatcher>();
+        while (await dispatcher.DispatchBatchAsync(default) > 0)
+        {
+        }
+    }
+
+    private async Task<ServiceProvider> StartAsync(string? instanceId = null)
     {
         var collection = new ServiceCollection().AddLogging();
         collection.AddTwinbox(b =>
@@ -136,7 +175,15 @@ public abstract class RelationalTests<TDatabase>(TDatabase database) : IClassFix
             b.UseInMemoryTransport(o => o.AutoDeliver = false)
                 .Route<OrderPlaced>().To("orders")
                 .AddHandler<PlaceOrderHandler, PlaceOrder>()
-                .Configure(o => o.Dispatcher.Enabled = false);
+                .Configure(o =>
+                {
+                    o.Dispatcher.Enabled = false;
+                    o.Dispatcher.BatchSize = 25;
+                    if (instanceId is not null)
+                    {
+                        o.InstanceId = instanceId;
+                    }
+                });
         });
         var services = collection.BuildServiceProvider(validateScopes: true);
 
@@ -155,7 +202,12 @@ public abstract class RelationalTests<TDatabase>(TDatabase database) : IClassFix
         return await connection.ExecuteScalarAsync<int>($"SELECT COUNT(*) FROM {table}");
     }
 
-    private string Table(string name) => database is SqlServerDatabase ? $"[messaging].[{name}]" : $"messaging.\"{name}\"";
+    private string Table(string name) => database switch
+    {
+        SqlServerDatabase => $"[messaging].[{name}]",
+        MySqlDatabase => $"messaging.`{name}`",
+        _ => $"messaging.\"{name}\"",
+    };
 
     private static IncomingMessage Incoming(string id, PlaceOrder message) => new(
         id,
@@ -196,3 +248,5 @@ public static class StoreCases
 public sealed class PostgreSqlTests(PostgreSqlDatabase database) : RelationalTests<PostgreSqlDatabase>(database);
 
 public sealed class SqlServerTests(SqlServerDatabase database) : RelationalTests<SqlServerDatabase>(database);
+
+public sealed class MySqlTests(MySqlDatabase database) : RelationalTests<MySqlDatabase>(database);

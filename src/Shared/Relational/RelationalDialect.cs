@@ -28,9 +28,12 @@ internal sealed class RelationalDialect
 
     public TwinboxSql Sql { get; }
 
-    public string Quote(string identifier) => _settings.Provider == SqlProvider.SqlServer
-        ? $"[{identifier.Replace("]", "]]", StringComparison.Ordinal)}]"
-        : $"\"{identifier.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
+    public string Quote(string identifier) => _settings.Provider switch
+    {
+        SqlProvider.SqlServer => $"[{identifier.Replace("]", "]]", StringComparison.Ordinal)}]",
+        SqlProvider.MySql => $"`{identifier.Replace("`", "``", StringComparison.Ordinal)}`",
+        _ => $"\"{identifier.Replace("\"", "\"\"", StringComparison.Ordinal)}\"",
+    };
 
     public string Insert(int rows)
     {
@@ -45,7 +48,12 @@ internal sealed class RelationalDialect
         return sql.Append(';').ToString();
     }
 
-    public string CreateSchema() => _settings.Provider == SqlProvider.SqlServer ? SqlServerSchema() : PostgreSqlSchema();
+    public string CreateSchema() => _settings.Provider switch
+    {
+        SqlProvider.SqlServer => SqlServerSchema(),
+        SqlProvider.MySql => MySqlSchema(),
+        _ => PostgreSqlSchema(),
+    };
 
     private string Table(string name) =>
         _settings.Schema is null ? Quote(name) : $"{Quote(_settings.Schema)}.{Quote(name)}";
@@ -91,6 +99,47 @@ internal sealed class RelationalDialect
                     CONSTRAINT [PK_{_settings.InboxTable}] PRIMARY KEY ([MessageId], [Consumer]));
                 CREATE INDEX [IX_{_settings.InboxTable}_ProcessedAt] ON {Inbox} ([ProcessedAt]);
             END;
+            """;
+    }
+
+    // MySQL has no CREATE INDEX IF NOT EXISTS, so the indexes are declared inline. Timestamps are stored as UTC
+    // datetime(6) and ids as char(36), matching what the EF Core MySQL providers create.
+    private string MySqlSchema()
+    {
+        var create = _settings.Schema is null ? string.Empty : $"CREATE DATABASE IF NOT EXISTS {Quote(_settings.Schema)};";
+        return $"""
+            {create}
+            CREATE TABLE IF NOT EXISTS {Outbox} (
+                `Sequence` bigint NOT NULL AUTO_INCREMENT,
+                `Id` char(36) CHARACTER SET ascii NOT NULL,
+                `MessageName` varchar(256) NOT NULL,
+                `Transport` varchar(64) NOT NULL,
+                `Destination` varchar(256) NOT NULL,
+                `PartitionKey` varchar(256) NULL,
+                `TenantId` varchar(128) NULL,
+                `Payload` longblob NOT NULL,
+                `ContentType` varchar(128) NOT NULL,
+                `Headers` longtext NOT NULL,
+                `TraceParent` varchar(64) NULL,
+                `CreatedAt` datetime(6) NOT NULL,
+                `AvailableAt` datetime(6) NOT NULL,
+                `Attempts` int NOT NULL,
+                `Status` int NOT NULL,
+                `LeaseOwner` varchar(256) NULL,
+                `LeaseUntil` datetime(6) NULL,
+                `LastError` varchar(2000) NULL,
+                `SentAt` datetime(6) NULL,
+                PRIMARY KEY (`Sequence`),
+                UNIQUE INDEX {Quote($"IX_{_settings.OutboxTable}_Id")} (`Id`),
+                INDEX {Quote($"IX_{_settings.OutboxTable}_Status_AvailableAt")} (`Status`, `AvailableAt`),
+                INDEX {Quote($"IX_{_settings.OutboxTable}_PartitionKey_Status")} (`PartitionKey`, `Status`));
+            CREATE TABLE IF NOT EXISTS {Inbox} (
+                `MessageId` varchar(256) NOT NULL,
+                `Consumer` varchar(256) NOT NULL,
+                `Source` varchar(256) NOT NULL,
+                `ProcessedAt` datetime(6) NOT NULL,
+                PRIMARY KEY (`MessageId`, `Consumer`),
+                INDEX {Quote($"IX_{_settings.InboxTable}_ProcessedAt")} (`ProcessedAt`));
             """;
     }
 

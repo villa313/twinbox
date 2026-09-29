@@ -11,6 +11,7 @@
     <Project Path="src/Twinbox.Kafka/Twinbox.Kafka.csproj" />
     <Project Path="src/Twinbox.MongoDB/Twinbox.MongoDB.csproj" />
     <Project Path="src/Twinbox.Nats/Twinbox.Nats.csproj" />
+    <Project Path="src/Twinbox.MySql/Twinbox.MySql.csproj" />
     <Project Path="src/Twinbox.PostgreSql/Twinbox.PostgreSql.csproj" />
     <Project Path="src/Twinbox.Pulsar/Twinbox.Pulsar.csproj" />
     <Project Path="src/Twinbox.RabbitMQ/Twinbox.RabbitMQ.csproj" />

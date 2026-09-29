@@ -5,4 +5,5 @@ internal enum SqlProvider
     SqlServer,
     PostgreSql,
     Sqlite,
+    MySql,
 }

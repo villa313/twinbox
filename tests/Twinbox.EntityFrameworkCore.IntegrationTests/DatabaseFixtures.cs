@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Testcontainers.MsSql;
+using Testcontainers.MySql;
 using Testcontainers.PostgreSql;
 
 namespace Twinbox.EntityFrameworkCore.IntegrationTests;
@@ -88,6 +89,27 @@ public sealed class SqlServerFixture : DatabaseFixture
 
     public override void Configure(DbContextOptionsBuilder options, bool retryOnFailure) =>
         options.UseSqlServer(_container.GetConnectionString(), o =>
+        {
+            if (retryOnFailure)
+            {
+                o.EnableRetryOnFailure();
+            }
+        });
+
+    public override async ValueTask InitializeAsync() => await _container.StartAsync();
+
+    public override async ValueTask DisposeAsync() => await _container.DisposeAsync();
+}
+
+public sealed class MySqlFixture : DatabaseFixture
+{
+    // Root, because the model's schemas are separate MySQL databases that EnsureCreated has to create.
+    private readonly MySqlContainer _container = new MySqlBuilder("mysql:8.4").WithUsername("root").Build();
+
+    public override string Name => "MySQL";
+
+    public override void Configure(DbContextOptionsBuilder options, bool retryOnFailure) =>
+        options.UseMySQL(_container.GetConnectionString(), o =>
         {
             if (retryOnFailure)
             {
