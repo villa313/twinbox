@@ -19,6 +19,11 @@ internal sealed partial class RetentionService(
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var retention = options.Value.Retention;
+        if (!retention.Enabled)
+        {
+            return;
+        }
+
         using var timer = new PeriodicTimer(retention.CleanupInterval, time);
         do
         {

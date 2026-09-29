@@ -4,7 +4,13 @@ using Twinbox.Tenancy;
 
 namespace Twinbox.Diagnostics;
 
-internal sealed class TwinboxHealthCheck(IEnumerable<IOutboxStore> stores, TenantDirectory tenants, TimeProvider time, TimeSpan maxPendingAge, long maxDeadMessages) : IHealthCheck
+internal sealed class TwinboxHealthCheck(
+    IEnumerable<IOutboxStore> stores,
+    TenantDirectory tenants,
+    TimeProvider time,
+    TimeSpan maxPendingAge,
+    long maxDeadMessages,
+    HealthStatus? deadLetterStatus) : IHealthCheck
 {
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
@@ -34,7 +40,7 @@ internal sealed class TwinboxHealthCheck(IEnumerable<IOutboxStore> stores, Tenan
         }
 
         return stats.DeadCount > maxDeadMessages
-            ? new HealthCheckResult(context.Registration.FailureStatus, $"{stats.DeadCount} outbox message(s) are dead-lettered.", data: data)
+            ? new HealthCheckResult(deadLetterStatus ?? context.Registration.FailureStatus, $"{stats.DeadCount} outbox message(s) are dead-lettered.", data: data)
             : HealthCheckResult.Healthy(data: data);
     }
 }

@@ -20,9 +20,16 @@ public static class TwinboxServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configure);
 
-        var builder = new TwinboxBuilder(services);
-        services.AddSingleton(builder.Routes);
-        services.AddSingleton(builder.MessageTypes);
+        // Later calls extend the first one, so modules can each add their own routes and handlers.
+        var routes = Existing<RouteTable>(services);
+        var messageTypes = Existing<MessageTypeRegistry>(services);
+        var builder = new TwinboxBuilder(services, routes ?? new RouteTable(), messageTypes ?? new MessageTypeRegistry());
+        if (routes is null)
+        {
+            services.AddSingleton(builder.Routes);
+            services.AddSingleton(builder.MessageTypes);
+        }
+
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<IMessageSerializer>(new SystemTextJsonMessageSerializer());
         services.TryAddSingleton<IMessageIdGenerator, Uuid7MessageIdGenerator>();
@@ -56,4 +63,8 @@ public static class TwinboxServiceCollectionExtensions
 
         return services;
     }
+
+    private static T? Existing<T>(IServiceCollection services)
+        where T : class =>
+        services.LastOrDefault(d => d.ServiceType == typeof(T))?.ImplementationInstance as T;
 }

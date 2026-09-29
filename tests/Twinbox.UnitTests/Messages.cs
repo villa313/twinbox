@@ -10,3 +10,7 @@ public sealed record OrderShipped(int OrderId);
 public abstract record DomainEvent;
 
 public sealed record CustomerRegistered(int CustomerId) : DomainEvent;
+
+public interface IAuditEvent;
+
+public sealed record SettingChanged(string Key) : IAuditEvent;

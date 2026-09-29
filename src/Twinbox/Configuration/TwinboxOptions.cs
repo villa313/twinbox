@@ -64,6 +64,9 @@ public sealed class DestinationOptions
 
 public sealed class RetentionOptions
 {
+    /// <summary>Turn off in hosts that only send, so a single host owns cleanup.</summary>
+    public bool Enabled { get; set; } = true;
+
     public TimeSpan SentMessages { get; set; } = TimeSpan.FromDays(1);
 
     /// <summary>Null keeps dead messages until someone replays or deletes them.</summary>
@@ -81,6 +84,7 @@ public sealed class InboxOptions
 {
     public bool Enabled { get; set; } = true;
 
+    /// <summary>What to do with a message this app has no type or no handler for.</summary>
     public UnknownMessagePolicy UnknownMessages { get; set; } = UnknownMessagePolicy.DeadLetter;
 }
 

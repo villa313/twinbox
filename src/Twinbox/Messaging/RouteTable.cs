@@ -17,6 +17,25 @@ internal sealed class RouteTable
         routes.Add(route);
     }
 
-    public IReadOnlyList<Route> Get(Type messageType) =>
-        _routes.TryGetValue(messageType, out var routes) ? routes : [];
+    /// <summary>Exact routes win; otherwise the nearest base class with routes, then an implemented interface with routes.</summary>
+    public IReadOnlyList<Route> Get(Type messageType)
+    {
+        for (var type = messageType; type is not null; type = type.BaseType)
+        {
+            if (_routes.TryGetValue(type, out var routes))
+            {
+                return routes;
+            }
+        }
+
+        foreach (var (contract, routes) in _routes)
+        {
+            if (contract.IsInterface && contract.IsAssignableFrom(messageType))
+            {
+                return routes;
+            }
+        }
+
+        return [];
+    }
 }

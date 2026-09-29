@@ -33,7 +33,15 @@ internal sealed partial class InboundPipeline(
 
         if (!registry.TryResolve(message.MessageName, out var messageType))
         {
-            HandleUnknown(message);
+            HandleUnknown(message, "no message type is registered");
+            return;
+        }
+
+        var messageHandlers = handlers.For(messageType);
+        if (messageHandlers.Count == 0)
+        {
+            // Acknowledging a message nobody handled would look like a successful delivery.
+            HandleUnknown(message, "no handler is registered");
             return;
         }
 
@@ -43,7 +51,7 @@ internal sealed partial class InboundPipeline(
         var context = new MessageContext(
             message.MessageId, message.MessageName, message.Source, message.Headers, message.DeliveryAttempt, message.PartitionKey);
 
-        foreach (var handler in handlers.For(messageType))
+        foreach (var handler in messageHandlers)
         {
             await InvokeAsync(handler, message, body, context, cancellationToken).ConfigureAwait(false);
         }
@@ -97,20 +105,20 @@ internal sealed partial class InboundPipeline(
         }
     }
 
-    private void HandleUnknown(IncomingMessage message)
+    private void HandleUnknown(IncomingMessage message, string reason)
     {
         if (options.Value.Inbox.UnknownMessages == UnknownMessagePolicy.Ignore)
         {
-            LogUnknownIgnored(message.MessageId, message.MessageName);
+            LogUnknownIgnored(message.MessageId, message.MessageName, reason);
             return;
         }
 
-        throw new PermanentDeliveryException($"No message type is registered for '{message.MessageName}' (message {message.MessageId}).");
+        throw new PermanentDeliveryException($"Can't process '{message.MessageName}' (message {message.MessageId}): {reason}.");
     }
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Skipping message {MessageId} for {Consumer}: already processed.")]
     private partial void LogDuplicate(string messageId, string consumer);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Ignoring message {MessageId}: no type registered for '{MessageName}'.")]
-    private partial void LogUnknownIgnored(string messageId, string messageName);
+    [LoggerMessage(Level = LogLevel.Information, Message = "Ignoring message {MessageId} ('{MessageName}'): {Reason}.")]
+    private partial void LogUnknownIgnored(string messageId, string messageName, string reason);
 }

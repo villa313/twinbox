@@ -52,6 +52,8 @@ Twinbox.RetentionOptions.CleanupInterval.get -> System.TimeSpan
 Twinbox.RetentionOptions.CleanupInterval.set -> void
 Twinbox.RetentionOptions.DeadMessages.get -> System.TimeSpan?
 Twinbox.RetentionOptions.DeadMessages.set -> void
+Twinbox.RetentionOptions.Enabled.get -> bool
+Twinbox.RetentionOptions.Enabled.set -> void
 Twinbox.RetentionOptions.InboxEntries.get -> System.TimeSpan
 Twinbox.RetentionOptions.InboxEntries.set -> void
 Twinbox.RetentionOptions.RetentionOptions() -> void
@@ -336,7 +338,7 @@ override Twinbox.Transport.IncomingMessage.ToString() -> string!
 override Twinbox.Transport.TransportMessage.Equals(object? obj) -> bool
 override Twinbox.Transport.TransportMessage.GetHashCode() -> int
 override Twinbox.Transport.TransportMessage.ToString() -> string!
-static Microsoft.Extensions.DependencyInjection.TwinboxHealthChecksBuilderExtensions.AddTwinbox(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder! builder, string! name = "twinbox", System.TimeSpan? maxPendingAge = null, long maxDeadMessages = 0, Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus failureStatus = Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Degraded, System.Collections.Generic.IEnumerable<string!>? tags = null) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
+static Microsoft.Extensions.DependencyInjection.TwinboxHealthChecksBuilderExtensions.AddTwinbox(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder! builder, string! name = "twinbox", System.TimeSpan? maxPendingAge = null, long maxDeadMessages = 0, Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus failureStatus = Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Degraded, System.Collections.Generic.IEnumerable<string!>? tags = null, Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus? deadLetterStatus = null) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
 static Microsoft.Extensions.DependencyInjection.TwinboxServiceCollectionExtensions.AddTwinbox(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Twinbox.TwinboxBuilder!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Twinbox.Serialization.HeaderCodec.Decode(string? json) -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
 static Twinbox.Serialization.HeaderCodec.Encode(System.Collections.Generic.IReadOnlyDictionary<string!, string!>! headers) -> string?

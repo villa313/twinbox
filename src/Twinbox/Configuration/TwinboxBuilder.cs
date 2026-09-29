@@ -10,16 +10,18 @@ namespace Twinbox;
 
 public sealed class TwinboxBuilder
 {
-    internal TwinboxBuilder(IServiceCollection services)
+    internal TwinboxBuilder(IServiceCollection services, RouteTable routes, MessageTypeRegistry messageTypes)
     {
         Services = services;
+        Routes = routes;
+        MessageTypes = messageTypes;
     }
 
     public IServiceCollection Services { get; }
 
-    internal RouteTable Routes { get; } = new();
+    internal RouteTable Routes { get; }
 
-    internal MessageTypeRegistry MessageTypes { get; } = new();
+    internal MessageTypeRegistry MessageTypes { get; }
 
     public RouteBuilder<TMessage> Route<TMessage>()
         where TMessage : class => new(this);
@@ -32,7 +34,7 @@ public sealed class TwinboxBuilder
         MessageTypes.GetOrAdd(typeof(TMessage));
         Services.TryAddScoped<THandler>();
         Services.AddSingleton<HandlerDescriptor>(
-            new HandlerDescriptor<THandler, TMessage>(consumerName ?? typeof(THandler).FullName ?? typeof(THandler).Name));
+            new HandlerDescriptor<THandler, TMessage>(consumerName ?? ConsumerNames.For(typeof(THandler))));
         return this;
     }
 
@@ -58,7 +60,7 @@ public sealed class TwinboxBuilder
             MessageTypes.GetOrAdd(messageType);
             var descriptorType = typeof(HandlerDescriptor<,>).MakeGenericType(typeof(THandler), messageType);
             var descriptor = (HandlerDescriptor)Activator.CreateInstance(
-                descriptorType, consumerName ?? typeof(THandler).FullName ?? typeof(THandler).Name)!;
+                descriptorType, consumerName ?? ConsumerNames.For(typeof(THandler)))!;
             Services.AddSingleton(descriptor);
         }
 
