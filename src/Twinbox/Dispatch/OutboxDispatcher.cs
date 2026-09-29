@@ -131,6 +131,8 @@ internal sealed partial class OutboxDispatcher(
             headers[TransportHeaders.TenantId] = message.TenantId;
         }
 
+        headers[TransportHeaders.DeliveryAttempt] = (message.Attempts + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
+
         try
         {
             await transport.SendAsync(

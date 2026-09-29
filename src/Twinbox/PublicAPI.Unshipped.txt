@@ -268,6 +268,7 @@ Twinbox.TwinboxBuilder.AddHandler<THandler>(string? consumerName = null) -> Twin
 Twinbox.TwinboxBuilder.Configure(System.Action<Twinbox.TwinboxOptions!>! configure) -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.Route<TMessage>() -> Twinbox.RouteBuilder<TMessage!>!
 Twinbox.TwinboxBuilder.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Twinbox.TwinboxBuilder.UseLocalDelivery() -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.UseSerializer(Twinbox.Serialization.IMessageSerializer! serializer) -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.UseTenants(System.Action<Twinbox.TenancyOptions!>! configure) -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxOptions
@@ -290,6 +291,7 @@ Twinbox.UnknownMessagePolicy
 Twinbox.UnknownMessagePolicy.DeadLetter = 0 -> Twinbox.UnknownMessagePolicy
 Twinbox.UnknownMessagePolicy.Ignore = 1 -> Twinbox.UnknownMessagePolicy
 const Twinbox.Diagnostics.TwinboxDiagnostics.SourceName = "Twinbox" -> string!
+const Twinbox.Transport.TransportHeaders.DeliveryAttempt = "twinbox-delivery-attempt" -> string!
 const Twinbox.Transport.TransportHeaders.MessageId = "twinbox-message-id" -> string!
 const Twinbox.Transport.TransportHeaders.MessageName = "twinbox-message-name" -> string!
 const Twinbox.Transport.TransportHeaders.PartitionKey = "twinbox-partition-key" -> string!

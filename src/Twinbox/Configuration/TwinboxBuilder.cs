@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Twinbox.Inbox;
 using Twinbox.Messaging;
 using Twinbox.Serialization;
+using Twinbox.Transport;
 
 namespace Twinbox;
 
@@ -61,6 +62,16 @@ public sealed class TwinboxBuilder
             Services.AddSingleton(descriptor);
         }
 
+        return this;
+    }
+
+    /// <summary>
+    /// Adds the "local" transport: messages routed to it are delivered to this app's own handlers by the dispatcher,
+    /// giving durable, retried in-process events.
+    /// </summary>
+    public TwinboxBuilder UseLocalDelivery()
+    {
+        Services.TryAddEnumerable(ServiceDescriptor.Singleton<ITransport, LocalTransport>());
         return this;
     }
 
