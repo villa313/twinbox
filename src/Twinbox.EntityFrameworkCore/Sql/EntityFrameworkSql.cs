@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
 using Twinbox.Sql;
-using Twinbox.Storage;
 
 namespace Twinbox.EntityFrameworkCore.Sql;
 
@@ -27,8 +26,8 @@ internal static class EntityFrameworkSql
         };
 
         var helper = context.GetService<ISqlGenerationHelper>();
-        var outbox = FindEntityType(context, typeof(OutboxMessage));
-        var inbox = FindEntityType(context, typeof(InboxRecord));
+        var outbox = FindEntityType(context, TwinboxEntities.Outbox);
+        var inbox = FindEntityType(context, TwinboxEntities.Inbox);
         return new TwinboxSql(
             provider,
             helper.DelimitIdentifier(outbox.GetTableName()!, outbox.GetSchema()),
@@ -37,8 +36,8 @@ internal static class EntityFrameworkSql
             ColumnResolver(helper, inbox));
     }
 
-    private static IEntityType FindEntityType(DbContext context, Type type) =>
-        context.Model.FindEntityType(type)
+    private static IEntityType FindEntityType(DbContext context, string name) =>
+        context.Model.FindEntityType(name)
             ?? throw new InvalidOperationException(
                 $"{context.GetType().Name} has no Twinbox tables. Call modelBuilder.AddTwinbox() in OnModelCreating and add a migration.");
 

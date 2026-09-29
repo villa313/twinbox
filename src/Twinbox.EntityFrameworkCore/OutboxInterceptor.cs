@@ -68,7 +68,7 @@ internal sealed class OutboxInterceptor : ISaveChangesInterceptor, IDbTransactio
             return;
         }
 
-        context.Set<OutboxMessage>().AddRange(session.TakePending());
+        context.TwinboxOutbox().AddRange(session.TakePending());
         AwaitingCommit.AddOrUpdate(context, services);
     }
 

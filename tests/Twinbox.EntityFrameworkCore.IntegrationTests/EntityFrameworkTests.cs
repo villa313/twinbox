@@ -20,13 +20,13 @@ public abstract class EntityFrameworkTests<TFixture>(TFixture database) : IClass
         await using var scope = services.CreateAsyncScope();
         var context = scope.ServiceProvider.GetRequiredService<ShopContext>();
         await database.EnsureSchemaAsync(context);
-        await context.Set<OutboxMessage>().ExecuteDeleteAsync();
-        await context.Set<InboxRecord>().ExecuteDeleteAsync();
+        await context.TwinboxOutbox().ExecuteDeleteAsync();
+        await context.TwinboxInbox().ExecuteDeleteAsync();
         await context.Orders.ExecuteDeleteAsync();
 
         var billing = scope.ServiceProvider.GetRequiredService<BillingContext>();
         await database.EnsureBillingSchemaAsync(billing);
-        await billing.Set<OutboxMessage>().ExecuteDeleteAsync();
+        await billing.TwinboxOutbox().ExecuteDeleteAsync();
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
@@ -268,7 +268,7 @@ public abstract class EntityFrameworkTests<TFixture>(TFixture database) : IClass
     private static async Task<int> CountOutboxAsync(IServiceProvider services)
     {
         await using var scope = services.CreateAsyncScope();
-        return await scope.ServiceProvider.GetRequiredService<ShopContext>().Set<OutboxMessage>().CountAsync();
+        return await scope.ServiceProvider.GetRequiredService<ShopContext>().TwinboxOutbox().CountAsync();
     }
 
     private static async Task<int> CountOrdersAsync(IServiceProvider services)

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Twinbox.EntityFrameworkCore;
 using Twinbox.Serialization;
@@ -17,9 +18,9 @@ public static class TwinboxModelBuilderExtensions
         var options = new TwinboxModelOptions();
         configure?.Invoke(options);
 
-        modelBuilder.Entity<OutboxMessage>(outbox =>
+        modelBuilder.SharedTypeEntity<OutboxMessage>(TwinboxEntities.Outbox, outbox =>
         {
-            outbox.ToTable(options.OutboxTable, options.Schema);
+            MapTable(outbox.Metadata, options.OutboxTable, options.Schema);
 
             // A sequential key gives insertion order for partitions and an append-only clustered index.
             outbox.Property<long>(SequenceProperty).ValueGeneratedOnAdd();
@@ -49,9 +50,9 @@ public static class TwinboxModelBuilderExtensions
                     headers => headers));
         });
 
-        modelBuilder.Entity<InboxRecord>(inbox =>
+        modelBuilder.SharedTypeEntity<InboxRecord>(TwinboxEntities.Inbox, inbox =>
         {
-            inbox.ToTable(options.InboxTable, options.Schema);
+            MapTable(inbox.Metadata, options.InboxTable, options.Schema);
             inbox.HasKey(r => new { r.MessageId, r.Consumer });
             inbox.HasIndex(r => r.ProcessedAt);
             inbox.Property(r => r.MessageId).HasMaxLength(256);
@@ -60,5 +61,19 @@ public static class TwinboxModelBuilderExtensions
         });
 
         return modelBuilder;
+    }
+
+    // An explicit ToTable would stop naming conventions from rewriting the default name, so only set what was asked for.
+    private static void MapTable(IMutableEntityType entityType, string? table, string? schema)
+    {
+        if (table is not null)
+        {
+            entityType.SetTableName(table);
+        }
+
+        if (schema is not null)
+        {
+            entityType.SetSchema(schema);
+        }
     }
 }

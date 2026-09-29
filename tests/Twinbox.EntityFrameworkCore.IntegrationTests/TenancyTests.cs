@@ -79,7 +79,7 @@ public sealed class TenancyTests(PostgreSqlFixture database) : IClassFixture<Pos
             scope.ServiceProvider.GetRequiredService<TenantContext>().Id = tenant;
             var context = scope.ServiceProvider.GetRequiredService<ShopContext>();
             await context.Database.EnsureCreatedAsync();
-            await context.Set<OutboxMessage>().ExecuteDeleteAsync();
+            await context.TwinboxOutbox().ExecuteDeleteAsync();
             await context.Orders.ExecuteDeleteAsync();
         }
 
@@ -90,7 +90,7 @@ public sealed class TenancyTests(PostgreSqlFixture database) : IClassFixture<Pos
     {
         await using var scope = services.CreateAsyncScope();
         scope.ServiceProvider.GetRequiredService<TenantContext>().Id = tenant;
-        return await scope.ServiceProvider.GetRequiredService<ShopContext>().Set<OutboxMessage>().AsNoTracking().ToListAsync();
+        return await scope.ServiceProvider.GetRequiredService<ShopContext>().TwinboxOutbox().AsNoTracking().ToListAsync();
     }
 
     private static async Task<int> CountOrdersAsync(IServiceProvider services, string tenant, string reference)

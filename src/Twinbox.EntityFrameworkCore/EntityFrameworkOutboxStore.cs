@@ -20,7 +20,7 @@ internal sealed class EntityFrameworkOutboxStore<TContext>(TwinboxScopeFactory s
         await using (scope.ConfigureAwait(false))
         {
             var context = scope.ServiceProvider.GetRequiredService<TContext>();
-            context.Set<OutboxMessage>().AddRange(messages);
+            context.TwinboxOutbox().AddRange(messages);
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
     }
@@ -33,7 +33,7 @@ internal sealed class EntityFrameworkOutboxStore<TContext>(TwinboxScopeFactory s
         {
             var context = scope.ServiceProvider.GetRequiredService<TContext>();
             var sql = EntityFrameworkSql.For(context);
-            var rows = await context.Set<OutboxMessage>()
+            var rows = await context.TwinboxOutbox()
                 .FromSqlRaw(
                     sql.Claim(),
                     Parameters.Create(context, "@now", claim.Now, DbType.DateTimeOffset),
@@ -106,7 +106,7 @@ internal sealed class EntityFrameworkOutboxStore<TContext>(TwinboxScopeFactory s
         var scope = scopeFactory.CreateAsyncScope();
         await using (scope.ConfigureAwait(false))
         {
-            var messages = scope.ServiceProvider.GetRequiredService<TContext>().Set<OutboxMessage>().AsNoTracking();
+            var messages = scope.ServiceProvider.GetRequiredService<TContext>().TwinboxOutbox().AsNoTracking();
             var unsent = messages.Where(m => m.Status == OutboxMessageStatus.Pending || m.Status == OutboxMessageStatus.Processing);
             var pendingCount = await unsent.LongCountAsync(cancellationToken).ConfigureAwait(false);
             var oldest = pendingCount == 0
