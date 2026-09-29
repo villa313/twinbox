@@ -31,7 +31,7 @@ internal sealed class EntityFrameworkOutboxStore<TContext>(IServiceScopeFactory 
         await using (scope.ConfigureAwait(false))
         {
             var context = scope.ServiceProvider.GetRequiredService<TContext>();
-            var sql = TwinboxSql.For(context);
+            var sql = EntityFrameworkSql.For(context);
             var rows = await context.Set<OutboxMessage>()
                 .FromSqlRaw(
                     sql.Claim(),
@@ -60,7 +60,7 @@ internal sealed class EntityFrameworkOutboxStore<TContext>(IServiceScopeFactory 
         await using (scope.ConfigureAwait(false))
         {
             var context = scope.ServiceProvider.GetRequiredService<TContext>();
-            var sql = TwinboxSql.For(context);
+            var sql = EntityFrameworkSql.For(context);
             foreach (var chunk in outcomes.Chunk(OutcomesPerCommand))
             {
                 var parameters = new List<DbParameter> { Parameters.Create(context, "@owner", owner, DbType.String) };
@@ -95,7 +95,7 @@ internal sealed class EntityFrameworkOutboxStore<TContext>(IServiceScopeFactory 
             }
 
             return await context.Database
-                .ExecuteSqlRawAsync(TwinboxSql.For(context).PurgeOutbox(purge.DeadBefore is not null), parameters, cancellationToken)
+                .ExecuteSqlRawAsync(EntityFrameworkSql.For(context).PurgeOutbox(purge.DeadBefore is not null), parameters, cancellationToken)
                 .ConfigureAwait(false);
         }
     }

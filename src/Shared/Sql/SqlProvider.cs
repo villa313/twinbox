@@ -1,4 +1,4 @@
-namespace Twinbox.EntityFrameworkCore.Sql;
+namespace Twinbox.Sql;
 
 internal enum SqlProvider
 {

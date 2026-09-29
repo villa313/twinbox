@@ -55,7 +55,7 @@ internal sealed class EntityFrameworkInboxStore<TContext>(IServiceScopeFactory s
         {
             var context = scope.ServiceProvider.GetRequiredService<TContext>();
             return await context.Database.ExecuteSqlRawAsync(
-                TwinboxSql.For(context).PurgeInbox(),
+                EntityFrameworkSql.For(context).PurgeInbox(),
                 [
                     Parameters.Create(context, "@before", processedBefore, DbType.DateTimeOffset),
                     Parameters.Create(context, "@batch", batchSize, DbType.Int32),
@@ -67,7 +67,7 @@ internal sealed class EntityFrameworkInboxStore<TContext>(IServiceScopeFactory s
     private static async Task<bool> TryInsertAsync(DbContext context, InboxEntry entry, CancellationToken cancellationToken)
     {
         var inserted = await context.Database.ExecuteSqlRawAsync(
-            TwinboxSql.For(context).InsertInbox(),
+            EntityFrameworkSql.For(context).InsertInbox(),
             [
                 Parameters.Create(context, "@messageId", entry.MessageId, DbType.String),
                 Parameters.Create(context, "@consumer", entry.Consumer, DbType.String),

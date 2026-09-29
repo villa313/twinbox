@@ -1,15 +1,10 @@
-using System.Runtime.CompilerServices;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Storage;
 using Twinbox.Storage;
 
-namespace Twinbox.EntityFrameworkCore.Sql;
+namespace Twinbox.Sql;
 
 /// <summary>
-/// Hand-written statements for the operations LINQ can't express (SKIP LOCKED claims, conditional inserts).
-/// Identifiers come from the model, so naming conventions and custom table names are honoured.
+/// Statements for the operations LINQ can't express (SKIP LOCKED claims, conditional inserts), shared as source by
+/// the relational stores. Callers pass delimited identifiers, so any naming convention works.
 /// </summary>
 internal sealed class TwinboxSql
 {
@@ -18,37 +13,28 @@ internal sealed class TwinboxSql
     private const int Sent = (int)OutboxMessageStatus.Sent;
     private const int Dead = (int)OutboxMessageStatus.Dead;
 
-    private static readonly ConditionalWeakTable<IModel, TwinboxSql> Cache = [];
-
     private readonly SqlProvider _provider;
     private readonly string _outbox;
     private readonly string _inbox;
     private readonly Func<string, string> _o;
     private readonly Func<string, string> _i;
 
-    private TwinboxSql(DbContext context)
+    /// <summary>The column resolvers map a property name (e.g. "AvailableAt") to its delimited column name.</summary>
+    public TwinboxSql(
+        SqlProvider provider,
+        string outboxTable,
+        string inboxTable,
+        Func<string, string> outboxColumn,
+        Func<string, string> inboxColumn)
     {
-        _provider = context.Database.ProviderName switch
-        {
-            "Microsoft.EntityFrameworkCore.SqlServer" => SqlProvider.SqlServer,
-            "Npgsql.EntityFrameworkCore.PostgreSQL" => SqlProvider.PostgreSql,
-            var other => throw new NotSupportedException(
-                $"Twinbox.EntityFrameworkCore supports SQL Server and PostgreSQL; '{other}' is not supported yet."),
-        };
-
-        var helper = context.GetService<ISqlGenerationHelper>();
-        var outboxType = FindEntityType(context, typeof(OutboxMessage));
-        var inboxType = FindEntityType(context, typeof(InboxRecord));
-        _outbox = helper.DelimitIdentifier(outboxType.GetTableName()!, outboxType.GetSchema());
-        _inbox = helper.DelimitIdentifier(inboxType.GetTableName()!, inboxType.GetSchema());
-        _o = ColumnResolver(helper, outboxType);
-        _i = ColumnResolver(helper, inboxType);
+        _provider = provider;
+        _outbox = outboxTable;
+        _inbox = inboxTable;
+        _o = outboxColumn;
+        _i = inboxColumn;
     }
 
-    public static TwinboxSql For(DbContext context) =>
-        Cache.GetValue(context.Model, _ => new TwinboxSql(context));
-
-    public string Sequence => _o(TwinboxModelBuilderExtensions.SequenceProperty);
+    public string Sequence => _o("Sequence");
 
     /// <summary>Leases due rows; only the oldest unsent row of a partition is due.</summary>
     public string Claim()
@@ -134,15 +120,4 @@ internal sealed class TwinboxSql
                     SELECT {_i("MessageId")}, {_i("Consumer")} FROM {_inbox}
                     WHERE {_i("ProcessedAt")} < @before LIMIT @batch FOR UPDATE SKIP LOCKED);
                 """;
-
-    private static IEntityType FindEntityType(DbContext context, Type type) =>
-        context.Model.FindEntityType(type)
-            ?? throw new InvalidOperationException(
-                $"{context.GetType().Name} has no Twinbox tables. Call modelBuilder.AddTwinbox() in OnModelCreating and add a migration.");
-
-    private static Func<string, string> ColumnResolver(ISqlGenerationHelper helper, IEntityType entityType)
-    {
-        var table = StoreObjectIdentifier.Table(entityType.GetTableName()!, entityType.GetSchema());
-        return property => helper.DelimitIdentifier(entityType.FindProperty(property)!.GetColumnName(table)!);
-    }
 }

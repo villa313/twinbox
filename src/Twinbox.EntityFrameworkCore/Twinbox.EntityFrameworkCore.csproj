@@ -8,6 +8,7 @@
   <ItemGroup>
     <ProjectReference Include="../Twinbox/Twinbox.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <Compile Include="../Shared/Sql/*.cs" LinkBase="Shared/Sql" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Twinbox.EntityFrameworkCore.IntegrationTests" />
