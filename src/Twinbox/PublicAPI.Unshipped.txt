@@ -28,6 +28,8 @@ Twinbox.DispatcherOptions.MaxPollInterval.get -> System.TimeSpan
 Twinbox.DispatcherOptions.MaxPollInterval.set -> void
 Twinbox.DispatcherOptions.MinPollInterval.get -> System.TimeSpan
 Twinbox.DispatcherOptions.MinPollInterval.set -> void
+Twinbox.DispatcherOptions.SendTimeout.get -> System.TimeSpan
+Twinbox.DispatcherOptions.SendTimeout.set -> void
 Twinbox.HandlerTransaction
 Twinbox.HandlerTransaction.Attach(System.Data.Common.DbConnection! connection, System.Data.Common.DbTransaction! transaction) -> void
 Twinbox.HandlerTransaction.Connection.get -> System.Data.Common.DbConnection!

@@ -106,6 +106,22 @@ public sealed class DispatcherTests
     }
 
     [Fact]
+    public async Task HungSend_TimesOutAndIsRetried()
+    {
+        await using var host = TestHost.Create(b => b
+            .Route<OrderPlaced>().To("orders")
+            .Configure(o => o.Dispatcher.SendTimeout = TimeSpan.FromMilliseconds(50)));
+        host.Harness.Transport.OnSend = _ => Task.Delay(Timeout.Infinite, new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token);
+
+        await host.SendAsync(o => o.Send(new OrderPlaced(1)));
+        await host.Services.GetRequiredService<IOutboxDispatcher>().DispatchBatchAsync(default);
+
+        var row = Assert.Single(host.Harness.Store.Snapshot());
+        Assert.Equal(OutboxMessageStatus.Pending, row.Status);
+        Assert.Contains("TimeoutException", row.LastError, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task UnknownTransport_DeadLetters()
     {
         await using var host = TestHost.Create(b => b.Route<OrderPlaced>().To("orders", transport: "missing"));
