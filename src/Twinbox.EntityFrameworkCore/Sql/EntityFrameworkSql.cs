@@ -10,6 +10,8 @@ namespace Twinbox.EntityFrameworkCore.Sql;
 /// <summary>Builds the shared statements from the EF model, so naming conventions and custom table names are honoured.</summary>
 internal static class EntityFrameworkSql
 {
+    public const string SqliteProvider = "Microsoft.EntityFrameworkCore.Sqlite";
+
     private static readonly ConditionalWeakTable<IModel, TwinboxSql> Cache = [];
 
     public static TwinboxSql For(DbContext context) =>
@@ -21,8 +23,9 @@ internal static class EntityFrameworkSql
         {
             "Microsoft.EntityFrameworkCore.SqlServer" => SqlProvider.SqlServer,
             "Npgsql.EntityFrameworkCore.PostgreSQL" => SqlProvider.PostgreSql,
+            SqliteProvider => SqlProvider.Sqlite,
             var other => throw new NotSupportedException(
-                $"Twinbox.EntityFrameworkCore supports SQL Server and PostgreSQL; '{other}' is not supported yet."),
+                $"Twinbox.EntityFrameworkCore supports SQL Server, PostgreSQL and SQLite; '{other}' is not supported yet."),
         };
 
         var helper = context.GetService<ISqlGenerationHelper>();

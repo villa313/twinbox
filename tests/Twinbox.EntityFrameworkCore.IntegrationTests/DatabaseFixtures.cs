@@ -99,3 +99,22 @@ public sealed class SqlServerFixture : DatabaseFixture
 
     public override async ValueTask DisposeAsync() => await _container.DisposeAsync();
 }
+
+public sealed class SqliteFixture : DatabaseFixture
+{
+    private readonly string _path = Path.Combine(Path.GetTempPath(), $"twinbox-{Guid.NewGuid():N}.db");
+
+    public override string Name => "SQLite";
+
+    public override void Configure(DbContextOptionsBuilder options, bool retryOnFailure) =>
+        options.UseSqlite($"Data Source={_path};Default Timeout=30");
+
+    public override ValueTask InitializeAsync() => ValueTask.CompletedTask;
+
+    public override ValueTask DisposeAsync()
+    {
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        File.Delete(_path);
+        return ValueTask.CompletedTask;
+    }
+}

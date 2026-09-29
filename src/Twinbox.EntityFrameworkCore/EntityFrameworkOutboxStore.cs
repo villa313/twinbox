@@ -109,9 +109,13 @@ internal sealed class EntityFrameworkOutboxStore<TContext>(TwinboxScopeFactory s
             var messages = scope.ServiceProvider.GetRequiredService<TContext>().TwinboxOutbox().AsNoTracking();
             var unsent = messages.Where(m => m.Status == OutboxMessageStatus.Pending || m.Status == OutboxMessageStatus.Processing);
             var pendingCount = await unsent.LongCountAsync(cancellationToken).ConfigureAwait(false);
+            // Ordering by the key rather than MIN(CreatedAt), which SQLite can't evaluate on DateTimeOffset.
             var oldest = pendingCount == 0
                 ? null
-                : await unsent.MinAsync(m => (DateTimeOffset?)m.CreatedAt, cancellationToken).ConfigureAwait(false);
+                : await unsent
+                    .OrderBy(m => EF.Property<long>(m, TwinboxModelBuilderExtensions.SequenceProperty))
+                    .Select(m => (DateTimeOffset?)m.CreatedAt)
+                    .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
             var deadCount = await messages.LongCountAsync(m => m.Status == OutboxMessageStatus.Dead, cancellationToken).ConfigureAwait(false);
             return new OutboxStatistics(pendingCount, oldest, deadCount);
         }

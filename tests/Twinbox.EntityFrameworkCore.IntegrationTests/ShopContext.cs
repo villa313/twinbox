@@ -30,5 +30,11 @@ public sealed record OrderPlaced(string Reference);
 public sealed class BillingContext(DbContextOptions<BillingContext> options) : DbContext(options)
 {
     protected override void OnModelCreating(ModelBuilder modelBuilder) =>
-        modelBuilder.AddTwinbox(o => o.Schema = "billing");
+        modelBuilder.AddTwinbox(o =>
+        {
+            // SQLite ignores schemas, so the names must differ from the shop's tables too.
+            o.Schema = "billing";
+            o.OutboxTable = "BillingOutbox";
+            o.InboxTable = "BillingInbox";
+        });
 }

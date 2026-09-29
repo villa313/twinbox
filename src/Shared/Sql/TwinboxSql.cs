@@ -49,16 +49,28 @@ internal sealed class TwinboxSql
                   AND p.{Sequence} < o.{Sequence}))
             """;
 
-        return _provider == SqlProvider.SqlServer
-            ? $"""
+        return _provider switch
+        {
+            SqlProvider.SqlServer => $"""
                 WITH due AS (
                     SELECT TOP (@batch) * FROM {_outbox} AS o WITH (UPDLOCK, READPAST, ROWLOCK)
                     WHERE {due}
                     ORDER BY o.{Sequence})
                 UPDATE due SET {_o("Status")} = {Processing}, {_o("LeaseOwner")} = @owner, {_o("LeaseUntil")} = @leaseUntil
                 OUTPUT inserted.*;
-                """
-            : $"""
+                """,
+
+            // SQLite serializes writers, so a plain UPDATE ... RETURNING is already exclusive.
+            SqlProvider.Sqlite => $"""
+                UPDATE {_outbox} SET {_o("Status")} = {Processing}, {_o("LeaseOwner")} = @owner, {_o("LeaseUntil")} = @leaseUntil
+                WHERE {Sequence} IN (
+                    SELECT o.{Sequence} FROM {_outbox} AS o
+                    WHERE {due}
+                    ORDER BY o.{Sequence}
+                    LIMIT @batch)
+                RETURNING *;
+                """,
+            _ => $"""
                 WITH due AS (
                     SELECT o.{Sequence} FROM {_outbox} AS o
                     WHERE {due}
@@ -68,7 +80,8 @@ internal sealed class TwinboxSql
                 UPDATE {_outbox} AS t SET {_o("Status")} = {Processing}, {_o("LeaseOwner")} = @owner, {_o("LeaseUntil")} = @leaseUntil
                 FROM due WHERE t.{Sequence} = due.{Sequence}
                 RETURNING t.*;
-                """;
+                """,
+        };
     }
 
     /// <summary>One statement per outcome; <paramref name="index"/> keeps parameter names unique within a batch.</summary>
@@ -89,35 +102,49 @@ internal sealed class TwinboxSql
         var expired = $"({_o("Status")} = {Sent} AND {_o("SentAt")} < @sentBefore)"
             + (includeDead ? $" OR ({_o("Status")} = {Dead} AND {_o("CreatedAt")} < @deadBefore)" : string.Empty);
 
-        return _provider == SqlProvider.SqlServer
-            ? $"DELETE TOP (@batch) FROM {_outbox} WITH (READPAST) WHERE {expired};"
-            : $"""
+        return _provider switch
+        {
+            SqlProvider.SqlServer => $"DELETE TOP (@batch) FROM {_outbox} WITH (READPAST) WHERE {expired};",
+            SqlProvider.Sqlite => $"""
+                DELETE FROM {_outbox} WHERE {Sequence} IN (
+                    SELECT {Sequence} FROM {_outbox} WHERE {expired} LIMIT @batch);
+                """,
+            _ => $"""
                 DELETE FROM {_outbox} WHERE {Sequence} IN (
                     SELECT {Sequence} FROM {_outbox} WHERE {expired} LIMIT @batch FOR UPDATE SKIP LOCKED);
-                """;
+                """,
+        };
     }
 
     /// <summary>Inserts the entry unless it exists; a concurrent duplicate waits for the first to commit or roll back.</summary>
     public string InsertInbox()
     {
         var columns = $"{_i("MessageId")}, {_i("Consumer")}, {_i("Source")}, {_i("ProcessedAt")}";
-        return _provider == SqlProvider.SqlServer
-            ? $"""
+        return _provider switch
+        {
+            SqlProvider.SqlServer => $"""
                 INSERT INTO {_inbox} ({columns})
                 SELECT @messageId, @consumer, @source, @processedAt
                 WHERE NOT EXISTS (
                     SELECT 1 FROM {_inbox} WITH (UPDLOCK, HOLDLOCK)
                     WHERE {_i("MessageId")} = @messageId AND {_i("Consumer")} = @consumer);
-                """
-            : $"INSERT INTO {_inbox} ({columns}) VALUES (@messageId, @consumer, @source, @processedAt) ON CONFLICT DO NOTHING;";
+                """,
+            SqlProvider.Sqlite => $"INSERT OR IGNORE INTO {_inbox} ({columns}) VALUES (@messageId, @consumer, @source, @processedAt);",
+            _ => $"INSERT INTO {_inbox} ({columns}) VALUES (@messageId, @consumer, @source, @processedAt) ON CONFLICT DO NOTHING;",
+        };
     }
 
-    public string PurgeInbox() =>
-        _provider == SqlProvider.SqlServer
-            ? $"DELETE TOP (@batch) FROM {_inbox} WITH (READPAST) WHERE {_i("ProcessedAt")} < @before;"
-            : $"""
-                DELETE FROM {_inbox} WHERE ({_i("MessageId")}, {_i("Consumer")}) IN (
-                    SELECT {_i("MessageId")}, {_i("Consumer")} FROM {_inbox}
-                    WHERE {_i("ProcessedAt")} < @before LIMIT @batch FOR UPDATE SKIP LOCKED);
-                """;
+    public string PurgeInbox() => _provider switch
+    {
+        SqlProvider.SqlServer => $"DELETE TOP (@batch) FROM {_inbox} WITH (READPAST) WHERE {_i("ProcessedAt")} < @before;",
+        SqlProvider.Sqlite => $"""
+            DELETE FROM {_inbox} WHERE rowid IN (
+                SELECT rowid FROM {_inbox} WHERE {_i("ProcessedAt")} < @before LIMIT @batch);
+            """,
+        _ => $"""
+            DELETE FROM {_inbox} WHERE ({_i("MessageId")}, {_i("Consumer")}) IN (
+                SELECT {_i("MessageId")}, {_i("Consumer")} FROM {_inbox}
+                WHERE {_i("ProcessedAt")} < @before LIMIT @batch FOR UPDATE SKIP LOCKED);
+            """,
+    };
 }

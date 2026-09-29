@@ -317,3 +317,5 @@ public static class StoreCases
 {
     public static TheoryData<ConformanceCase<IOutboxStore>> All => [.. OutboxStoreConformance.Cases];
 }
+
+public sealed class SqliteTests(SqliteFixture database) : EntityFrameworkTests<SqliteFixture>(database);
