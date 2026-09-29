@@ -57,12 +57,15 @@
     <PackageVersion Include="Testcontainers.ServiceBus" Version="4.15.0" />
     <PackageVersion Include="Testcontainers.Kafka" Version="4.15.0" />
     <PackageVersion Include="Testcontainers.Redis" Version="4.15.0" />
+    <PackageVersion Include="Testcontainers.Pulsar" Version="4.15.0" />
     <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.21.0" />
     <PackageVersion Include="RabbitMQ.Client" Version="7.2.2" />
     <!-- The first release with a net8.0 build; no advisories are published against it. -->
     <PackageVersion Include="Confluent.Kafka" Version="2.6.0" />
     <!-- The first release with a net8.0 build; no advisories are published against it. -->
     <PackageVersion Include="StackExchange.Redis" Version="2.8.22" />
+    <!-- Earlier releases can leave a producer permanently disconnected after a reconnect race (fixed in 5.3.3). -->
+    <PackageVersion Include="DotPulsar" Version="5.3.3" />
     <PackageVersion Include="Dapper" Version="2.1.89" />
   </ItemGroup>
 </Project>

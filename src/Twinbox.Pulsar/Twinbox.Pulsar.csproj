@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Apache Pulsar transport for Twinbox: keyed sends and subscriptions that acknowledge only after the inbox has handled a message, redeliver failures after a delay, and park poison messages in a dead-letter topic.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Twinbox/Twinbox.csproj" />
+    <PackageReference Include="DotPulsar" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Twinbox.Pulsar.Tests" />
+  </ItemGroup>
+</Project>
