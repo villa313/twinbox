@@ -20,6 +20,9 @@ public sealed class TwinboxOptions
     public RetentionOptions Retention { get; set; } = new();
 
     public InboxOptions Inbox { get; set; } = new();
+
+    /// <summary>Prepended to every routed destination, e.g. "staging-" to keep environments sharing a broker apart.</summary>
+    public string? DestinationPrefix { get; set; }
 }
 
 public sealed class DispatcherOptions

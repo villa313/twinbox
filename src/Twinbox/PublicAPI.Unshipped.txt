@@ -64,6 +64,7 @@ Twinbox.Migration.OutboxImportOptions.PollInterval.set -> void
 Twinbox.Migration.OutboxImportOptions.SelectPending.get -> string?
 Twinbox.Migration.OutboxImportOptions.SelectPending.set -> void
 Twinbox.MigrationTwinboxBuilderExtensions
+Twinbox.ReplyExtensions
 Twinbox.RetentionOptions
 Twinbox.RetentionOptions.BatchSize.get -> int
 Twinbox.RetentionOptions.BatchSize.set -> void
@@ -250,6 +251,8 @@ Twinbox.TenancyOptions.TenantListCacheDuration.set -> void
 Twinbox.TransactionalOutboxExtensions
 Twinbox.Transport.HeaderProfile
 Twinbox.Transport.HeaderProfile.<Clone>$() -> Twinbox.Transport.HeaderProfile!
+Twinbox.Transport.HeaderProfile.Constants.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>?
+Twinbox.Transport.HeaderProfile.Constants.init -> void
 Twinbox.Transport.HeaderProfile.Deconstruct(out string! MessageId, out string! MessageName, out string? PartitionKey) -> void
 Twinbox.Transport.HeaderProfile.Equals(Twinbox.Transport.HeaderProfile? other) -> bool
 Twinbox.Transport.HeaderProfile.HeaderProfile(string! MessageId, string! MessageName, string? PartitionKey = null) -> void
@@ -259,6 +262,8 @@ Twinbox.Transport.HeaderProfile.MessageName.get -> string!
 Twinbox.Transport.HeaderProfile.MessageName.init -> void
 Twinbox.Transport.HeaderProfile.PartitionKey.get -> string?
 Twinbox.Transport.HeaderProfile.PartitionKey.init -> void
+Twinbox.Transport.HeaderProfile.SentTime.get -> string?
+Twinbox.Transport.HeaderProfile.SentTime.init -> void
 Twinbox.Transport.IInboundPipeline
 Twinbox.Transport.IInboundPipeline.ProcessAsync(Twinbox.Transport.IncomingMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.Transport.ITransport
@@ -310,8 +315,10 @@ Twinbox.Transport.TransportMessage.PartitionKey.get -> string?
 Twinbox.Transport.TransportMessage.PartitionKey.init -> void
 Twinbox.Transport.TransportMessage.TransportMessage(string! MessageId, string! MessageName, string! Destination, System.ReadOnlyMemory<byte> Body, string! ContentType, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Headers, string? PartitionKey) -> void
 Twinbox.TwinboxBuilder
+Twinbox.TwinboxBuilder.AddFilter<TFilter>() -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.AddHandler<THandler, TMessage>(string? consumerName = null) -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.AddHandler<THandler>(string? consumerName = null) -> Twinbox.TwinboxBuilder!
+Twinbox.TwinboxBuilder.AddOutgoingFilter<TFilter>() -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.Configure(System.Action<Twinbox.TwinboxOptions!>! configure) -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.Route<TMessage>() -> Twinbox.RouteBuilder<TMessage!>!
 Twinbox.TwinboxBuilder.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
@@ -322,6 +329,8 @@ Twinbox.TwinboxBuilder.UseTenants(System.Action<Twinbox.TenancyOptions!>! config
 Twinbox.TwinboxOptions
 Twinbox.TwinboxOptions.CircuitBreaker.get -> Twinbox.CircuitBreakerOptions!
 Twinbox.TwinboxOptions.CircuitBreaker.set -> void
+Twinbox.TwinboxOptions.DestinationPrefix.get -> string?
+Twinbox.TwinboxOptions.DestinationPrefix.set -> void
 Twinbox.TwinboxOptions.Destinations.get -> System.Collections.Generic.Dictionary<string!, Twinbox.DestinationOptions!>!
 Twinbox.TwinboxOptions.Destinations.set -> void
 Twinbox.TwinboxOptions.Dispatcher.get -> Twinbox.DispatcherOptions!
@@ -339,10 +348,12 @@ Twinbox.UnknownMessagePolicy
 Twinbox.UnknownMessagePolicy.DeadLetter = 0 -> Twinbox.UnknownMessagePolicy
 Twinbox.UnknownMessagePolicy.Ignore = 1 -> Twinbox.UnknownMessagePolicy
 const Twinbox.Diagnostics.TwinboxDiagnostics.SourceName = "Twinbox" -> string!
+const Twinbox.Transport.TransportHeaders.CorrelationId = "twinbox-correlation-id" -> string!
 const Twinbox.Transport.TransportHeaders.DeliveryAttempt = "twinbox-delivery-attempt" -> string!
 const Twinbox.Transport.TransportHeaders.MessageId = "twinbox-message-id" -> string!
 const Twinbox.Transport.TransportHeaders.MessageName = "twinbox-message-name" -> string!
 const Twinbox.Transport.TransportHeaders.PartitionKey = "twinbox-partition-key" -> string!
+const Twinbox.Transport.TransportHeaders.ReplyTo = "twinbox-reply-to" -> string!
 const Twinbox.Transport.TransportHeaders.TenantId = "twinbox-tenant" -> string!
 const Twinbox.Transport.TransportHeaders.TraceParent = "traceparent" -> string!
 const Twinbox.TwinboxOptions.SectionName = "Twinbox" -> string!
@@ -377,6 +388,7 @@ static Microsoft.Extensions.DependencyInjection.TwinboxHealthChecksBuilderExtens
 static Microsoft.Extensions.DependencyInjection.TwinboxServiceCollectionExtensions.AddTwinbox(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Twinbox.TwinboxBuilder!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Twinbox.MigrationTwinboxBuilderExtensions.ImportFromExistingOutbox(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.Migration.OutboxImportOptions!>! configure) -> Twinbox.TwinboxBuilder!
 static Twinbox.MigrationTwinboxBuilderExtensions.SeedInboxFromExisting(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.Migration.InboxSeedOptions!>! configure) -> Twinbox.TwinboxBuilder!
+static Twinbox.ReplyExtensions.Reply<TResponse>(this Twinbox.IOutbox! outbox, Twinbox.MessageContext! request, TResponse! response, string? transport = null) -> void
 static Twinbox.Serialization.HeaderCodec.Decode(string? json) -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
 static Twinbox.Serialization.HeaderCodec.Encode(System.Collections.Generic.IReadOnlyDictionary<string!, string!>! headers) -> string?
 static Twinbox.Storage.DispatchOutcome.operator !=(Twinbox.Storage.DispatchOutcome? left, Twinbox.Storage.DispatchOutcome? right) -> bool
@@ -393,6 +405,7 @@ static Twinbox.Storage.OutboxStatistics.operator !=(Twinbox.Storage.OutboxStatis
 static Twinbox.Storage.OutboxStatistics.operator ==(Twinbox.Storage.OutboxStatistics? left, Twinbox.Storage.OutboxStatistics? right) -> bool
 static Twinbox.TransactionalOutboxExtensions.CommitAsync(this Twinbox.IOutbox! outbox, System.Data.Common.DbTransaction! transaction, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 static Twinbox.TransactionalOutboxExtensions.SaveAsync(this Twinbox.IOutbox! outbox, System.Data.Common.DbTransaction! transaction, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static Twinbox.Transport.HeaderProfile.CloudEvents(string! source, string! prefix = "ce-") -> Twinbox.Transport.HeaderProfile!
 static Twinbox.Transport.HeaderProfile.Prefixed(string! prefix) -> Twinbox.Transport.HeaderProfile!
 static Twinbox.Transport.HeaderProfile.operator !=(Twinbox.Transport.HeaderProfile? left, Twinbox.Transport.HeaderProfile? right) -> bool
 static Twinbox.Transport.HeaderProfile.operator ==(Twinbox.Transport.HeaderProfile? left, Twinbox.Transport.HeaderProfile? right) -> bool

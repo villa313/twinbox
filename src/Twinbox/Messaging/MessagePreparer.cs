@@ -6,6 +6,7 @@ using Twinbox.Transport;
 namespace Twinbox.Messaging;
 
 internal sealed class MessagePreparer(
+    Microsoft.Extensions.Options.IOptions<TwinboxOptions> options,
     MessageTypeRegistry registry,
     RouteTable routes,
     TransportRegistry transports,
@@ -13,12 +14,14 @@ internal sealed class MessagePreparer(
     IMessageIdGenerator ids,
     TimeProvider time)
 {
-    public IReadOnlyList<OutboxMessage> Prepare<TMessage>(TMessage message, SendOptions? options, string? tenantId)
+    public IReadOnlyList<OutboxMessage> Prepare<TMessage>(TMessage message, SendOptions? sendOptions, string? tenantId)
         where TMessage : class
     {
         // Route and serialize by the runtime type, so events collected as a base type still reach their own routes.
         var messageType = message.GetType();
-        var messageRoutes = routes.Get(messageType);
+        var messageRoutes = sendOptions?.Destination is { } destination
+            ? [new Route(destination, sendOptions.Transport)]
+            : Prefixed(routes.Get(messageType));
         if (messageRoutes.Count == 0)
         {
             throw new InvalidOperationException(
@@ -28,8 +31,8 @@ internal sealed class MessagePreparer(
         var name = registry.GetOrAdd(messageType);
         var payload = serializer.Serialize(message, messageType);
         var now = time.GetUtcNow();
-        var availableAt = options?.Delay is { } delay ? now + delay : now;
-        var headers = options?.Headers ?? EmptyHeaders.Instance;
+        var availableAt = sendOptions?.Delay is { } delay ? now + delay : now;
+        var headers = sendOptions?.Headers ?? EmptyHeaders.Instance;
         var traceParent = Activity.Current is { IdFormat: ActivityIdFormat.W3C } activity ? activity.Id : null;
 
         var prepared = new OutboxMessage[messageRoutes.Count];
@@ -41,7 +44,7 @@ internal sealed class MessagePreparer(
                 MessageName = name,
                 Transport = messageRoutes[i].Transport ?? transports.ResolveDefaultName(),
                 Destination = messageRoutes[i].Destination,
-                PartitionKey = options?.PartitionKey,
+                PartitionKey = sendOptions?.PartitionKey,
                 TenantId = tenantId,
                 Payload = payload,
                 ContentType = serializer.ContentType,
@@ -60,7 +63,7 @@ internal sealed class MessagePreparer(
     public IReadOnlyList<OutboxMessage> PrepareImported(Type messageType, string messageName, string legacyId, byte[] payload)
     {
         var now = time.GetUtcNow();
-        return [.. routes.Get(messageType).Select(route => new OutboxMessage
+        return [.. Prefixed(routes.Get(messageType)).Select(route => new OutboxMessage
         {
             Id = Migration.ImportedMessageIds.For(legacyId, route.Destination),
             MessageName = messageName,
@@ -73,4 +76,9 @@ internal sealed class MessagePreparer(
             Status = OutboxMessageStatus.Pending,
         })];
     }
+
+    private IReadOnlyList<Route> Prefixed(IReadOnlyList<Route> routes) =>
+        options.Value.DestinationPrefix is { Length: > 0 } prefix
+            ? [.. routes.Select(r => r with { Destination = prefix + r.Destination })]
+            : routes;
 }

@@ -9,4 +9,6 @@ public static class TransportHeaders
     public const string TraceParent = "traceparent";
     public const string TenantId = "twinbox-tenant";
     public const string DeliveryAttempt = "twinbox-delivery-attempt";
+    public const string CorrelationId = "twinbox-correlation-id";
+    public const string ReplyTo = "twinbox-reply-to";
 }

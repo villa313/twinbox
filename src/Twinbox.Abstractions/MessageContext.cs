@@ -6,4 +6,9 @@ public sealed record MessageContext(
     string Source,
     IReadOnlyDictionary<string, string> Headers,
     int DeliveryAttempt,
-    string? PartitionKey);
+    string? PartitionKey)
+{
+    public string? CorrelationId { get; init; }
+
+    public string? ReplyTo { get; init; }
+}

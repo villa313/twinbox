@@ -1,20 +1,16 @@
 #nullable enable
-override Twinbox.MessageContext.Equals(object? obj) -> bool
-override Twinbox.MessageContext.GetHashCode() -> int
-override Twinbox.MessageContext.ToString() -> string!
-override Twinbox.SendOptions.Equals(object? obj) -> bool
-override Twinbox.SendOptions.GetHashCode() -> int
-override Twinbox.SendOptions.ToString() -> string!
-static Twinbox.MessageContext.operator !=(Twinbox.MessageContext? left, Twinbox.MessageContext? right) -> bool
-static Twinbox.MessageContext.operator ==(Twinbox.MessageContext? left, Twinbox.MessageContext? right) -> bool
-static Twinbox.SendOptions.operator !=(Twinbox.SendOptions? left, Twinbox.SendOptions? right) -> bool
-static Twinbox.SendOptions.operator ==(Twinbox.SendOptions? left, Twinbox.SendOptions? right) -> bool
 Twinbox.IHandle<TMessage>
 Twinbox.IHandle<TMessage>.HandleAsync(TMessage! message, Twinbox.MessageContext! context, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.IMessageFilter
+Twinbox.IMessageFilter.InvokeAsync(object! message, Twinbox.MessageContext! context, System.Func<System.Threading.Tasks.Task!>! continuation, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.IOutbox
 Twinbox.IOutbox.Send<TMessage>(TMessage! message, Twinbox.SendOptions? options = null) -> void
+Twinbox.IOutgoingMessageFilter
+Twinbox.IOutgoingMessageFilter.OnSending(object! message, System.Collections.Generic.IDictionary<string!, string!>! headers) -> void
 Twinbox.MessageContext
 Twinbox.MessageContext.<Clone>$() -> Twinbox.MessageContext!
+Twinbox.MessageContext.CorrelationId.get -> string?
+Twinbox.MessageContext.CorrelationId.init -> void
 Twinbox.MessageContext.Deconstruct(out string! MessageId, out string! MessageName, out string! Source, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Headers, out int DeliveryAttempt, out string? PartitionKey) -> void
 Twinbox.MessageContext.DeliveryAttempt.get -> int
 Twinbox.MessageContext.DeliveryAttempt.init -> void
@@ -28,6 +24,8 @@ Twinbox.MessageContext.MessageName.get -> string!
 Twinbox.MessageContext.MessageName.init -> void
 Twinbox.MessageContext.PartitionKey.get -> string?
 Twinbox.MessageContext.PartitionKey.init -> void
+Twinbox.MessageContext.ReplyTo.get -> string?
+Twinbox.MessageContext.ReplyTo.init -> void
 Twinbox.MessageContext.Source.get -> string!
 Twinbox.MessageContext.Source.init -> void
 Twinbox.MessageNameAttribute
@@ -35,11 +33,29 @@ Twinbox.MessageNameAttribute.MessageNameAttribute(string! name) -> void
 Twinbox.MessageNameAttribute.Name.get -> string!
 Twinbox.SendOptions
 Twinbox.SendOptions.<Clone>$() -> Twinbox.SendOptions!
+Twinbox.SendOptions.CorrelationId.get -> string?
+Twinbox.SendOptions.CorrelationId.init -> void
 Twinbox.SendOptions.Delay.get -> System.TimeSpan?
 Twinbox.SendOptions.Delay.init -> void
+Twinbox.SendOptions.Destination.get -> string?
+Twinbox.SendOptions.Destination.init -> void
 Twinbox.SendOptions.Equals(Twinbox.SendOptions? other) -> bool
 Twinbox.SendOptions.Headers.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>?
 Twinbox.SendOptions.Headers.init -> void
 Twinbox.SendOptions.PartitionKey.get -> string?
 Twinbox.SendOptions.PartitionKey.init -> void
+Twinbox.SendOptions.ReplyTo.get -> string?
+Twinbox.SendOptions.ReplyTo.init -> void
 Twinbox.SendOptions.SendOptions() -> void
+Twinbox.SendOptions.Transport.get -> string?
+Twinbox.SendOptions.Transport.init -> void
+override Twinbox.MessageContext.Equals(object? obj) -> bool
+override Twinbox.MessageContext.GetHashCode() -> int
+override Twinbox.MessageContext.ToString() -> string!
+override Twinbox.SendOptions.Equals(object? obj) -> bool
+override Twinbox.SendOptions.GetHashCode() -> int
+override Twinbox.SendOptions.ToString() -> string!
+static Twinbox.MessageContext.operator !=(Twinbox.MessageContext? left, Twinbox.MessageContext? right) -> bool
+static Twinbox.MessageContext.operator ==(Twinbox.MessageContext? left, Twinbox.MessageContext? right) -> bool
+static Twinbox.SendOptions.operator !=(Twinbox.SendOptions? left, Twinbox.SendOptions? right) -> bool
+static Twinbox.SendOptions.operator ==(Twinbox.SendOptions? left, Twinbox.SendOptions? right) -> bool

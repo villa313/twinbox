@@ -2,16 +2,28 @@ namespace Twinbox.Transport;
 
 internal sealed class HeaderProfiles(IEnumerable<HeaderProfile> profiles)
 {
+    private static readonly Dictionary<string, string> EmptyConstants = [];
+
     private readonly HeaderProfile[] _profiles = [.. profiles];
 
     public bool IsEmpty => _profiles.Length == 0;
 
-    public void Write(IDictionary<string, string> headers, string messageId, string messageName, string? partitionKey)
+    public void Write(IDictionary<string, string> headers, string messageId, string messageName, string? partitionKey, DateTimeOffset sentAt)
     {
         foreach (var profile in _profiles)
         {
             headers[profile.MessageId] = messageId;
             headers[profile.MessageName] = messageName;
+            if (profile.SentTime is not null)
+            {
+                headers[profile.SentTime] = sentAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture);
+            }
+
+            foreach (var (name, value) in profile.Constants ?? EmptyConstants)
+            {
+                headers[name] = value;
+            }
+
             if (profile.PartitionKey is not null && partitionKey is not null)
             {
                 headers[profile.PartitionKey] = partitionKey;

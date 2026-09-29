@@ -78,6 +78,21 @@ public sealed class TwinboxBuilder
     }
 
     /// <summary>Also writes and reads another system's header names; see <see cref="HeaderProfile"/>.</summary>
+    /// <summary>Runs <typeparamref name="TFilter"/> around every handler call; filters run in registration order.</summary>
+    public TwinboxBuilder AddFilter<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TFilter>()
+        where TFilter : class, IMessageFilter
+    {
+        Services.AddScoped<IMessageFilter, TFilter>();
+        return this;
+    }
+
+    public TwinboxBuilder AddOutgoingFilter<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TFilter>()
+        where TFilter : class, IOutgoingMessageFilter
+    {
+        Services.AddScoped<IOutgoingMessageFilter, TFilter>();
+        return this;
+    }
+
     public TwinboxBuilder UseHeaderProfile(HeaderProfile profile)
     {
         ArgumentNullException.ThrowIfNull(profile);

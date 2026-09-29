@@ -56,7 +56,11 @@ internal sealed partial class InboundPipeline(
         using var _ = TenantScope.Enter(tenant);
         var body = Deserialize(message, messageType);
         var context = new MessageContext(
-            message.MessageId, message.MessageName, message.Source, message.Headers, message.DeliveryAttempt, message.PartitionKey);
+            message.MessageId, message.MessageName, message.Source, message.Headers, message.DeliveryAttempt, message.PartitionKey)
+        {
+            CorrelationId = message.Headers.GetValueOrDefault(TransportHeaders.CorrelationId),
+            ReplyTo = message.Headers.GetValueOrDefault(TransportHeaders.ReplyTo),
+        };
 
         foreach (var handler in messageHandlers)
         {
@@ -76,7 +80,7 @@ internal sealed partial class InboundPipeline(
         {
             if (inbox is null || !options.Value.Inbox.Enabled)
             {
-                await handler.InvokeAsync(scope.ServiceProvider, body, context, cancellationToken).ConfigureAwait(false);
+                await RunAsync(scope.ServiceProvider, handler, body, context, cancellationToken).ConfigureAwait(false);
                 TwinboxDiagnostics.MessagesProcessed.Add(1);
                 return;
             }
@@ -85,7 +89,7 @@ internal sealed partial class InboundPipeline(
             var processed = await inbox.TryProcessAsync(
                 entry,
                 scope.ServiceProvider,
-                ct => handler.InvokeAsync(scope.ServiceProvider, body, context, ct),
+                ct => RunAsync(scope.ServiceProvider, handler, body, context, ct),
                 cancellationToken).ConfigureAwait(false);
 
             if (processed)
@@ -98,6 +102,24 @@ internal sealed partial class InboundPipeline(
                 TwinboxDiagnostics.DuplicatesSkipped.Add(1);
             }
         }
+    }
+
+    private static async Task RunAsync(
+        IServiceProvider services,
+        HandlerDescriptor handler,
+        object body,
+        MessageContext context,
+        CancellationToken cancellationToken)
+    {
+        using var _ = InboundContext.Enter(context);
+        Func<Task> next = () => handler.InvokeAsync(services, body, context, cancellationToken);
+        foreach (var filter in services.GetServices<IMessageFilter>().Reverse())
+        {
+            var inner = next;
+            next = () => filter.InvokeAsync(body, context, inner, cancellationToken);
+        }
+
+        await next().ConfigureAwait(false);
     }
 
     private object Deserialize(IncomingMessage message, Type messageType)

@@ -1,5 +1,8 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using Twinbox.Inbox;
 using Twinbox.Storage;
+using Twinbox.Transport;
 using Twinbox.Tenancy;
 
 namespace Twinbox.Messaging;
@@ -11,6 +14,8 @@ internal sealed partial class OutboxBuffer(
     TenancyOptions? tenancy = null)
     : IOutbox, IOutboxSession, IDisposable
 {
+    private static readonly SendOptions DefaultOptions = new();
+
     private readonly ILogger _logger = logger;
 
     private readonly List<OutboxMessage> _pending = [];
@@ -33,9 +38,10 @@ internal sealed partial class OutboxBuffer(
         where TMessage : class
     {
         ArgumentNullException.ThrowIfNull(message);
+        options ??= DefaultOptions;
         // Inside a handler the inbound tenant wins; otherwise ask the app which tenant this scope belongs to.
         var tenant = TenantScope.Current ?? tenancy?.CurrentTenant?.Invoke(services);
-        var prepared = preparer.Prepare(message, options, tenant);
+        var prepared = preparer.Prepare(message, options with { Headers = OutgoingHeaders(message, options) }, tenant);
         lock (_gate)
         {
             _pending.AddRange(prepared);
@@ -64,6 +70,28 @@ internal sealed partial class OutboxBuffer(
         {
             LogUnsavedMessages(count);
         }
+    }
+
+    private Dictionary<string, string> OutgoingHeaders(object message, SendOptions options)
+    {
+        var headers = options.Headers is null ? [] : new Dictionary<string, string>(options.Headers);
+        var inbound = InboundContext.Current;
+        if ((options.CorrelationId ?? inbound?.CorrelationId ?? inbound?.MessageId) is { } correlationId)
+        {
+            headers[TransportHeaders.CorrelationId] = correlationId;
+        }
+
+        if (options.ReplyTo is not null)
+        {
+            headers[TransportHeaders.ReplyTo] = options.ReplyTo;
+        }
+
+        foreach (var filter in services.GetServices<IOutgoingMessageFilter>())
+        {
+            filter.OnSending(message, headers);
+        }
+
+        return headers;
     }
 
     [LoggerMessage(Level = LogLevel.Error, Message = "{Count} outbox message(s) were sent but never saved. Save a Twinbox-enabled DbContext resolved in the same scope, call context.EnlistOutbox(outbox) for contexts you create yourself, or use outbox.CommitAsync(transaction) with ADO.NET.")]

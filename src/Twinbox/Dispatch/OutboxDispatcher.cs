@@ -132,7 +132,7 @@ internal sealed partial class OutboxDispatcher(
             headers[TransportHeaders.TenantId] = message.TenantId;
         }
 
-        headerProfiles.Write(headers, message.Id.ToString(), message.MessageName, message.PartitionKey);
+        headerProfiles.Write(headers, message.Id.ToString(), message.MessageName, message.PartitionKey, message.CreatedAt);
         headers[TransportHeaders.DeliveryAttempt] = (message.Attempts + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
 
         try
