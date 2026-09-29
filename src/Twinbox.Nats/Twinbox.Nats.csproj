@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>NATS JetStream transport for Twinbox: deduplicated, acknowledged publishes and durable pull consumers that acknowledge only after the inbox has handled a message.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Twinbox/Twinbox.csproj" />
+    <PackageReference Include="NATS.Client.JetStream" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Twinbox.Nats.Tests" />
+  </ItemGroup>
+</Project>

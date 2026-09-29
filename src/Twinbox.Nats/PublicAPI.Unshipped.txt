@@ -1,0 +1,40 @@
+#nullable enable
+Twinbox.Nats.NatsOptions
+Twinbox.Nats.NatsOptions.AckWait.get -> System.TimeSpan
+Twinbox.Nats.NatsOptions.AckWait.set -> void
+Twinbox.Nats.NatsOptions.AddStream(string! name, params string![]! subjects) -> Twinbox.Nats.NatsOptions!
+Twinbox.Nats.NatsOptions.AutoCreateStreams.get -> bool
+Twinbox.Nats.NatsOptions.AutoCreateStreams.set -> void
+Twinbox.Nats.NatsOptions.ClientName.get -> string!
+Twinbox.Nats.NatsOptions.ClientName.set -> void
+Twinbox.Nats.NatsOptions.ConfigureConnection.get -> System.Func<NATS.Client.Core.NatsOpts!, NATS.Client.Core.NatsOpts!>?
+Twinbox.Nats.NatsOptions.ConfigureConnection.set -> void
+Twinbox.Nats.NatsOptions.ConsumerConcurrency.get -> int
+Twinbox.Nats.NatsOptions.ConsumerConcurrency.set -> void
+Twinbox.Nats.NatsOptions.DeadLetterSubject.get -> string?
+Twinbox.Nats.NatsOptions.DeadLetterSubject.set -> void
+Twinbox.Nats.NatsOptions.DeadLetterUnroutable.get -> bool
+Twinbox.Nats.NatsOptions.DeadLetterUnroutable.set -> void
+Twinbox.Nats.NatsOptions.DuplicateWindow.get -> System.TimeSpan
+Twinbox.Nats.NatsOptions.DuplicateWindow.set -> void
+Twinbox.Nats.NatsOptions.Listen(string! stream, string! durableConsumer, string? filterSubject = null) -> Twinbox.Nats.NatsOptions!
+Twinbox.Nats.NatsOptions.MaxAckPending.get -> int
+Twinbox.Nats.NatsOptions.MaxAckPending.set -> void
+Twinbox.Nats.NatsOptions.MaxDeliver.get -> int
+Twinbox.Nats.NatsOptions.MaxDeliver.set -> void
+Twinbox.Nats.NatsOptions.MaxRetryDelay.get -> System.TimeSpan
+Twinbox.Nats.NatsOptions.MaxRetryDelay.set -> void
+Twinbox.Nats.NatsOptions.NatsOptions() -> void
+Twinbox.Nats.NatsOptions.PrefetchCount.get -> int
+Twinbox.Nats.NatsOptions.PrefetchCount.set -> void
+Twinbox.Nats.NatsOptions.RetryDelay.get -> System.TimeSpan
+Twinbox.Nats.NatsOptions.RetryDelay.set -> void
+Twinbox.Nats.NatsOptions.Url.get -> string!
+Twinbox.Nats.NatsOptions.Url.set -> void
+Twinbox.Nats.NatsTransport
+Twinbox.Nats.NatsTransport.Name.get -> string!
+Twinbox.Nats.NatsTransport.SendAsync(Twinbox.Transport.TransportMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.NatsTwinboxBuilderExtensions
+const Twinbox.Nats.NatsTransport.TransportName = "nats" -> string!
+static Twinbox.NatsTwinboxBuilderExtensions.UseNats(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.Nats.NatsOptions!>! configure) -> Twinbox.TwinboxBuilder!
+static Twinbox.NatsTwinboxBuilderExtensions.UseNats(this Twinbox.TwinboxBuilder! builder, string! url) -> Twinbox.TwinboxBuilder!

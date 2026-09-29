@@ -9,6 +9,7 @@
     <Project Path="src/Twinbox.InMemory/Twinbox.InMemory.csproj" />
     <Project Path="src/Twinbox.Kafka/Twinbox.Kafka.csproj" />
     <Project Path="src/Twinbox.MongoDB/Twinbox.MongoDB.csproj" />
+    <Project Path="src/Twinbox.Nats/Twinbox.Nats.csproj" />
     <Project Path="src/Twinbox.PostgreSql/Twinbox.PostgreSql.csproj" />
     <Project Path="src/Twinbox.RabbitMQ/Twinbox.RabbitMQ.csproj" />
     <Project Path="src/Twinbox.RedisStreams/Twinbox.RedisStreams.csproj" />
@@ -24,6 +25,7 @@
     <Project Path="tests/Twinbox.Kafka.Tests/Twinbox.Kafka.Tests.csproj" />
     <Project Path="tests/Twinbox.RedisStreams.Tests/Twinbox.RedisStreams.Tests.csproj" />
     <Project Path="tests/Twinbox.MongoDB.IntegrationTests/Twinbox.MongoDB.IntegrationTests.csproj" />
+    <Project Path="tests/Twinbox.Nats.Tests/Twinbox.Nats.Tests.csproj" />
     <Project Path="tests/Twinbox.Relational.IntegrationTests/Twinbox.Relational.IntegrationTests.csproj" />
     <Project Path="tests/Twinbox.SourceGenerators.Tests/Twinbox.SourceGenerators.Tests.csproj" />
     <Project Path="tests/Twinbox.UnitTests/Twinbox.UnitTests.csproj" />
