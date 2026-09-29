@@ -5,10 +5,12 @@
   <Folder Name="/src/">
     <Project Path="src/Twinbox.Abstractions/Twinbox.Abstractions.csproj" />
     <Project Path="src/Twinbox.InMemory/Twinbox.InMemory.csproj" />
+    <Project Path="src/Twinbox.RabbitMQ/Twinbox.RabbitMQ.csproj" />
     <Project Path="src/Twinbox.Testing/Twinbox.Testing.csproj" />
     <Project Path="src/Twinbox/Twinbox.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Twinbox.RabbitMQ.Tests/Twinbox.RabbitMQ.Tests.csproj" />
     <Project Path="tests/Twinbox.UnitTests/Twinbox.UnitTests.csproj" />
   </Folder>
 </Solution>
