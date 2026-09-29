@@ -1,0 +1,62 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Twinbox.EntityFrameworkCore;
+using Twinbox.Storage;
+#if !NET9_0_OR_GREATER
+using Microsoft.EntityFrameworkCore.Infrastructure;
+#endif
+
+namespace Twinbox;
+
+public static class EntityFrameworkCoreTwinboxBuilderExtensions
+{
+    /// <summary>
+    /// Stores the outbox and inbox in <typeparamref name="TContext"/>'s database. Messages sent through
+    /// <see cref="IOutbox"/> are saved by the context's next SaveChanges, inside the same transaction.
+    /// </summary>
+    public static TwinboxBuilder UseEntityFrameworkCore<TContext>(this TwinboxBuilder builder)
+        where TContext : DbContext
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.Services.TryAddSingleton<IOutboxStore, EntityFrameworkOutboxStore<TContext>>();
+        builder.Services.TryAddSingleton<IInboxStore, EntityFrameworkInboxStore<TContext>>();
+        AddInterceptor<TContext>(builder.Services);
+        return builder;
+    }
+
+#if NET9_0_OR_GREATER
+    private static void AddInterceptor<TContext>(IServiceCollection services)
+        where TContext : DbContext =>
+        services.ConfigureDbContext<TContext>(options => options.AddInterceptors(OutboxInterceptor.Instance));
+#else
+    private static void AddInterceptor<TContext>(IServiceCollection services)
+        where TContext : DbContext
+    {
+        // EF Core 8 has no ConfigureDbContext, so decorate the options registration AddDbContext made.
+        var registration = services.LastOrDefault(d => d.ServiceType == typeof(DbContextOptions<TContext>))
+            ?? throw new InvalidOperationException(
+                $"Call AddDbContext<{typeof(TContext).Name}>() before UseEntityFrameworkCore<{typeof(TContext).Name}>().");
+
+        services.Add(new ServiceDescriptor(
+            typeof(DbContextOptions<TContext>),
+            sp => WithInterceptor((DbContextOptions<TContext>)Create(registration, sp)),
+            registration.Lifetime));
+    }
+
+    private static object Create(ServiceDescriptor registration, IServiceProvider services) =>
+        registration.ImplementationInstance
+            ?? registration.ImplementationFactory?.Invoke(services)
+            ?? ActivatorUtilities.CreateInstance(services, registration.ImplementationType!);
+
+    private static DbContextOptions<TContext> WithInterceptor<TContext>(DbContextOptions<TContext> options)
+        where TContext : DbContext
+    {
+        var core = options.FindExtension<CoreOptionsExtension>() ?? new CoreOptionsExtension();
+        var interceptors = core.Interceptors ?? [];
+        return interceptors.Contains(OutboxInterceptor.Instance)
+            ? options
+            : (DbContextOptions<TContext>)options.WithExtension(core.WithInterceptors([.. interceptors, OutboxInterceptor.Instance]));
+    }
+#endif
+}

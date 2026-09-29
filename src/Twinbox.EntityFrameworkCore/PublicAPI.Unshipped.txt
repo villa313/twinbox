@@ -1,0 +1,13 @@
+#nullable enable
+Microsoft.EntityFrameworkCore.TwinboxModelBuilderExtensions
+static Microsoft.EntityFrameworkCore.TwinboxModelBuilderExtensions.AddTwinbox(this Microsoft.EntityFrameworkCore.ModelBuilder! modelBuilder, System.Action<Twinbox.EntityFrameworkCore.TwinboxModelOptions!>? configure = null) -> Microsoft.EntityFrameworkCore.ModelBuilder!
+static Twinbox.EntityFrameworkCoreTwinboxBuilderExtensions.UseEntityFrameworkCore<TContext>(this Twinbox.TwinboxBuilder! builder) -> Twinbox.TwinboxBuilder!
+Twinbox.EntityFrameworkCore.TwinboxModelOptions
+Twinbox.EntityFrameworkCore.TwinboxModelOptions.InboxTable.get -> string!
+Twinbox.EntityFrameworkCore.TwinboxModelOptions.InboxTable.set -> void
+Twinbox.EntityFrameworkCore.TwinboxModelOptions.OutboxTable.get -> string!
+Twinbox.EntityFrameworkCore.TwinboxModelOptions.OutboxTable.set -> void
+Twinbox.EntityFrameworkCore.TwinboxModelOptions.Schema.get -> string?
+Twinbox.EntityFrameworkCore.TwinboxModelOptions.Schema.set -> void
+Twinbox.EntityFrameworkCore.TwinboxModelOptions.TwinboxModelOptions() -> void
+Twinbox.EntityFrameworkCoreTwinboxBuilderExtensions

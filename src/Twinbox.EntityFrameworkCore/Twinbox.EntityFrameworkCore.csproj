@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>EF Core storage for Twinbox: outbox messages are saved in the same SaveChanges or transaction as your data. Supports SQL Server and PostgreSQL.</Description>
+    <PackageTags>$(PackageTags);entity-framework-core;sqlserver;postgresql</PackageTags>
+    <!-- EF Core itself relies on runtime model building, so this package makes no AOT promise. -->
+    <IsAotCompatible>false</IsAotCompatible>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Twinbox/Twinbox.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Twinbox.EntityFrameworkCore.IntegrationTests" />
+  </ItemGroup>
+</Project>
