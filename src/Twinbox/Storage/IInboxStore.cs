@@ -3,18 +3,17 @@ namespace Twinbox.Storage;
 public interface IInboxStore
 {
     /// <summary>
-    /// Records <paramref name="entry"/> inside a unit of work the handler shares. Returns null when the
-    /// consumer already processed this message.
+    /// Runs <paramref name="handler"/> in one unit of work with the inbox entry, so the entry, the handler's own writes
+    /// and any messages it sends commit or roll back together. Returns false, without running the handler, when this
+    /// consumer already processed the message. Stores with retrying execution strategies may run the handler again.
     /// </summary>
-    Task<IInboxLease?> TryBeginAsync(InboxEntry entry, IServiceProvider scopedServices, CancellationToken cancellationToken);
+    Task<bool> TryProcessAsync(
+        InboxEntry entry,
+        IServiceProvider scopedServices,
+        Func<CancellationToken, Task> handler,
+        CancellationToken cancellationToken);
 
     Task<int> PurgeAsync(DateTimeOffset processedBefore, int batchSize, CancellationToken cancellationToken);
 }
 
 public sealed record InboxEntry(string MessageId, string Consumer, string Source, DateTimeOffset ReceivedAt);
-
-/// <summary>Disposing without completing rolls back the entry and everything the handler wrote.</summary>
-public interface IInboxLease : IAsyncDisposable
-{
-    Task CompleteAsync(CancellationToken cancellationToken);
-}

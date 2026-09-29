@@ -64,19 +64,20 @@ internal sealed partial class InboundPipeline(
             }
 
             var entry = new InboxEntry(message.MessageId, handler.ConsumerName, message.Source, time.GetUtcNow());
-            var lease = await inbox.TryBeginAsync(entry, scope.ServiceProvider, cancellationToken).ConfigureAwait(false);
-            if (lease is null)
+            var processed = await inbox.TryProcessAsync(
+                entry,
+                scope.ServiceProvider,
+                ct => handler.InvokeAsync(scope.ServiceProvider, body, context, ct),
+                cancellationToken).ConfigureAwait(false);
+
+            if (processed)
+            {
+                TwinboxDiagnostics.MessagesProcessed.Add(1);
+            }
+            else
             {
                 LogDuplicate(message.MessageId, handler.ConsumerName);
                 TwinboxDiagnostics.DuplicatesSkipped.Add(1);
-                return;
-            }
-
-            await using (lease.ConfigureAwait(false))
-            {
-                await handler.InvokeAsync(scope.ServiceProvider, body, context, cancellationToken).ConfigureAwait(false);
-                await lease.CompleteAsync(cancellationToken).ConfigureAwait(false);
-                TwinboxDiagnostics.MessagesProcessed.Add(1);
             }
         }
     }

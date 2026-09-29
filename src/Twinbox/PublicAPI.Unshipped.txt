@@ -139,11 +139,9 @@ Twinbox.Storage.DispatchOutcome.Status.get -> Twinbox.Storage.OutboxMessageStatu
 Twinbox.Storage.DispatchOutcome.Status.init -> void
 Twinbox.Storage.IDispatchSignal
 Twinbox.Storage.IDispatchSignal.Notify() -> void
-Twinbox.Storage.IInboxLease
-Twinbox.Storage.IInboxLease.CompleteAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.Storage.IInboxStore
 Twinbox.Storage.IInboxStore.PurgeAsync(System.DateTimeOffset processedBefore, int batchSize, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
-Twinbox.Storage.IInboxStore.TryBeginAsync(Twinbox.Storage.InboxEntry! entry, System.IServiceProvider! scopedServices, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Twinbox.Storage.IInboxLease?>!
+Twinbox.Storage.IInboxStore.TryProcessAsync(Twinbox.Storage.InboxEntry! entry, System.IServiceProvider! scopedServices, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! handler, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<bool>!
 Twinbox.Storage.IMessageIdGenerator
 Twinbox.Storage.IMessageIdGenerator.NewId(System.DateTimeOffset now) -> System.Guid
 Twinbox.Storage.InboxEntry

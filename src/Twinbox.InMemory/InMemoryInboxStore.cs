@@ -5,9 +5,6 @@ namespace Twinbox.InMemory;
 
 public sealed class InMemoryInboxStore(IOutboxStore outbox, IDispatchSignal signal, TimeProvider time) : IInboxStore
 {
-    private readonly IOutboxStore _outbox = outbox;
-    private readonly IDispatchSignal _signal = signal;
-    private readonly TimeProvider _time = time;
     private readonly object _gate = new();
     private readonly Dictionary<(string MessageId, string Consumer), DateTimeOffset> _processed = [];
     private readonly HashSet<(string MessageId, string Consumer)> _inFlight = [];
@@ -20,19 +17,56 @@ public sealed class InMemoryInboxStore(IOutboxStore outbox, IDispatchSignal sign
         }
     }
 
-    public Task<IInboxLease?> TryBeginAsync(InboxEntry entry, IServiceProvider scopedServices, CancellationToken cancellationToken)
+    public async Task<bool> TryProcessAsync(
+        InboxEntry entry,
+        IServiceProvider scopedServices,
+        Func<CancellationToken, Task> handler,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(entry);
+        ArgumentNullException.ThrowIfNull(scopedServices);
+        ArgumentNullException.ThrowIfNull(handler);
+
         var key = (entry.MessageId, entry.Consumer);
         lock (_gate)
         {
             if (_processed.ContainsKey(key) || !_inFlight.Add(key))
             {
-                return Task.FromResult<IInboxLease?>(null);
+                return false;
             }
         }
 
-        return Task.FromResult<IInboxLease?>(new Lease(this, key, scopedServices.GetRequiredService<IOutboxSession>()));
+        var session = scopedServices.GetRequiredService<IOutboxSession>();
+        try
+        {
+            await handler(cancellationToken).ConfigureAwait(false);
+            var pending = session.TakePending();
+            if (pending.Count > 0)
+            {
+                await outbox.AppendAsync(pending, cancellationToken).ConfigureAwait(false);
+                signal.Notify();
+            }
+
+            lock (_gate)
+            {
+                _processed[key] = time.GetUtcNow();
+            }
+
+            return true;
+        }
+        catch
+        {
+            // Rolled back: whatever the handler sent is discarded with the inbox entry.
+            session.TakePending();
+            throw;
+        }
+        finally
+        {
+            lock (_gate)
+            {
+                _inFlight.Remove(key);
+            }
+        }
     }
 
     public Task<int> PurgeAsync(DateTimeOffset processedBefore, int batchSize, CancellationToken cancellationToken)
@@ -46,44 +80,6 @@ public sealed class InMemoryInboxStore(IOutboxStore outbox, IDispatchSignal sign
             }
 
             return Task.FromResult(expired.Length);
-        }
-    }
-
-    private sealed class Lease(InMemoryInboxStore store, (string, string) key, IOutboxSession session) : IInboxLease
-    {
-        private bool _completed;
-
-        public async Task CompleteAsync(CancellationToken cancellationToken)
-        {
-            var pending = session.TakePending();
-            if (pending.Count > 0)
-            {
-                await store._outbox.AppendAsync(pending, cancellationToken).ConfigureAwait(false);
-                store._signal.Notify();
-            }
-
-            lock (store._gate)
-            {
-                store._processed[key] = store._time.GetUtcNow();
-                store._inFlight.Remove(key);
-            }
-
-            _completed = true;
-        }
-
-        public ValueTask DisposeAsync()
-        {
-            if (!_completed)
-            {
-                // Rolled back: the handler's outgoing messages are discarded along with the inbox entry.
-                session.TakePending();
-                lock (store._gate)
-                {
-                    store._inFlight.Remove(key);
-                }
-            }
-
-            return ValueTask.CompletedTask;
         }
     }
 }
