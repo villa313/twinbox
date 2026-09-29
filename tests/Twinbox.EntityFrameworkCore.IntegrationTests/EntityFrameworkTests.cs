@@ -225,7 +225,7 @@ public abstract class EntityFrameworkTests<TFixture>(TFixture database) : IClass
         Assert.Equal(1, purged);
     }
 
-    private ServiceProvider BuildServices(
+    protected ServiceProvider BuildServices(
         Action<IServiceCollection>? services = null,
         bool retryOnFailure = false,
         Action<TwinboxOptions>? configure = null)
@@ -321,3 +321,4 @@ public static class StoreCases
 }
 
 public sealed class SqliteTests(SqliteFixture database) : EntityFrameworkTests<SqliteFixture>(database);
+

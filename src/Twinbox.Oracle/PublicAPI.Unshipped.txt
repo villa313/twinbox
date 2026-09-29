@@ -1,0 +1,18 @@
+#nullable enable
+Twinbox.Oracle.OracleStorageOptions
+Twinbox.Oracle.OracleStorageOptions.ConnectionString.get -> string?
+Twinbox.Oracle.OracleStorageOptions.ConnectionString.set -> void
+Twinbox.Oracle.OracleStorageOptions.ConnectionStringFactory.get -> System.Func<System.IServiceProvider!, string!>?
+Twinbox.Oracle.OracleStorageOptions.ConnectionStringFactory.set -> void
+Twinbox.Oracle.OracleStorageOptions.CreateSchemaIfMissing.get -> bool
+Twinbox.Oracle.OracleStorageOptions.CreateSchemaIfMissing.set -> void
+Twinbox.Oracle.OracleStorageOptions.InboxTable.get -> string!
+Twinbox.Oracle.OracleStorageOptions.InboxTable.set -> void
+Twinbox.Oracle.OracleStorageOptions.OutboxTable.get -> string!
+Twinbox.Oracle.OracleStorageOptions.OutboxTable.set -> void
+Twinbox.Oracle.OracleStorageOptions.OracleStorageOptions() -> void
+Twinbox.Oracle.OracleStorageOptions.Schema.get -> string?
+Twinbox.Oracle.OracleStorageOptions.Schema.set -> void
+Twinbox.OracleTwinboxBuilderExtensions
+static Twinbox.OracleTwinboxBuilderExtensions.UseOracle(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.Oracle.OracleStorageOptions!>! configure) -> Twinbox.TwinboxBuilder!
+static Twinbox.OracleTwinboxBuilderExtensions.UseOracle(this Twinbox.TwinboxBuilder! builder, string! connectionString) -> Twinbox.TwinboxBuilder!
