@@ -29,6 +29,12 @@ public sealed class RabbitMqOptions
     /// <summary>Declare exchanges, queues and bindings on first use; turn off when topology is managed elsewhere.</summary>
     public bool AutoProvision { get; set; } = true;
 
+    /// <summary>
+    /// Unroutable publishes are retried by default, because a consumer may not have bound its queue yet when the
+    /// publisher starts. Set this to dead-letter them on the first attempt instead.
+    /// </summary>
+    public bool DeadLetterUnroutable { get; set; }
+
     /// <summary>Deliveries per message before the quorum queue dead-letters it.</summary>
     public int DeliveryLimit { get; set; } = 10;
 

@@ -86,10 +86,26 @@ public sealed class RabbitMqIntegrationTests(RabbitMqFixture broker) : IClassFix
     }
 
     [Fact]
-    public async Task UnroutableMessage_IsReportedAsPermanentFailure()
+    public async Task UnroutableMessage_IsRetryableByDefault()
     {
         var (exchange, _) = Names();
         await using var host = await RabbitMqTestHost.StartAsync(broker.ConnectionUri, new Journal(), _ => { });
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => host.Transport.SendAsync(Message("lost-0", exchange, "{}"), TestContext.Current.CancellationToken));
+
+        Assert.Contains("unroutable", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task UnroutableMessage_IsPermanentWhenConfigured()
+    {
+        var (exchange, _) = Names();
+        await using var host = await RabbitMqTestHost.StartAsync(
+            broker.ConnectionUri,
+            new Journal(),
+            _ => { },
+            o => o.DeadLetterUnroutable = true);
 
         var error = await Assert.ThrowsAsync<PermanentDeliveryException>(
             () => host.Transport.SendAsync(Message("lost-1", exchange, "{}"), TestContext.Current.CancellationToken));
@@ -104,7 +120,8 @@ public sealed class RabbitMqIntegrationTests(RabbitMqFixture broker) : IClassFix
         await using var host = await RabbitMqTestHost.StartAsync(
             broker.ConnectionUri,
             new Journal(),
-            b => b.Route<OrderPlaced>().To(exchange));
+            b => b.Route<OrderPlaced>().To(exchange),
+            o => o.DeadLetterUnroutable = true);
 
         await host.SendAsync(new OrderPlaced(4));
 

@@ -37,3 +37,5 @@ Twinbox.RabbitMQ.RabbitMqTransport.DisposeAsync() -> System.Threading.Tasks.Valu
 Twinbox.RabbitMQ.RabbitMqTransport.Name.get -> string!
 Twinbox.RabbitMQ.RabbitMqTransport.SendAsync(Twinbox.Transport.TransportMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.RabbitMqTwinboxBuilderExtensions
+Twinbox.RabbitMQ.RabbitMqOptions.DeadLetterUnroutable.get -> bool
+Twinbox.RabbitMQ.RabbitMqOptions.DeadLetterUnroutable.set -> void

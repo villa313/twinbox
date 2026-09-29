@@ -57,10 +57,14 @@ public sealed partial class RabbitMqTransport : ITransport, IAsyncDisposable
             discard = true;
             throw new TimeoutException($"Publishing to exchange '{message.Destination}' was not confirmed within {_options.PublishTimeout}.", ex);
         }
-        catch (Exception ex) when (RabbitMqErrors.IsPermanent(ex))
+        catch (Exception ex) when (RabbitMqErrors.IsPermanent(ex, _options.DeadLetterUnroutable))
         {
             _declaredExchanges.TryRemove(message.Destination, out _);
             throw new PermanentDeliveryException(RabbitMqErrors.Describe(ex, message.Destination, message.MessageName), ex);
+        }
+        catch (Exception ex) when (RabbitMqErrors.IsUnroutable(ex))
+        {
+            throw new InvalidOperationException(RabbitMqErrors.Describe(ex, message.Destination, message.MessageName), ex);
         }
         catch (OperationCanceledException)
         {
