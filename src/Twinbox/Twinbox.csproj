@@ -1,9 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Description>Transactional outbox and inbox for .NET: reliable delivery to any message broker with built-in deduplication.</Description>
+    <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Twinbox.Abstractions/Twinbox.Abstractions.csproj" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Twinbox.UnitTests" />
+    <InternalsVisibleTo Include="Twinbox.Testing" />
   </ItemGroup>
 </Project>

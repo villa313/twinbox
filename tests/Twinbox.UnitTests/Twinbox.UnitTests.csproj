@@ -6,10 +6,10 @@
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
-  <PropertyGroup>
-  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Twinbox.Testing/Twinbox.Testing.csproj" />

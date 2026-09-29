@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>In-memory store and transport for Twinbox, for tests and local development.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Twinbox/Twinbox.csproj" />
+  </ItemGroup>
+</Project>

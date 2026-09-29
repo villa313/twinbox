@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>Test harness and provider conformance kit for Twinbox.</Description>
+    <Description>Test harness and provider conformance suite for Twinbox. Works with any test framework.</Description>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../Twinbox/Twinbox.csproj" />
+    <ProjectReference Include="../Twinbox.InMemory/Twinbox.InMemory.csproj" />
   </ItemGroup>
 </Project>

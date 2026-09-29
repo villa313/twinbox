@@ -3,6 +3,6 @@
 
   <PropertyGroup>
     <!-- Test names use Method_State_Expected underscores. -->
-    <NoWarn>$(NoWarn);CA1707</NoWarn>
+    <NoWarn>$(NoWarn);CA1707;xUnit1051</NoWarn>
   </PropertyGroup>
 </Project>

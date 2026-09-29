@@ -5,6 +5,8 @@
     <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <IsPackable>true</IsPackable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Docs only where they add something; self-explanatory members stay undocumented. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
     <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
