@@ -10,6 +10,7 @@
     <Project Path="src/Twinbox.Kafka/Twinbox.Kafka.csproj" />
     <Project Path="src/Twinbox.PostgreSql/Twinbox.PostgreSql.csproj" />
     <Project Path="src/Twinbox.RabbitMQ/Twinbox.RabbitMQ.csproj" />
+    <Project Path="src/Twinbox.RedisStreams/Twinbox.RedisStreams.csproj" />
     <Project Path="src/Twinbox.SqlServer/Twinbox.SqlServer.csproj" />
     <Project Path="src/Twinbox.SourceGenerators/Twinbox.SourceGenerators.csproj" />
     <Project Path="src/Twinbox.Testing/Twinbox.Testing.csproj" />
@@ -20,6 +21,7 @@
     <Project Path="tests/Twinbox.RabbitMQ.Tests/Twinbox.RabbitMQ.Tests.csproj" />
     <Project Path="tests/Twinbox.AzureServiceBus.Tests/Twinbox.AzureServiceBus.Tests.csproj" />
     <Project Path="tests/Twinbox.Kafka.Tests/Twinbox.Kafka.Tests.csproj" />
+    <Project Path="tests/Twinbox.RedisStreams.Tests/Twinbox.RedisStreams.Tests.csproj" />
     <Project Path="tests/Twinbox.Relational.IntegrationTests/Twinbox.Relational.IntegrationTests.csproj" />
     <Project Path="tests/Twinbox.SourceGenerators.Tests/Twinbox.SourceGenerators.Tests.csproj" />
     <Project Path="tests/Twinbox.UnitTests/Twinbox.UnitTests.csproj" />
