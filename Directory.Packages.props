@@ -56,10 +56,13 @@
     <PackageVersion Include="Testcontainers.RabbitMq" Version="4.15.0" />
     <PackageVersion Include="Testcontainers.ServiceBus" Version="4.15.0" />
     <PackageVersion Include="Testcontainers.Kafka" Version="4.15.0" />
+    <PackageVersion Include="Testcontainers.MongoDb" Version="4.15.0" />
     <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.21.0" />
     <PackageVersion Include="RabbitMQ.Client" Version="7.2.2" />
     <!-- The first release with a net8.0 build; no advisories are published against it. -->
     <PackageVersion Include="Confluent.Kafka" Version="2.6.0" />
     <PackageVersion Include="Dapper" Version="2.1.89" />
+    <!-- The first 3.x release whose dependencies carry no advisories (SharpCompress 0.48.1, Snappier 1.3.1); its net6.0 build serves net8.0. -->
+    <PackageVersion Include="MongoDB.Driver" Version="3.9.0" />
   </ItemGroup>
 </Project>
