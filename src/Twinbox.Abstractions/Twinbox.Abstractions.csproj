@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Contracts for Twinbox, the transactional outbox and inbox for .NET. Zero dependencies.</Description>
+  </PropertyGroup>
+</Project>
