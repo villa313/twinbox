@@ -4,7 +4,7 @@ public interface IMessageSerializer
 {
     string ContentType { get; }
 
-    byte[] Serialize<TMessage>(TMessage message);
+    byte[] Serialize(object message, Type messageType);
 
     object Deserialize(ReadOnlySpan<byte> body, Type messageType);
 }

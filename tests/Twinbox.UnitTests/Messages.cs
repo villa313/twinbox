@@ -6,3 +6,7 @@ public sealed record OrderPlaced(int OrderId);
 public sealed record InvoiceIssued(int InvoiceId);
 
 public sealed record OrderShipped(int OrderId);
+
+public abstract record DomainEvent;
+
+public sealed record CustomerRegistered(int CustomerId) : DomainEvent;

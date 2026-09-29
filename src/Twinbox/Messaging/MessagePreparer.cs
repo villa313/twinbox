@@ -16,15 +16,17 @@ internal sealed class MessagePreparer(
     public IReadOnlyList<OutboxMessage> Prepare<TMessage>(TMessage message, SendOptions? options, string? tenantId)
         where TMessage : class
     {
-        var messageRoutes = routes.Get(typeof(TMessage));
+        // Route and serialize by the runtime type, so events collected as a base type still reach their own routes.
+        var messageType = message.GetType();
+        var messageRoutes = routes.Get(messageType);
         if (messageRoutes.Count == 0)
         {
             throw new InvalidOperationException(
-                $"No route is configured for {typeof(TMessage)}. Add one with Route<{typeof(TMessage).Name}>().To(\"destination\").");
+                $"No route is configured for {messageType}. Add one with Route<{messageType.Name}>().To(\"destination\").");
         }
 
-        var name = registry.GetOrAdd(typeof(TMessage));
-        var payload = serializer.Serialize(message);
+        var name = registry.GetOrAdd(messageType);
+        var payload = serializer.Serialize(message, messageType);
         var now = time.GetUtcNow();
         var availableAt = options?.Delay is { } delay ? now + delay : now;
         var headers = options?.Headers ?? EmptyHeaders.Instance;

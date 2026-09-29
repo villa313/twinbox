@@ -22,6 +22,19 @@ public sealed class OutboxTests
     }
 
     [Fact]
+    public async Task Send_AsBaseType_RoutesAndSerializesTheRuntimeType()
+    {
+        await using var host = TestHost.Create(b => b.Route<CustomerRegistered>().To("customers"));
+        DomainEvent domainEvent = new CustomerRegistered(5);
+
+        await host.SendAsync(o => o.Send(domainEvent));
+        await host.Harness.DrainAsync();
+
+        Assert.Equal("customers", Assert.Single(host.Harness.Transport.Sent).Destination);
+        Assert.Equal(new CustomerRegistered(5), Assert.Single(host.Harness.Sent<CustomerRegistered>()));
+    }
+
+    [Fact]
     public async Task Send_WithoutCommit_IsNeverDelivered()
     {
         await using var host = TestHost.Create(b => b.Route<OrderPlaced>().To("orders"));

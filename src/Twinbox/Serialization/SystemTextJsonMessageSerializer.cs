@@ -18,8 +18,8 @@ public sealed class SystemTextJsonMessageSerializer : IMessageSerializer
 
     public string ContentType => "application/json";
 
-    public byte[] Serialize<TMessage>(TMessage message) =>
-        JsonSerializer.SerializeToUtf8Bytes(message, (JsonTypeInfo<TMessage>)_options.GetTypeInfo(typeof(TMessage)));
+    public byte[] Serialize(object message, Type messageType) =>
+        JsonSerializer.SerializeToUtf8Bytes(message, _options.GetTypeInfo(messageType));
 
     public object Deserialize(ReadOnlySpan<byte> body, Type messageType) =>
         JsonSerializer.Deserialize(body, _options.GetTypeInfo(messageType))

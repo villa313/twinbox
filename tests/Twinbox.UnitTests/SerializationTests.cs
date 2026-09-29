@@ -27,7 +27,7 @@ public sealed class SerializationTests
     {
         var serializer = new SystemTextJsonMessageSerializer();
 
-        var bytes = serializer.Serialize(new OrderPlaced(12));
+        var bytes = serializer.Serialize(new OrderPlaced(12), typeof(OrderPlaced));
 
         Assert.Equal("""{"orderId":12}""", System.Text.Encoding.UTF8.GetString(bytes));
         Assert.Equal(new OrderPlaced(12), serializer.Deserialize(bytes, typeof(OrderPlaced)));
