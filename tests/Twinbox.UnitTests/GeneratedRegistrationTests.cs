@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 
-using Twinbox.Generated;
 
 namespace Twinbox.UnitTests;
 
