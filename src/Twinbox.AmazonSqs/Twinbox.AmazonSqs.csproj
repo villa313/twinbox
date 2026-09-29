@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Amazon SQS and SNS transport for Twinbox: sends to queues or fans out through topics, and long-polls queues, deleting each message only after the inbox has handled it.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Twinbox/Twinbox.csproj" />
+    <PackageReference Include="AWSSDK.SQS" />
+    <PackageReference Include="AWSSDK.SimpleNotificationService" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Twinbox.AmazonSqs.Tests" />
+  </ItemGroup>
+</Project>
