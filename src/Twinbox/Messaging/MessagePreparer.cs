@@ -55,4 +55,22 @@ internal sealed class MessagePreparer(
 
         return prepared;
     }
+
+    /// <summary>Builds outbox rows for a body produced elsewhere, one per route, with ids derived from its old id.</summary>
+    public IReadOnlyList<OutboxMessage> PrepareImported(Type messageType, string messageName, string legacyId, byte[] payload)
+    {
+        var now = time.GetUtcNow();
+        return [.. routes.Get(messageType).Select(route => new OutboxMessage
+        {
+            Id = Migration.ImportedMessageIds.For(legacyId, route.Destination),
+            MessageName = messageName,
+            Transport = route.Transport ?? transports.ResolveDefaultName(),
+            Destination = route.Destination,
+            Payload = payload,
+            ContentType = serializer.ContentType,
+            CreatedAt = now,
+            AvailableAt = now,
+            Status = OutboxMessageStatus.Pending,
+        })];
+    }
 }

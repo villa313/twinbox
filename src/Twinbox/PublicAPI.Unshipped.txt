@@ -45,6 +45,25 @@ Twinbox.InboxOptions.Enabled.set -> void
 Twinbox.InboxOptions.InboxOptions() -> void
 Twinbox.InboxOptions.UnknownMessages.get -> Twinbox.UnknownMessagePolicy
 Twinbox.InboxOptions.UnknownMessages.set -> void
+Twinbox.Migration.InboxSeedOptions
+Twinbox.Migration.InboxSeedOptions.CreateConnection.get -> System.Func<System.IServiceProvider!, System.Data.Common.DbConnection!>?
+Twinbox.Migration.InboxSeedOptions.CreateConnection.set -> void
+Twinbox.Migration.InboxSeedOptions.InboxSeedOptions() -> void
+Twinbox.Migration.InboxSeedOptions.SelectProcessed.get -> string?
+Twinbox.Migration.InboxSeedOptions.SelectProcessed.set -> void
+Twinbox.Migration.OutboxImportOptions
+Twinbox.Migration.OutboxImportOptions.BatchSize.get -> int
+Twinbox.Migration.OutboxImportOptions.BatchSize.set -> void
+Twinbox.Migration.OutboxImportOptions.CreateConnection.get -> System.Func<System.IServiceProvider!, System.Data.Common.DbConnection!>?
+Twinbox.Migration.OutboxImportOptions.CreateConnection.set -> void
+Twinbox.Migration.OutboxImportOptions.MarkImported.get -> string?
+Twinbox.Migration.OutboxImportOptions.MarkImported.set -> void
+Twinbox.Migration.OutboxImportOptions.OutboxImportOptions() -> void
+Twinbox.Migration.OutboxImportOptions.PollInterval.get -> System.TimeSpan
+Twinbox.Migration.OutboxImportOptions.PollInterval.set -> void
+Twinbox.Migration.OutboxImportOptions.SelectPending.get -> string?
+Twinbox.Migration.OutboxImportOptions.SelectPending.set -> void
+Twinbox.MigrationTwinboxBuilderExtensions
 Twinbox.RetentionOptions
 Twinbox.RetentionOptions.BatchSize.get -> int
 Twinbox.RetentionOptions.BatchSize.set -> void
@@ -356,6 +375,8 @@ override Twinbox.Transport.TransportMessage.GetHashCode() -> int
 override Twinbox.Transport.TransportMessage.ToString() -> string!
 static Microsoft.Extensions.DependencyInjection.TwinboxHealthChecksBuilderExtensions.AddTwinbox(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder! builder, string! name = "twinbox", System.TimeSpan? maxPendingAge = null, long maxDeadMessages = 0, Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus failureStatus = Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Degraded, System.Collections.Generic.IEnumerable<string!>? tags = null, Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus? deadLetterStatus = null) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
 static Microsoft.Extensions.DependencyInjection.TwinboxServiceCollectionExtensions.AddTwinbox(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Twinbox.TwinboxBuilder!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Twinbox.MigrationTwinboxBuilderExtensions.ImportFromExistingOutbox(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.Migration.OutboxImportOptions!>! configure) -> Twinbox.TwinboxBuilder!
+static Twinbox.MigrationTwinboxBuilderExtensions.SeedInboxFromExisting(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.Migration.InboxSeedOptions!>! configure) -> Twinbox.TwinboxBuilder!
 static Twinbox.Serialization.HeaderCodec.Decode(string? json) -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
 static Twinbox.Serialization.HeaderCodec.Encode(System.Collections.Generic.IReadOnlyDictionary<string!, string!>! headers) -> string?
 static Twinbox.Storage.DispatchOutcome.operator !=(Twinbox.Storage.DispatchOutcome? left, Twinbox.Storage.DispatchOutcome? right) -> bool
