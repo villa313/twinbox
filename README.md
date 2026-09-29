@@ -99,7 +99,7 @@ A route or handler registered for a base class or interface covers all of its su
 ## Features
 
 - **Storage:** EF Core (SQL Server, PostgreSQL, SQLite), Dapper/ADO.NET (SQL Server, PostgreSQL), in-memory
-- **Transports:** Azure Service Bus, RabbitMQ, Kafka, local delivery, in-memory
+- **Transports:** Azure Service Bus, RabbitMQ, Kafka, NATS JetStream, local delivery, in-memory
 - **Delivery:** at-least-once, plus an inbox for effectively-once processing that is deduplicated per handler
 - **Retries:** exponential backoff with jitter and a circuit breaker per destination, configurable from
   `appsettings.json` (`Twinbox:Destinations:{name}:Retry`)
