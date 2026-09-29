@@ -34,6 +34,7 @@ public static class TwinboxServiceCollectionExtensions
         services.TryAddSingleton<IMessageSerializer>(new SystemTextJsonMessageSerializer());
         services.TryAddSingleton<IMessageIdGenerator, Uuid7MessageIdGenerator>();
         services.TryAddSingleton<TransportRegistry>();
+        services.TryAddSingleton<HeaderProfiles>();
         services.TryAddSingleton<TwinboxScopeFactory>();
         services.TryAddSingleton<TenantDirectory>();
         services.TryAddSingleton<MessagePreparer>();

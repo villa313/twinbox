@@ -77,6 +77,14 @@ public sealed class TwinboxBuilder
         return this;
     }
 
+    /// <summary>Also writes and reads another system's header names; see <see cref="HeaderProfile"/>.</summary>
+    public TwinboxBuilder UseHeaderProfile(HeaderProfile profile)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+        Services.AddSingleton(profile);
+        return this;
+    }
+
     public TwinboxBuilder UseTenants(Action<TenancyOptions> configure)
     {
         ArgumentNullException.ThrowIfNull(configure);

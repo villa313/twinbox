@@ -13,14 +13,15 @@ internal sealed partial class OutboxDispatcher(
     IEnumerable<IOutboxStore> stores,
     TenantDirectory tenants,
     TransportRegistry transports,
+    HeaderProfiles headerProfiles,
     IEnumerable<IDeadLetterObserver> deadLetterObservers,
     IOptions<TwinboxOptions> options,
     TimeProvider time,
     ILogger<OutboxDispatcher> logger) : IOutboxDispatcher
 {
-    private readonly ILogger _logger = logger;
-
     private const int MaxErrorLength = 2000;
+
+    private readonly ILogger _logger = logger;
 
     private readonly ConcurrentDictionary<(string Transport, string Destination), CircuitBreaker> _breakers = new();
     private readonly IDeadLetterObserver[] _observers = [.. deadLetterObservers];
@@ -99,7 +100,7 @@ internal sealed partial class OutboxDispatcher(
 
             try
             {
-                await SendAsync(transport, message, cancellationToken).ConfigureAwait(false);
+                await SendAsync(transport, message, headerProfiles, cancellationToken).ConfigureAwait(false);
                 breaker.RecordSuccess();
                 var sentAt = time.GetUtcNow();
                 outcomes.Add(new DispatchOutcome(message.Id, OutboxMessageStatus.Sent, message.Attempts + 1, SentAt: sentAt));
@@ -112,7 +113,7 @@ internal sealed partial class OutboxDispatcher(
         }
     }
 
-    private static async Task SendAsync(ITransport transport, OutboxMessage message, CancellationToken cancellationToken)
+    private static async Task SendAsync(ITransport transport, OutboxMessage message, HeaderProfiles headerProfiles, CancellationToken cancellationToken)
     {
         using var activity = TwinboxDiagnostics.StartActivity($"{message.Destination} send", ActivityKind.Producer, message.TraceParent);
         activity?.SetTag("messaging.system", transport.Name);
@@ -131,6 +132,7 @@ internal sealed partial class OutboxDispatcher(
             headers[TransportHeaders.TenantId] = message.TenantId;
         }
 
+        headerProfiles.Write(headers, message.Id.ToString(), message.MessageName, message.PartitionKey);
         headers[TransportHeaders.DeliveryAttempt] = (message.Attempts + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
 
         try

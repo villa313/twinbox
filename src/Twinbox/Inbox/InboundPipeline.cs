@@ -14,6 +14,7 @@ namespace Twinbox.Inbox;
 internal sealed partial class InboundPipeline(
     MessageTypeRegistry registry,
     HandlerRegistry handlers,
+    HeaderProfiles headerProfiles,
     IMessageSerializer serializer,
     TwinboxScopeFactory scopeFactory,
     IOptions<TwinboxOptions> options,
@@ -26,6 +27,12 @@ internal sealed partial class InboundPipeline(
     public async Task ProcessAsync(IncomingMessage message, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(message);
+        message = headerProfiles.Read(message);
+        if (string.IsNullOrEmpty(message.MessageId))
+        {
+            throw new PermanentDeliveryException($"A message from {message.Source} has no message id, so it can't be deduplicated.");
+        }
+
         message.Headers.TryGetValue(TransportHeaders.TraceParent, out var traceParent);
         using var activity = TwinboxDiagnostics.StartActivity($"{message.Source} process", ActivityKind.Consumer, traceParent);
         activity?.SetTag("messaging.message.id", message.MessageId);

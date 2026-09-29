@@ -114,10 +114,11 @@ public sealed class MessageMapperTests
     }
 
     [Fact]
-    public void ToIncoming_WithoutMessageId_IsPermanentFailure()
+    public void ToIncoming_WithoutMessageId_LeavesItForHeaderProfiles()
     {
-        Assert.Throws<PermanentDeliveryException>(
-            () => RabbitMqMessageMapper.ToIncoming("orders", new BasicProperties { Type = "order-placed" }, ReadOnlyMemory<byte>.Empty, false));
+        var incoming = RabbitMqMessageMapper.ToIncoming("orders", new BasicProperties { Type = "order-placed" }, ReadOnlyMemory<byte>.Empty, false);
+
+        Assert.Equal(string.Empty, incoming.MessageId);
     }
 
     [Fact]

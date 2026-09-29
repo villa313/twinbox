@@ -229,6 +229,17 @@ Twinbox.TenancyOptions.TenancyOptions() -> void
 Twinbox.TenancyOptions.TenantListCacheDuration.get -> System.TimeSpan
 Twinbox.TenancyOptions.TenantListCacheDuration.set -> void
 Twinbox.TransactionalOutboxExtensions
+Twinbox.Transport.HeaderProfile
+Twinbox.Transport.HeaderProfile.<Clone>$() -> Twinbox.Transport.HeaderProfile!
+Twinbox.Transport.HeaderProfile.Deconstruct(out string! MessageId, out string! MessageName, out string? PartitionKey) -> void
+Twinbox.Transport.HeaderProfile.Equals(Twinbox.Transport.HeaderProfile? other) -> bool
+Twinbox.Transport.HeaderProfile.HeaderProfile(string! MessageId, string! MessageName, string? PartitionKey = null) -> void
+Twinbox.Transport.HeaderProfile.MessageId.get -> string!
+Twinbox.Transport.HeaderProfile.MessageId.init -> void
+Twinbox.Transport.HeaderProfile.MessageName.get -> string!
+Twinbox.Transport.HeaderProfile.MessageName.init -> void
+Twinbox.Transport.HeaderProfile.PartitionKey.get -> string?
+Twinbox.Transport.HeaderProfile.PartitionKey.init -> void
 Twinbox.Transport.IInboundPipeline
 Twinbox.Transport.IInboundPipeline.ProcessAsync(Twinbox.Transport.IncomingMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.Transport.ITransport
@@ -285,6 +296,7 @@ Twinbox.TwinboxBuilder.AddHandler<THandler>(string? consumerName = null) -> Twin
 Twinbox.TwinboxBuilder.Configure(System.Action<Twinbox.TwinboxOptions!>! configure) -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.Route<TMessage>() -> Twinbox.RouteBuilder<TMessage!>!
 Twinbox.TwinboxBuilder.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Twinbox.TwinboxBuilder.UseHeaderProfile(Twinbox.Transport.HeaderProfile! profile) -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.UseLocalDelivery() -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.UseSerializer(Twinbox.Serialization.IMessageSerializer! serializer) -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.UseTenants(System.Action<Twinbox.TenancyOptions!>! configure) -> Twinbox.TwinboxBuilder!
@@ -333,6 +345,9 @@ override Twinbox.Storage.OutboxPurge.ToString() -> string!
 override Twinbox.Storage.OutboxStatistics.Equals(object? obj) -> bool
 override Twinbox.Storage.OutboxStatistics.GetHashCode() -> int
 override Twinbox.Storage.OutboxStatistics.ToString() -> string!
+override Twinbox.Transport.HeaderProfile.Equals(object? obj) -> bool
+override Twinbox.Transport.HeaderProfile.GetHashCode() -> int
+override Twinbox.Transport.HeaderProfile.ToString() -> string!
 override Twinbox.Transport.IncomingMessage.Equals(object? obj) -> bool
 override Twinbox.Transport.IncomingMessage.GetHashCode() -> int
 override Twinbox.Transport.IncomingMessage.ToString() -> string!
@@ -357,6 +372,9 @@ static Twinbox.Storage.OutboxStatistics.operator !=(Twinbox.Storage.OutboxStatis
 static Twinbox.Storage.OutboxStatistics.operator ==(Twinbox.Storage.OutboxStatistics? left, Twinbox.Storage.OutboxStatistics? right) -> bool
 static Twinbox.TransactionalOutboxExtensions.CommitAsync(this Twinbox.IOutbox! outbox, System.Data.Common.DbTransaction! transaction, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 static Twinbox.TransactionalOutboxExtensions.SaveAsync(this Twinbox.IOutbox! outbox, System.Data.Common.DbTransaction! transaction, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static Twinbox.Transport.HeaderProfile.Prefixed(string! prefix) -> Twinbox.Transport.HeaderProfile!
+static Twinbox.Transport.HeaderProfile.operator !=(Twinbox.Transport.HeaderProfile? left, Twinbox.Transport.HeaderProfile? right) -> bool
+static Twinbox.Transport.HeaderProfile.operator ==(Twinbox.Transport.HeaderProfile? left, Twinbox.Transport.HeaderProfile? right) -> bool
 static Twinbox.Transport.IncomingMessage.operator !=(Twinbox.Transport.IncomingMessage? left, Twinbox.Transport.IncomingMessage? right) -> bool
 static Twinbox.Transport.IncomingMessage.operator ==(Twinbox.Transport.IncomingMessage? left, Twinbox.Transport.IncomingMessage? right) -> bool
 static Twinbox.Transport.TransportMessage.operator !=(Twinbox.Transport.TransportMessage? left, Twinbox.Transport.TransportMessage? right) -> bool

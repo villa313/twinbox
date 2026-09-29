@@ -37,8 +37,8 @@ internal static class RabbitMqMessageMapper
     public static IncomingMessage ToIncoming(string queue, IReadOnlyBasicProperties properties, ReadOnlyMemory<byte> body, bool redelivered)
     {
         var headers = DecodeHeaders(properties.Headers);
-        var messageId = NullIfEmpty(properties.MessageId) ?? headers.GetValueOrDefault(TransportHeaders.MessageId)
-            ?? throw new PermanentDeliveryException($"A message on queue '{queue}' has no message id, so it cannot be deduplicated.");
+        // Left empty when missing: a header profile may still supply the id, and the pipeline rejects it otherwise.
+        var messageId = NullIfEmpty(properties.MessageId) ?? headers.GetValueOrDefault(TransportHeaders.MessageId) ?? string.Empty;
         var messageName = NullIfEmpty(properties.Type) ?? headers.GetValueOrDefault(TransportHeaders.MessageName) ?? string.Empty;
 
         return new IncomingMessage(
