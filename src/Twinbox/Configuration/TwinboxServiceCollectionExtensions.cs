@@ -37,6 +37,7 @@ public static class TwinboxServiceCollectionExtensions
         services.TryAddSingleton<IOutboxDispatcher, OutboxDispatcher>();
 
         services.TryAddScoped<OutboxBuffer>();
+        services.TryAddScoped<HandlerTransaction>();
         services.TryAddScoped<IOutbox>(sp => sp.GetRequiredService<OutboxBuffer>());
         services.TryAddScoped<IOutboxSession>(sp => sp.GetRequiredService<OutboxBuffer>());
 

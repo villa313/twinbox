@@ -1,7 +1,7 @@
 namespace Twinbox.Tenancy;
 
 /// <summary>Lists tenants to work through, caching the list so every dispatch pass doesn't query it.</summary>
-internal sealed class TenantDirectory(TwinboxScopeFactory scopes, TimeProvider time, TenancyOptions? tenancy = null) : IDisposable
+public sealed class TenantDirectory(TwinboxScopeFactory scopes, TimeProvider time, TenancyOptions? tenancy = null) : IDisposable
 {
     private static readonly IReadOnlyCollection<string?> NoTenants = [null];
 
@@ -9,8 +9,22 @@ internal sealed class TenantDirectory(TwinboxScopeFactory scopes, TimeProvider t
     private IReadOnlyCollection<string?> _cached = [];
     private DateTimeOffset _expiresAt = DateTimeOffset.MinValue;
 
+    /// <summary>
+    /// Runs <paramref name="action"/> once per tenant with that tenant entered, so scopes from
+    /// <see cref="TwinboxScopeFactory"/> resolve its services. Runs once with no tenant when tenancy isn't configured.
+    /// </summary>
+    public async Task ForEachTenantAsync(Func<CancellationToken, Task> action, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        foreach (var tenant in await GetTenantsAsync(cancellationToken).ConfigureAwait(false))
+        {
+            using var _ = TenantScope.Enter(tenant);
+            await action(cancellationToken).ConfigureAwait(false);
+        }
+    }
+
     /// <summary>Returns a single null entry when tenancy isn't configured, so callers can always loop.</summary>
-    public async Task<IReadOnlyCollection<string?>> GetTenantsAsync(CancellationToken cancellationToken)
+    internal async Task<IReadOnlyCollection<string?>> GetTenantsAsync(CancellationToken cancellationToken)
     {
         if (tenancy?.ListTenants is not { } list)
         {

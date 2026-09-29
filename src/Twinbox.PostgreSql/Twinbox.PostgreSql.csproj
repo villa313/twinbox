@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>PostgreSQL storage for Twinbox with plain ADO.NET or Dapper: save outbox messages in your own NpgsqlTransaction.</Description>
+    <PackageTags>$(PackageTags);postgresql;npgsql;dapper;ado-net</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Twinbox/Twinbox.csproj" />
+    <PackageReference Include="Npgsql" />
+    <Compile Include="../Shared/Sql/*.cs" LinkBase="Shared/Sql" />
+    <Compile Include="../Shared/Relational/*.cs" LinkBase="Shared/Relational" />
+  </ItemGroup>
+</Project>

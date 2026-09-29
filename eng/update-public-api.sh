@@ -2,6 +2,7 @@
 # Syncs each project's PublicAPI.Unshipped.txt with the build: adds undeclared symbols (RS0016), drops removed ones (RS0017).
 set -euo pipefail
 cd "$(dirname "$0")/.."
+for pass in 1 2 3; do
 dotnet build Twinbox.slnx -c Release 2>&1 | python3 -c '
 import re, sys, collections
 added = collections.defaultdict(set)
@@ -16,4 +17,5 @@ for project in set(added) | set(removed):
     lines = sorted((existing | added[project]) - removed[project])
     open(path, "w").write("#nullable enable\n" + "\n".join(lines) + "\n")
     print(f"{path}: +{len(added[project] - existing)} -{len(removed[project] & existing)}")
-'
+' | tee /dev/stderr | grep -q . || break
+done

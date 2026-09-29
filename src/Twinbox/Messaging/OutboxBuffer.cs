@@ -16,6 +16,8 @@ internal sealed partial class OutboxBuffer(
     private readonly List<OutboxMessage> _pending = [];
     private readonly object _gate = new();
 
+    internal IServiceProvider Services => services;
+
     public bool HasPending
     {
         get

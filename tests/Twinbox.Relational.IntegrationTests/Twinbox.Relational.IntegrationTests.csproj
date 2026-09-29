@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Dapper" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Testcontainers.MsSql" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Twinbox.SqlServer/Twinbox.SqlServer.csproj" />
+    <ProjectReference Include="../../src/Twinbox.PostgreSql/Twinbox.PostgreSql.csproj" />
+    <ProjectReference Include="../../src/Twinbox.Testing/Twinbox.Testing.csproj" />
+  </ItemGroup>
+</Project>

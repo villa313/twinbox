@@ -28,6 +28,13 @@ Twinbox.DispatcherOptions.MaxPollInterval.get -> System.TimeSpan
 Twinbox.DispatcherOptions.MaxPollInterval.set -> void
 Twinbox.DispatcherOptions.MinPollInterval.get -> System.TimeSpan
 Twinbox.DispatcherOptions.MinPollInterval.set -> void
+Twinbox.HandlerTransaction
+Twinbox.HandlerTransaction.Attach(System.Data.Common.DbConnection! connection, System.Data.Common.DbTransaction! transaction) -> void
+Twinbox.HandlerTransaction.Connection.get -> System.Data.Common.DbConnection!
+Twinbox.HandlerTransaction.Detach() -> void
+Twinbox.HandlerTransaction.HandlerTransaction() -> void
+Twinbox.HandlerTransaction.IsActive.get -> bool
+Twinbox.HandlerTransaction.Transaction.get -> System.Data.Common.DbTransaction!
 Twinbox.IDeadLetterObserver
 Twinbox.IDeadLetterObserver.OnDeadLetteredAsync(Twinbox.Storage.OutboxMessage! message, System.Exception! exception, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.IOutboxDispatcher
@@ -103,6 +110,8 @@ Twinbox.Storage.IOutboxStore.ClaimAsync(Twinbox.Storage.OutboxClaim! claim, Syst
 Twinbox.Storage.IOutboxStore.CompleteAsync(string! owner, System.Collections.Generic.IReadOnlyList<Twinbox.Storage.DispatchOutcome!>! outcomes, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.Storage.IOutboxStore.GetStatisticsAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Twinbox.Storage.OutboxStatistics!>!
 Twinbox.Storage.IOutboxStore.PurgeAsync(Twinbox.Storage.OutboxPurge! purge, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
+Twinbox.Storage.IOutboxTransactionWriter
+Twinbox.Storage.IOutboxTransactionWriter.WriteAsync(System.Data.Common.DbTransaction! transaction, System.Collections.Generic.IReadOnlyList<Twinbox.Storage.OutboxMessage!>! messages, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.Storage.InboxEntry
 Twinbox.Storage.InboxEntry.<Clone>$() -> Twinbox.Storage.InboxEntry!
 Twinbox.Storage.InboxEntry.Consumer.get -> string!
@@ -199,6 +208,10 @@ Twinbox.Storage.OutboxStatistics.PendingCount.init -> void
 Twinbox.Storage.Uuid7MessageIdGenerator
 Twinbox.Storage.Uuid7MessageIdGenerator.NewId(System.DateTimeOffset now) -> System.Guid
 Twinbox.Storage.Uuid7MessageIdGenerator.Uuid7MessageIdGenerator() -> void
+Twinbox.Tenancy.TenantDirectory
+Twinbox.Tenancy.TenantDirectory.Dispose() -> void
+Twinbox.Tenancy.TenantDirectory.ForEachTenantAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! action, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.Tenancy.TenantDirectory.TenantDirectory(Twinbox.Tenancy.TwinboxScopeFactory! scopes, System.TimeProvider! time, Twinbox.TenancyOptions? tenancy = null) -> void
 Twinbox.Tenancy.TwinboxScopeFactory
 Twinbox.Tenancy.TwinboxScopeFactory.CreateAsyncScope() -> Microsoft.Extensions.DependencyInjection.AsyncServiceScope
 Twinbox.Tenancy.TwinboxScopeFactory.TwinboxScopeFactory(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory! scopes, Twinbox.TenancyOptions? tenancy = null) -> void
@@ -212,6 +225,7 @@ Twinbox.TenancyOptions.ListTenants.set -> void
 Twinbox.TenancyOptions.TenancyOptions() -> void
 Twinbox.TenancyOptions.TenantListCacheDuration.get -> System.TimeSpan
 Twinbox.TenancyOptions.TenantListCacheDuration.set -> void
+Twinbox.TransactionalOutboxExtensions
 Twinbox.Transport.IInboundPipeline
 Twinbox.Transport.IInboundPipeline.ProcessAsync(Twinbox.Transport.IncomingMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.Transport.ITransport
@@ -338,6 +352,8 @@ static Twinbox.Storage.OutboxPurge.operator !=(Twinbox.Storage.OutboxPurge? left
 static Twinbox.Storage.OutboxPurge.operator ==(Twinbox.Storage.OutboxPurge? left, Twinbox.Storage.OutboxPurge? right) -> bool
 static Twinbox.Storage.OutboxStatistics.operator !=(Twinbox.Storage.OutboxStatistics? left, Twinbox.Storage.OutboxStatistics? right) -> bool
 static Twinbox.Storage.OutboxStatistics.operator ==(Twinbox.Storage.OutboxStatistics? left, Twinbox.Storage.OutboxStatistics? right) -> bool
+static Twinbox.TransactionalOutboxExtensions.CommitAsync(this Twinbox.IOutbox! outbox, System.Data.Common.DbTransaction! transaction, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static Twinbox.TransactionalOutboxExtensions.SaveAsync(this Twinbox.IOutbox! outbox, System.Data.Common.DbTransaction! transaction, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 static Twinbox.Transport.IncomingMessage.operator !=(Twinbox.Transport.IncomingMessage? left, Twinbox.Transport.IncomingMessage? right) -> bool
 static Twinbox.Transport.IncomingMessage.operator ==(Twinbox.Transport.IncomingMessage? left, Twinbox.Transport.IncomingMessage? right) -> bool
 static Twinbox.Transport.TransportMessage.operator !=(Twinbox.Transport.TransportMessage? left, Twinbox.Transport.TransportMessage? right) -> bool
