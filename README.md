@@ -48,7 +48,7 @@ create yourself, call `context.EnlistOutbox(outbox)`.
 
 ```csharp
 builder.Services.AddTwinbox(twinbox => twinbox
-    .UseSqlServer(connectionString)        // or .UsePostgreSql(connectionString)
+    .UseSqlServer(connectionString)        // or .UsePostgreSql(connectionString) / .UseMySql(connectionString)
     .UseRabbitMq(o => o.ConnectionUri = new Uri(rabbitUri))
     .Route<OrderPlaced>().To("orders"));
 ```
@@ -98,7 +98,7 @@ A route or handler registered for a base class or interface covers all of its su
 
 ## Features
 
-- **Storage:** EF Core (SQL Server, PostgreSQL, SQLite), Dapper/ADO.NET (SQL Server, PostgreSQL), in-memory
+- **Storage:** EF Core (SQL Server, PostgreSQL, MySQL, SQLite), Dapper/ADO.NET (SQL Server, PostgreSQL, MySQL), in-memory
 - **Transports:** Azure Service Bus, RabbitMQ, Kafka, local delivery, in-memory
 - **Delivery:** at-least-once, plus an inbox for effectively-once processing that is deduplicated per handler
 - **Retries:** exponential backoff with jitter and a circuit breaker per destination, configurable from

@@ -313,6 +313,8 @@ public sealed class PostgreSqlTests(PostgreSqlFixture database) : EntityFramewor
 
 public sealed class SqlServerTests(SqlServerFixture database) : EntityFrameworkTests<SqlServerFixture>(database);
 
+public sealed class MySqlTests(MySqlFixture database) : EntityFrameworkTests<MySqlFixture>(database);
+
 public static class StoreCases
 {
     public static TheoryData<ConformanceCase<IOutboxStore>> All => [.. OutboxStoreConformance.Cases];

@@ -1,8 +1,10 @@
 using System.Data;
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Twinbox.EntityFrameworkCore.Sql;
+using Twinbox.Sql;
 using Twinbox.Storage;
 using Twinbox.Tenancy;
 
@@ -33,6 +35,11 @@ internal sealed class EntityFrameworkOutboxStore<TContext>(TwinboxScopeFactory s
         {
             var context = scope.ServiceProvider.GetRequiredService<TContext>();
             var sql = EntityFrameworkSql.For(context);
+            if (!sql.ClaimsInOneStatement)
+            {
+                return await ClaimInTransactionAsync(context, sql, claim, cancellationToken).ConfigureAwait(false);
+            }
+
             var rows = await context.TwinboxOutbox()
                 .FromSqlRaw(
                     sql.Claim(),
@@ -119,6 +126,67 @@ internal sealed class EntityFrameworkOutboxStore<TContext>(TwinboxScopeFactory s
             var deadCount = await messages.LongCountAsync(m => m.Status == OutboxMessageStatus.Dead, cancellationToken).ConfigureAwait(false);
             return new OutboxStatistics(pendingCount, oldest, deadCount);
         }
+    }
+
+    private static Task<IReadOnlyList<OutboxMessage>> ClaimInTransactionAsync(
+        TContext context,
+        TwinboxSql sql,
+        OutboxClaim claim,
+        CancellationToken cancellationToken) =>
+        context.Database.CreateExecutionStrategy().ExecuteAsync(
+            async ct =>
+            {
+                context.ChangeTracker.Clear();
+
+                // Read committed stops the locking read from taking gap locks that would stall concurrent appends.
+                var transaction = await context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, ct).ConfigureAwait(false);
+                await using (transaction.ConfigureAwait(false))
+                {
+                    var sequences = await LockDueAsync(context, sql, claim, transaction.GetDbTransaction(), ct).ConfigureAwait(false);
+                    IReadOnlyList<OutboxMessage> leased = [];
+                    if (sequences.Count > 0)
+                    {
+                        await context.Database.ExecuteSqlRawAsync(
+                            sql.Lease(sequences),
+                            [
+                                Parameters.Create(context, "@owner", claim.Owner, DbType.String),
+                                Parameters.Create(context, "@leaseUntil", claim.Now + claim.LeaseDuration, DbType.DateTimeOffset),
+                            ],
+                            ct).ConfigureAwait(false);
+                        leased = await context.TwinboxOutbox()
+                            .FromSqlRaw(sql.SelectLeased(sequences))
+                            .AsTracking()
+                            .ToListAsync(ct)
+                            .ConfigureAwait(false);
+                    }
+
+                    await transaction.CommitAsync(ct).ConfigureAwait(false);
+                    return leased;
+                }
+            },
+            cancellationToken);
+
+    private static async Task<List<long>> LockDueAsync(
+        DbContext context,
+        TwinboxSql sql,
+        OutboxClaim claim,
+        DbTransaction transaction,
+        CancellationToken cancellationToken)
+    {
+        await using var command = context.Database.GetDbConnection().CreateCommand();
+        command.CommandText = sql.LockDue();
+        command.Transaction = transaction;
+        command.Parameters.Add(Parameters.Create(context, "@now", claim.Now, DbType.DateTimeOffset));
+        command.Parameters.Add(Parameters.Create(context, "@batch", claim.BatchSize, DbType.Int32));
+
+        var sequences = new List<long>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            sequences.Add(reader.GetInt64(0));
+        }
+
+        return sequences;
     }
 
     private static IEnumerable<DbParameter> OutcomeParameters(DbContext context, DispatchOutcome outcome, int index) =>
