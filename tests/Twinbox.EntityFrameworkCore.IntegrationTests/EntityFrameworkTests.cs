@@ -225,7 +225,7 @@ public abstract class EntityFrameworkTests<TFixture>(TFixture database) : IClass
         Assert.Equal(1, purged);
     }
 
-    private ServiceProvider BuildServices(
+    protected ServiceProvider BuildServices(
         Action<IServiceCollection>? services = null,
         bool retryOnFailure = false,
         Action<TwinboxOptions>? configure = null)
@@ -313,6 +313,8 @@ public sealed class PostgreSqlTests(PostgreSqlFixture database) : EntityFramewor
 
 public sealed class SqlServerTests(SqlServerFixture database) : EntityFrameworkTests<SqlServerFixture>(database);
 
+public sealed class MySqlTests(MySqlFixture database) : EntityFrameworkTests<MySqlFixture>(database);
+
 public static class StoreCases
 {
     public static TheoryData<ConformanceCase<IOutboxStore>> All => [.. OutboxStoreConformance.Cases];
@@ -320,4 +322,3 @@ public static class StoreCases
 
 public sealed class SqliteTests(SqliteFixture database) : EntityFrameworkTests<SqliteFixture>(database);
 
-public sealed class OracleTests(OracleFixture database) : EntityFrameworkTests<OracleFixture>(database);

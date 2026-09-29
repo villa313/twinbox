@@ -28,6 +28,11 @@ internal sealed class RelationalOutboxStore(
     {
         ArgumentNullException.ThrowIfNull(claim);
         await using var lease = await OpenAsync(cancellationToken).ConfigureAwait(false);
+        if (!dialect.Sql.ClaimsInOneStatement)
+        {
+            return await ClaimInTransactionAsync(lease.Connection, claim, cancellationToken).ConfigureAwait(false);
+        }
+
         await using var command = lease.Connection.Command(dialect.Sql.Claim())
             .With("@now", claim.Now, DbType.DateTimeOffset)
             .With("@batch", claim.BatchSize, DbType.Int32)
@@ -125,6 +130,39 @@ internal sealed class RelationalOutboxStore(
             await scope.DisposeAsync().ConfigureAwait(false);
             throw;
         }
+    }
+
+    private async Task<IReadOnlyList<OutboxMessage>> ClaimInTransactionAsync(
+        DbConnection connection,
+        OutboxClaim claim,
+        CancellationToken cancellationToken)
+    {
+        // Read committed stops the locking read from taking gap locks that would stall concurrent appends.
+        await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken).ConfigureAwait(false);
+        var sequences = new List<long>();
+        await using (var select = connection.Command(dialect.Sql.LockDue(), transaction)
+            .With("@now", claim.Now, DbType.DateTimeOffset)
+            .With("@batch", claim.BatchSize, DbType.Int32))
+        await using (var keys = await select.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
+        {
+            while (await keys.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                sequences.Add(keys.GetInt64(0));
+            }
+        }
+
+        IReadOnlyList<OutboxMessage> leased = [];
+        if (sequences.Count > 0)
+        {
+            await using var command = connection.Command(dialect.Sql.Lease(sequences) + dialect.Sql.SelectLeased(sequences), transaction)
+                .With("@owner", claim.Owner, DbType.String)
+                .With("@leaseUntil", claim.Now + claim.LeaseDuration, DbType.DateTimeOffset);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            leased = await OutboxRowReader.ReadAsync(reader, cancellationToken).ConfigureAwait(false);
+        }
+
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        return leased;
     }
 
     private static void AddRow(DbCommand command, OutboxMessage m, int row) => command

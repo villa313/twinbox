@@ -39,6 +39,9 @@ public sealed class DispatcherOptions
     public TimeSpan MaxPollInterval { get; set; } = TimeSpan.FromSeconds(30);
 
     public int MaxDegreeOfParallelism { get; set; } = Environment.ProcessorCount;
+
+    /// <summary>Caps a single send so a hung broker call can't stall a batch; a timeout is retried like any failure.</summary>
+    public TimeSpan SendTimeout { get; set; } = TimeSpan.FromSeconds(30);
 }
 
 public sealed class RetryOptions

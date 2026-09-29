@@ -19,6 +19,10 @@ internal static class EntityFrameworkSql
     public static TwinboxSql For(DbContext context) =>
         Cache.GetValue(context.Model, _ => Create(context));
 
+    /// <summary>Oracle's MySql.EntityFrameworkCore and Pomelo.EntityFrameworkCore.MySql.</summary>
+    public static bool IsMySql(string? providerName) =>
+        providerName is "MySql.EntityFrameworkCore" or "Pomelo.EntityFrameworkCore.MySql";
+
     private static TwinboxSql Create(DbContext context)
     {
         var provider = context.Database.ProviderName switch
@@ -27,8 +31,9 @@ internal static class EntityFrameworkSql
             "Npgsql.EntityFrameworkCore.PostgreSQL" => SqlProvider.PostgreSql,
             SqliteProvider => SqlProvider.Sqlite,
             OracleProvider => SqlProvider.Oracle,
+            var name when IsMySql(name) => SqlProvider.MySql,
             var other => throw new NotSupportedException(
-                $"Twinbox.EntityFrameworkCore supports SQL Server, PostgreSQL, SQLite and Oracle; '{other}' is not supported yet."),
+                $"Twinbox.EntityFrameworkCore supports SQL Server, PostgreSQL, MySQL, Oracle and SQLite; '{other}' is not supported yet."),
         };
 
         var helper = context.GetService<ISqlGenerationHelper>();

@@ -1,11 +1,10 @@
+using System.Globalization;
 using Twinbox.Storage;
 
 namespace Twinbox.Sql;
 
-/// <summary>
-/// Statements for the operations LINQ can't express (SKIP LOCKED claims, conditional inserts), shared as source by
-/// the relational stores. Callers pass delimited identifiers, so any naming convention works.
-/// </summary>
+/// <summary>Statements for the operations LINQ can't express (SKIP LOCKED claims, conditional inserts), shared as source by
+/// the relational stores. Callers pass delimited identifiers, so any naming convention works.</summary>
 internal sealed partial class TwinboxSql
 {
     private const int Pending = (int)OutboxMessageStatus.Pending;
@@ -36,19 +35,14 @@ internal sealed partial class TwinboxSql
 
     public string Sequence => _o("Sequence");
 
+    /// <summary>False for MySQL, which has no UPDATE ... RETURNING: its claim is <see cref="LockDue"/>, <see cref="Lease"/>
+    /// and <see cref="SelectLeased"/> in one transaction.</summary>
+    public bool ClaimsInOneStatement => _provider != SqlProvider.MySql;
+
     /// <summary>Leases due rows; only the oldest unsent row of a partition is due.</summary>
     public string Claim()
     {
-        var due = $"""
-            ((o.{_o("Status")} = {Pending} AND o.{_o("AvailableAt")} <= @now)
-                OR (o.{_o("Status")} = {Processing} AND o.{_o("LeaseUntil")} < @now))
-            AND (o.{_o("PartitionKey")} IS NULL OR NOT EXISTS (
-                SELECT 1 FROM {_outbox} p
-                WHERE p.{_o("PartitionKey")} = o.{_o("PartitionKey")}
-                  AND p.{_o("Status")} IN ({Pending}, {Processing})
-                  AND p.{Sequence} < o.{Sequence}))
-            """;
-
+        var due = Due();
         return _provider switch
         {
             SqlProvider.Oracle => OracleClaim(due),
@@ -71,6 +65,7 @@ internal sealed partial class TwinboxSql
                     LIMIT @batch)
                 RETURNING *;
                 """,
+            SqlProvider.MySql => throw new NotSupportedException("MySQL claims in several statements, starting with LockDue."),
             _ => $"""
                 WITH due AS (
                     SELECT o.{Sequence} FROM {_outbox} AS o
@@ -84,6 +79,23 @@ internal sealed partial class TwinboxSql
                 """,
         };
     }
+
+    /// <summary>Locks the keys of due rows; the caller leases and reads them back before committing.</summary>
+    public string LockDue() => $"""
+        SELECT o.{Sequence} FROM {_outbox} AS o
+        WHERE {Due()}
+        ORDER BY o.{Sequence}
+        LIMIT @batch
+        FOR UPDATE SKIP LOCKED;
+        """;
+
+    public string Lease(IEnumerable<long> sequences) => $"""
+        UPDATE {_outbox} SET {_o("Status")} = {Processing}, {_o("LeaseOwner")} = @owner, {_o("LeaseUntil")} = @leaseUntil
+        WHERE {Sequence} IN ({KeyList(sequences)});
+        """;
+
+    public string SelectLeased(IEnumerable<long> sequences) =>
+        $"SELECT * FROM {_outbox} WHERE {Sequence} IN ({KeyList(sequences)}) ORDER BY {Sequence}";
 
     /// <summary>One statement per outcome; <paramref name="index"/> keeps parameter names unique within a batch.</summary>
     public string Complete(int index) => _provider == SqlProvider.Oracle ? OracleComplete(index) : $"""
@@ -114,6 +126,7 @@ internal sealed partial class TwinboxSql
                 DELETE FROM {_outbox} WHERE {Sequence} IN (
                     SELECT {Sequence} FROM {_outbox} WHERE {expired} LIMIT @batch);
                 """,
+            SqlProvider.MySql => $"DELETE FROM {_outbox} WHERE {expired} ORDER BY {Sequence} LIMIT @batch;",
             _ => $"""
                 DELETE FROM {_outbox} WHERE {Sequence} IN (
                     SELECT {Sequence} FROM {_outbox} WHERE {expired} LIMIT @batch FOR UPDATE SKIP LOCKED);
@@ -136,6 +149,9 @@ internal sealed partial class TwinboxSql
                     WHERE {_i("MessageId")} = @messageId AND {_i("Consumer")} = @consumer);
                 """,
             SqlProvider.Sqlite => $"INSERT OR IGNORE INTO {_inbox} ({columns}) VALUES (@messageId, @consumer, @source, @processedAt);",
+
+            // ON DUPLICATE KEY UPDATE reports 1 row under the drivers' default found-rows mode; IGNORE reports 0.
+            SqlProvider.MySql => $"INSERT IGNORE INTO {_inbox} ({columns}) VALUES (@messageId, @consumer, @source, @processedAt);",
             _ => $"INSERT INTO {_inbox} ({columns}) VALUES (@messageId, @consumer, @source, @processedAt) ON CONFLICT DO NOTHING;",
         };
     }
@@ -148,10 +164,27 @@ internal sealed partial class TwinboxSql
             DELETE FROM {_inbox} WHERE rowid IN (
                 SELECT rowid FROM {_inbox} WHERE {_i("ProcessedAt")} < @before LIMIT @batch);
             """,
+        SqlProvider.MySql => $"""
+            DELETE FROM {_inbox} WHERE {_i("ProcessedAt")} < @before
+            ORDER BY {_i("ProcessedAt")}, {_i("MessageId")}, {_i("Consumer")} LIMIT @batch;
+            """,
         _ => $"""
             DELETE FROM {_inbox} WHERE ({_i("MessageId")}, {_i("Consumer")}) IN (
                 SELECT {_i("MessageId")}, {_i("Consumer")} FROM {_inbox}
                 WHERE {_i("ProcessedAt")} < @before LIMIT @batch FOR UPDATE SKIP LOCKED);
             """,
     };
+
+    private static string KeyList(IEnumerable<long> sequences) =>
+        string.Join(", ", sequences.Select(s => s.ToString(CultureInfo.InvariantCulture)));
+
+    private string Due() => $"""
+        ((o.{_o("Status")} = {Pending} AND o.{_o("AvailableAt")} <= @now)
+            OR (o.{_o("Status")} = {Processing} AND o.{_o("LeaseUntil")} < @now))
+        AND (o.{_o("PartitionKey")} IS NULL OR NOT EXISTS (
+            SELECT 1 FROM {_outbox} p
+            WHERE p.{_o("PartitionKey")} = o.{_o("PartitionKey")}
+              AND p.{_o("Status")} IN ({Pending}, {Processing})
+              AND p.{Sequence} < o.{Sequence}))
+        """;
 }

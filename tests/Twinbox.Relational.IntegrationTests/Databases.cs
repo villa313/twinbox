@@ -1,8 +1,10 @@
 using System.Data.Common;
 using Microsoft.Data.SqlClient;
+using MySqlConnector;
 using Npgsql;
 using Oracle.ManagedDataAccess.Client;
 using Testcontainers.MsSql;
+using Testcontainers.MySql;
 using Testcontainers.Oracle;
 using Testcontainers.PostgreSql;
 
@@ -43,6 +45,30 @@ public sealed class PostgreSqlDatabase : Database
         });
 
     public override DbConnection Connect() => new NpgsqlConnection(ConnectionString);
+
+    public override async ValueTask InitializeAsync() => await _container.StartAsync();
+
+    public override async ValueTask DisposeAsync() => await _container.DisposeAsync();
+}
+
+public sealed class MySqlDatabase : Database
+{
+    // Root, because the "messaging" schema is a separate MySQL database the store creates.
+    private readonly MySqlContainer _container = new MySqlBuilder("mysql:8.4").WithUsername("root").Build();
+
+    public override string ConnectionString => _container.GetConnectionString();
+
+    public override string CreateOrdersTable =>
+        "CREATE TABLE IF NOT EXISTS orders (reference varchar(64) PRIMARY KEY);";
+
+    public override void UseStore(TwinboxBuilder builder) =>
+        builder.UseMySql(o =>
+        {
+            o.ConnectionString = ConnectionString;
+            o.Schema = "messaging";
+        });
+
+    public override DbConnection Connect() => new MySqlConnection(ConnectionString);
 
     public override async ValueTask InitializeAsync() => await _container.StartAsync();
 

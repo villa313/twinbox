@@ -100,7 +100,7 @@ internal sealed partial class OutboxDispatcher(
 
             try
             {
-                await SendAsync(transport, message, headerProfiles, cancellationToken).ConfigureAwait(false);
+                await SendWithTimeoutAsync(transport, message, settings.Dispatcher.SendTimeout, cancellationToken).ConfigureAwait(false);
                 breaker.RecordSuccess();
                 var sentAt = time.GetUtcNow();
                 outcomes.Add(new DispatchOutcome(message.Id, OutboxMessageStatus.Sent, message.Attempts + 1, SentAt: sentAt));
@@ -110,6 +110,23 @@ internal sealed partial class OutboxDispatcher(
             {
                 outcomes.Add(await HandleFailureAsync(message, ex, retry, breaker, cancellationToken).ConfigureAwait(false));
             }
+        }
+    }
+
+    private async Task SendWithTimeoutAsync(ITransport transport, OutboxMessage message, TimeSpan timeout, CancellationToken cancellationToken)
+    {
+        using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutSource.CancelAfter(timeout);
+        try
+        {
+            // WaitAsync also covers transports that ignore the token.
+            await SendAsync(transport, message, headerProfiles, timeoutSource.Token)
+                .WaitAsync(timeout, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new TimeoutException($"Sending to {message.Destination} took longer than {timeout}.", ex);
         }
     }
 
