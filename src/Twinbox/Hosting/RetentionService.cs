@@ -6,7 +6,7 @@ using Twinbox.Storage;
 namespace Twinbox.Hosting;
 
 internal sealed partial class RetentionService(
-    IOutboxStore outbox,
+    IEnumerable<IOutboxStore> outboxes,
     IOptions<TwinboxOptions> options,
     TimeProvider time,
     ILogger<RetentionService> logger,
@@ -36,8 +36,11 @@ internal sealed partial class RetentionService(
     {
         var now = time.GetUtcNow();
         var purge = new OutboxPurge(now - retention.SentMessages, now - retention.DeadMessages, retention.BatchSize);
-        while (await outbox.PurgeAsync(purge, cancellationToken).ConfigureAwait(false) >= retention.BatchSize)
+        foreach (var outbox in outboxes)
         {
+            while (await outbox.PurgeAsync(purge, cancellationToken).ConfigureAwait(false) >= retention.BatchSize)
+            {
+            }
         }
 
         if (inbox is null)

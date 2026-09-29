@@ -3,11 +3,15 @@ using Twinbox.Storage;
 
 namespace Twinbox.Diagnostics;
 
-internal sealed class TwinboxHealthCheck(IOutboxStore store, TimeProvider time, TimeSpan maxPendingAge, long maxDeadMessages) : IHealthCheck
+internal sealed class TwinboxHealthCheck(IEnumerable<IOutboxStore> stores, TimeProvider time, TimeSpan maxPendingAge, long maxDeadMessages) : IHealthCheck
 {
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
-        var stats = await store.GetStatisticsAsync(cancellationToken).ConfigureAwait(false);
+        var all = await Task.WhenAll(stores.Select(s => s.GetStatisticsAsync(cancellationToken))).ConfigureAwait(false);
+        var stats = new OutboxStatistics(
+            all.Sum(s => s.PendingCount),
+            all.Min(s => s.OldestPendingCreatedAt),
+            all.Sum(s => s.DeadCount));
         var data = new Dictionary<string, object>
         {
             ["pending"] = stats.PendingCount,

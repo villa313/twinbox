@@ -9,7 +9,7 @@ using Twinbox.Transport;
 namespace Twinbox.Dispatch;
 
 internal sealed partial class OutboxDispatcher(
-    IOutboxStore store,
+    IEnumerable<IOutboxStore> stores,
     TransportRegistry transports,
     IEnumerable<IDeadLetterObserver> deadLetterObservers,
     IOptions<TwinboxOptions> options,
@@ -22,8 +22,20 @@ internal sealed partial class OutboxDispatcher(
 
     private readonly ConcurrentDictionary<(string Transport, string Destination), CircuitBreaker> _breakers = new();
     private readonly IDeadLetterObserver[] _observers = [.. deadLetterObservers];
+    private readonly IOutboxStore[] _stores = [.. stores];
 
     public async Task<int> DispatchBatchAsync(CancellationToken cancellationToken)
+    {
+        var claimed = 0;
+        foreach (var store in _stores)
+        {
+            claimed += await DispatchBatchAsync(store, cancellationToken).ConfigureAwait(false);
+        }
+
+        return claimed;
+    }
+
+    private async Task<int> DispatchBatchAsync(IOutboxStore store, CancellationToken cancellationToken)
     {
         var settings = options.Value;
         var owner = settings.InstanceId;

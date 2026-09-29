@@ -13,13 +13,15 @@ public static class EntityFrameworkCoreTwinboxBuilderExtensions
 {
     /// <summary>
     /// Stores the outbox and inbox in <typeparamref name="TContext"/>'s database. Messages sent through
-    /// <see cref="IOutbox"/> are saved by the context's next SaveChanges, inside the same transaction.
+    /// <see cref="IOutbox"/> are saved by the next SaveChanges of any Twinbox-enabled context in the scope. The first
+    /// registered context also hosts the inbox.
     /// </summary>
     public static TwinboxBuilder UseEntityFrameworkCore<TContext>(this TwinboxBuilder builder)
         where TContext : DbContext
     {
         ArgumentNullException.ThrowIfNull(builder);
-        builder.Services.TryAddSingleton<IOutboxStore, EntityFrameworkOutboxStore<TContext>>();
+        // Each context gets its own store, so a modular monolith dispatches every module's outbox table.
+        builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IOutboxStore, EntityFrameworkOutboxStore<TContext>>());
         builder.Services.TryAddSingleton<IInboxStore, EntityFrameworkInboxStore<TContext>>();
         AddInterceptor<TContext>(builder.Services);
         return builder;

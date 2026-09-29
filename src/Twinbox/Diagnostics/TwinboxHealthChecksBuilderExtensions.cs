@@ -20,7 +20,7 @@ public static class TwinboxHealthChecksBuilderExtensions
         return builder.Add(new HealthCheckRegistration(
             name,
             sp => new TwinboxHealthCheck(
-                sp.GetRequiredService<IOutboxStore>(),
+                sp.GetServices<IOutboxStore>(),
                 sp.GetRequiredService<TimeProvider>(),
                 maxPendingAge ?? TimeSpan.FromMinutes(5),
                 maxDeadMessages),

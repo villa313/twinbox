@@ -17,7 +17,7 @@ public static class InMemoryTwinboxBuilderExtensions
     {
         ArgumentNullException.ThrowIfNull(builder);
         builder.Services.TryAddSingleton<InMemoryOutboxStore>();
-        builder.Services.TryAddSingleton<IOutboxStore>(sp => sp.GetRequiredService<InMemoryOutboxStore>());
+        builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IOutboxStore, InMemoryOutboxStore>(sp => sp.GetRequiredService<InMemoryOutboxStore>()));
         builder.Services.TryAddSingleton<InMemoryInboxStore>();
         builder.Services.TryAddSingleton<IInboxStore>(sp => sp.GetRequiredService<InMemoryInboxStore>());
         builder.Services.TryAddScoped<InMemoryUnitOfWork>();

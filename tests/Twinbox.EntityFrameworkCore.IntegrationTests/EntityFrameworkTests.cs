@@ -23,6 +23,10 @@ public abstract class EntityFrameworkTests<TFixture>(TFixture database) : IClass
         await context.Set<OutboxMessage>().ExecuteDeleteAsync();
         await context.Set<InboxRecord>().ExecuteDeleteAsync();
         await context.Orders.ExecuteDeleteAsync();
+
+        var billing = scope.ServiceProvider.GetRequiredService<BillingContext>();
+        await database.EnsureBillingSchemaAsync(billing);
+        await billing.Set<OutboxMessage>().ExecuteDeleteAsync();
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
@@ -193,6 +197,23 @@ public abstract class EntityFrameworkTests<TFixture>(TFixture database) : IClass
     }
 
     [Fact]
+    public async Task EveryContextsOutbox_IsDispatched()
+    {
+        await using var services = BuildServices();
+
+        await using (var scope = services.CreateAsyncScope())
+        {
+            var outbox = scope.ServiceProvider.GetRequiredService<IOutbox>();
+            outbox.Send(new OrderPlaced("shop"));
+            await scope.ServiceProvider.GetRequiredService<ShopContext>().SaveChangesAsync();
+            outbox.Send(new OrderPlaced("billing"));
+            await scope.ServiceProvider.GetRequiredService<BillingContext>().SaveChangesAsync();
+        }
+
+        Assert.Equal(2, await services.GetRequiredService<IOutboxDispatcher>().DispatchBatchAsync(default));
+    }
+
+    [Fact]
     public async Task Purge_RemovesProcessedInboxEntries()
     {
         await using var services = BuildServices();
@@ -212,8 +233,10 @@ public abstract class EntityFrameworkTests<TFixture>(TFixture database) : IClass
         var collection = new ServiceCollection().AddLogging();
         services?.Invoke(collection);
         collection.AddDbContext<ShopContext>(o => database.Configure(o, retryOnFailure));
+        collection.AddDbContext<BillingContext>(o => database.Configure(o, retryOnFailure));
         collection.AddTwinbox(b => b
             .UseEntityFrameworkCore<ShopContext>()
+            .UseEntityFrameworkCore<BillingContext>()
             .UseInMemoryTransport(o => o.AutoDeliver = false)
             .Route<OrderPlaced>().To("orders")
             .AddHandler<PlaceOrderHandler, PlaceOrder>()

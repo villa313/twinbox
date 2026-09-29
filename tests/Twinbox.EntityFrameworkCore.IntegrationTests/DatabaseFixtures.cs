@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Testcontainers.MsSql;
 using Testcontainers.PostgreSql;
 
@@ -8,8 +9,28 @@ public abstract class DatabaseFixture : IAsyncLifetime
 {
     private readonly SemaphoreSlim _schemaGate = new(1, 1);
     private bool _schemaCreated;
+    private bool _billingCreated;
 
     public abstract string Name { get; }
+
+    /// <summary>Both contexts share one database, so the second adds its tables without EnsureCreated.</summary>
+    public async Task EnsureBillingSchemaAsync(BillingContext context)
+    {
+        await _schemaGate.WaitAsync();
+        try
+        {
+            if (!_billingCreated)
+            {
+                var creator = context.GetService<Microsoft.EntityFrameworkCore.Storage.IRelationalDatabaseCreator>();
+                await creator.CreateTablesAsync();
+                _billingCreated = true;
+            }
+        }
+        finally
+        {
+            _schemaGate.Release();
+        }
+    }
 
     public async Task EnsureSchemaAsync(ShopContext context)
     {
