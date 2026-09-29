@@ -8,6 +8,7 @@
     <Project Path="src/Twinbox.AzureServiceBus/Twinbox.AzureServiceBus.csproj" />
     <Project Path="src/Twinbox.InMemory/Twinbox.InMemory.csproj" />
     <Project Path="src/Twinbox.RabbitMQ/Twinbox.RabbitMQ.csproj" />
+    <Project Path="src/Twinbox.SourceGenerators/Twinbox.SourceGenerators.csproj" />
     <Project Path="src/Twinbox.Testing/Twinbox.Testing.csproj" />
     <Project Path="src/Twinbox/Twinbox.csproj" />
   </Folder>

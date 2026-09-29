@@ -13,6 +13,10 @@
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="../Twinbox.SourceGenerators/Twinbox.SourceGenerators.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+    <None Include="../Twinbox.SourceGenerators/bin/$(Configuration)/netstandard2.0/Twinbox.SourceGenerators.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  </ItemGroup>
+  <ItemGroup>
     <InternalsVisibleTo Include="Twinbox.UnitTests" />
     <InternalsVisibleTo Include="Twinbox.Testing" />
   </ItemGroup>
