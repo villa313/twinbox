@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Redis Streams transport for Twinbox: consumer groups that acknowledge only after the inbox has handled an entry, reclaim a crashed consumer's pending entries, and park poison entries in a dead stream.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Twinbox/Twinbox.csproj" />
+    <PackageReference Include="StackExchange.Redis" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Twinbox.RedisStreams.Tests" />
+  </ItemGroup>
+</Project>
