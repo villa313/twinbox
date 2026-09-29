@@ -486,3 +486,4 @@ $RECYCLE.BIN/
 # Internal planning and competitive notes
 .claude/plans/
 artifacts/
+.claude/worktrees/
