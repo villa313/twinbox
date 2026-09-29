@@ -1,0 +1,39 @@
+#nullable enable
+const Twinbox.RabbitMQ.RabbitMqTransport.DefaultName = "rabbitmq" -> string!
+static Twinbox.RabbitMqTwinboxBuilderExtensions.UseRabbitMq(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.RabbitMQ.RabbitMqOptions!>! configure) -> Twinbox.TwinboxBuilder!
+Twinbox.RabbitMQ.RabbitMqOptions
+Twinbox.RabbitMQ.RabbitMqOptions.AutoProvision.get -> bool
+Twinbox.RabbitMQ.RabbitMqOptions.AutoProvision.set -> void
+Twinbox.RabbitMQ.RabbitMqOptions.ClientProvidedName.get -> string!
+Twinbox.RabbitMQ.RabbitMqOptions.ClientProvidedName.set -> void
+Twinbox.RabbitMQ.RabbitMqOptions.ConfigureConnectionFactory.get -> System.Action<RabbitMQ.Client.ConnectionFactory!>?
+Twinbox.RabbitMQ.RabbitMqOptions.ConfigureConnectionFactory.set -> void
+Twinbox.RabbitMQ.RabbitMqOptions.ConnectionUri.get -> System.Uri?
+Twinbox.RabbitMQ.RabbitMqOptions.ConnectionUri.set -> void
+Twinbox.RabbitMQ.RabbitMqOptions.ConsumerConcurrency.get -> ushort
+Twinbox.RabbitMQ.RabbitMqOptions.ConsumerConcurrency.set -> void
+Twinbox.RabbitMQ.RabbitMqOptions.DeliveryLimit.get -> int
+Twinbox.RabbitMQ.RabbitMqOptions.DeliveryLimit.set -> void
+Twinbox.RabbitMQ.RabbitMqOptions.HostName.get -> string!
+Twinbox.RabbitMQ.RabbitMqOptions.HostName.set -> void
+Twinbox.RabbitMQ.RabbitMqOptions.Listen(string! queue, string! exchange, string! bindingKey = "#") -> Twinbox.RabbitMQ.RabbitMqOptions!
+Twinbox.RabbitMQ.RabbitMqOptions.Password.get -> string!
+Twinbox.RabbitMQ.RabbitMqOptions.Password.set -> void
+Twinbox.RabbitMQ.RabbitMqOptions.Port.get -> int?
+Twinbox.RabbitMQ.RabbitMqOptions.Port.set -> void
+Twinbox.RabbitMQ.RabbitMqOptions.PrefetchCount.get -> ushort
+Twinbox.RabbitMQ.RabbitMqOptions.PrefetchCount.set -> void
+Twinbox.RabbitMQ.RabbitMqOptions.PublishChannelPoolSize.get -> int
+Twinbox.RabbitMQ.RabbitMqOptions.PublishChannelPoolSize.set -> void
+Twinbox.RabbitMQ.RabbitMqOptions.PublishTimeout.get -> System.TimeSpan
+Twinbox.RabbitMQ.RabbitMqOptions.PublishTimeout.set -> void
+Twinbox.RabbitMQ.RabbitMqOptions.RabbitMqOptions() -> void
+Twinbox.RabbitMQ.RabbitMqOptions.UserName.get -> string!
+Twinbox.RabbitMQ.RabbitMqOptions.UserName.set -> void
+Twinbox.RabbitMQ.RabbitMqOptions.VirtualHost.get -> string!
+Twinbox.RabbitMQ.RabbitMqOptions.VirtualHost.set -> void
+Twinbox.RabbitMQ.RabbitMqTransport
+Twinbox.RabbitMQ.RabbitMqTransport.DisposeAsync() -> System.Threading.Tasks.ValueTask
+Twinbox.RabbitMQ.RabbitMqTransport.Name.get -> string!
+Twinbox.RabbitMQ.RabbitMqTransport.SendAsync(Twinbox.Transport.TransportMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.RabbitMqTwinboxBuilderExtensions
