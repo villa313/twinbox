@@ -19,7 +19,8 @@ jobs:
             10.0.x
       - run: dotnet restore Twinbox.slnx
       - run: dotnet build Twinbox.slnx -c Release --no-restore
-      - run: dotnet test --solution Twinbox.slnx -c Release --no-build
+      # Integration tests start database and broker containers; capping modules keeps runners from running out of memory.
+      - run: dotnet test --solution Twinbox.slnx -c Release --no-build --max-parallel-test-modules 3
       - run: dotnet pack Twinbox.slnx -c Release --no-build -o artifacts
       - uses: actions/upload-artifact@v4
         with:
