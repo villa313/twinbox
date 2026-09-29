@@ -115,6 +115,32 @@ A route or handler registered for a base class or interface covers all of its su
 Payloads are JSON with camelCase property names (`JsonSerializerDefaults.Web`). Pass your own
 `JsonSerializerOptions` to `UseSerializer(new SystemTextJsonMessageSerializer(options))` if you need something else.
 
+## Moving over from another outbox
+
+You can switch one service at a time without a big-bang cutover:
+
+```csharp
+twinbox
+    // Keep talking to services that haven't moved yet, in both directions.
+    .UseHeaderProfile(HeaderProfile.Prefixed("legacy"))       // legacy-msg-id, legacy-msg-name
+    // Drain messages the old outbox never sent.
+    .ImportFromExistingOutbox(o =>
+    {
+        o.CreateConnection = _ => new SqlConnection(connectionString);
+        o.SelectPending = "SELECT TOP (@batch) Id, Name, Content FROM old.Published WHERE Status = 'Scheduled'";
+        o.MarkImported = "UPDATE old.Published SET Status = 'Migrated' WHERE Id = @id";
+    })
+    // Remember what the old inbox already processed, so redeliveries are skipped.
+    .SeedInboxFromExisting(o =>
+    {
+        o.CreateConnection = _ => new SqlConnection(connectionString);
+        o.SelectProcessed = "SELECT Id AS MessageId, 'MyApp.ShipOrder' AS Consumer FROM old.Received WHERE Status = 'Succeeded'";
+    });
+```
+
+Give message types their old names with `[MessageName("old.name")]`. Imported rows get deterministic ids, so if
+a row is imported twice, the inbox discards the repeat.
+
 ## Testing
 
 ```csharp
