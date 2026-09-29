@@ -13,5 +13,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Twinbox.Testing/Twinbox.Testing.csproj" />
+    <ProjectReference Include="../../src/Twinbox.SourceGenerators/Twinbox.SourceGenerators.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
   </ItemGroup>
 </Project>

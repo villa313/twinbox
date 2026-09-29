@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Twinbox.SourceGenerators/Twinbox.SourceGenerators.csproj" />
+    <!-- Puts Twinbox.dll next to the tests so generated code can be compiled against it. -->
+    <ProjectReference Include="../../src/Twinbox/Twinbox.csproj" />
+  </ItemGroup>
+</Project>
