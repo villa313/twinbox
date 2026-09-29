@@ -64,6 +64,20 @@ public sealed class TwinboxBuilder
         return this;
     }
 
+    public TwinboxBuilder UseTenants(Action<TenancyOptions> configure)
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+        var tenancy = new TenancyOptions();
+        configure(tenancy);
+        if (tenancy.ListTenants is null || tenancy.EnterTenant is null || tenancy.CurrentTenant is null)
+        {
+            throw new ArgumentException("UseTenants needs ListTenants, EnterTenant and CurrentTenant.", nameof(configure));
+        }
+
+        Services.AddSingleton(tenancy);
+        return this;
+    }
+
     public TwinboxBuilder Configure(Action<TwinboxOptions> configure)
     {
         Services.Configure(configure);

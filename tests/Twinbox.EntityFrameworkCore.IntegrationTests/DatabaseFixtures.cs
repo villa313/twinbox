@@ -62,6 +62,10 @@ public sealed class PostgreSqlFixture : DatabaseFixture
 
     public override string Name => "PostgreSQL";
 
+    /// <summary>Same server, separate database; EnsureCreated creates it on first use.</summary>
+    public string ConnectionStringFor(string database) =>
+        new Npgsql.NpgsqlConnectionStringBuilder(_container.GetConnectionString()) { Database = database }.ConnectionString;
+
     public override void Configure(DbContextOptionsBuilder options, bool retryOnFailure) =>
         options.UseNpgsql(_container.GetConnectionString(), o =>
         {

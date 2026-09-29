@@ -8,6 +8,7 @@ using Twinbox.Inbox;
 using Twinbox.Messaging;
 using Twinbox.Serialization;
 using Twinbox.Storage;
+using Twinbox.Tenancy;
 using Twinbox.Transport;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -26,6 +27,8 @@ public static class TwinboxServiceCollectionExtensions
         services.TryAddSingleton<IMessageSerializer>(new SystemTextJsonMessageSerializer());
         services.TryAddSingleton<IMessageIdGenerator, Uuid7MessageIdGenerator>();
         services.TryAddSingleton<TransportRegistry>();
+        services.TryAddSingleton<TwinboxScopeFactory>();
+        services.TryAddSingleton<TenantDirectory>();
         services.TryAddSingleton<MessagePreparer>();
         services.TryAddSingleton<HandlerRegistry>();
         services.TryAddSingleton<IInboundPipeline, InboundPipeline>();

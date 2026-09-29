@@ -3,10 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Twinbox.EntityFrameworkCore.Sql;
 using Twinbox.Storage;
+using Twinbox.Tenancy;
 
 namespace Twinbox.EntityFrameworkCore;
 
-internal sealed class EntityFrameworkInboxStore<TContext>(IServiceScopeFactory scopeFactory) : IInboxStore
+internal sealed class EntityFrameworkInboxStore<TContext>(TwinboxScopeFactory scopeFactory) : IInboxStore
     where TContext : DbContext
 {
     public async Task<bool> TryProcessAsync(

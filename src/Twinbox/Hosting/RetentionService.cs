@@ -2,11 +2,13 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Twinbox.Storage;
+using Twinbox.Tenancy;
 
 namespace Twinbox.Hosting;
 
 internal sealed partial class RetentionService(
     IEnumerable<IOutboxStore> outboxes,
+    TenantDirectory tenants,
     IOptions<TwinboxOptions> options,
     TimeProvider time,
     ILogger<RetentionService> logger,
@@ -33,6 +35,15 @@ internal sealed partial class RetentionService(
     }
 
     internal async Task PurgeAsync(RetentionOptions retention, CancellationToken cancellationToken)
+    {
+        foreach (var tenant in await tenants.GetTenantsAsync(cancellationToken).ConfigureAwait(false))
+        {
+            using var _ = TenantScope.Enter(tenant);
+            await PurgeTenantAsync(retention, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private async Task PurgeTenantAsync(RetentionOptions retention, CancellationToken cancellationToken)
     {
         var now = time.GetUtcNow();
         var purge = new OutboxPurge(now - retention.SentMessages, now - retention.DeadMessages, retention.BatchSize);

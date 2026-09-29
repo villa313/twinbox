@@ -1,9 +1,14 @@
 using Microsoft.Extensions.Logging;
 using Twinbox.Storage;
+using Twinbox.Tenancy;
 
 namespace Twinbox.Messaging;
 
-internal sealed partial class OutboxBuffer(MessagePreparer preparer, ILogger<OutboxBuffer> logger)
+internal sealed partial class OutboxBuffer(
+    MessagePreparer preparer,
+    IServiceProvider services,
+    ILogger<OutboxBuffer> logger,
+    TenancyOptions? tenancy = null)
     : IOutbox, IOutboxSession, IDisposable
 {
     private readonly ILogger _logger = logger;
@@ -26,7 +31,9 @@ internal sealed partial class OutboxBuffer(MessagePreparer preparer, ILogger<Out
         where TMessage : class
     {
         ArgumentNullException.ThrowIfNull(message);
-        var prepared = preparer.Prepare(message, options);
+        // Inside a handler the inbound tenant wins; otherwise ask the app which tenant this scope belongs to.
+        var tenant = TenantScope.Current ?? tenancy?.CurrentTenant?.Invoke(services);
+        var prepared = preparer.Prepare(message, options, tenant);
         lock (_gate)
         {
             _pending.AddRange(prepared);

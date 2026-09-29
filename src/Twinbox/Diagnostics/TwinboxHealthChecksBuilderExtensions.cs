@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Twinbox.Diagnostics;
 using Twinbox.Storage;
+using Twinbox.Tenancy;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -21,6 +22,7 @@ public static class TwinboxHealthChecksBuilderExtensions
             name,
             sp => new TwinboxHealthCheck(
                 sp.GetServices<IOutboxStore>(),
+                sp.GetRequiredService<TenantDirectory>(),
                 sp.GetRequiredService<TimeProvider>(),
                 maxPendingAge ?? TimeSpan.FromMinutes(5),
                 maxDeadMessages),

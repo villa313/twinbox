@@ -4,10 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Twinbox.EntityFrameworkCore.Sql;
 using Twinbox.Storage;
+using Twinbox.Tenancy;
 
 namespace Twinbox.EntityFrameworkCore;
 
-internal sealed class EntityFrameworkOutboxStore<TContext>(IServiceScopeFactory scopeFactory) : IOutboxStore
+internal sealed class EntityFrameworkOutboxStore<TContext>(TwinboxScopeFactory scopeFactory) : IOutboxStore
     where TContext : DbContext
 {
     // Keeps each Complete batch well under SQL Server's 2100-parameter limit.

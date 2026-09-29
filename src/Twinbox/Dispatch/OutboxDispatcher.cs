@@ -4,12 +4,14 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Twinbox.Diagnostics;
 using Twinbox.Storage;
+using Twinbox.Tenancy;
 using Twinbox.Transport;
 
 namespace Twinbox.Dispatch;
 
 internal sealed partial class OutboxDispatcher(
     IEnumerable<IOutboxStore> stores,
+    TenantDirectory tenants,
     TransportRegistry transports,
     IEnumerable<IDeadLetterObserver> deadLetterObservers,
     IOptions<TwinboxOptions> options,
@@ -27,9 +29,13 @@ internal sealed partial class OutboxDispatcher(
     public async Task<int> DispatchBatchAsync(CancellationToken cancellationToken)
     {
         var claimed = 0;
-        foreach (var store in _stores)
+        foreach (var tenant in await tenants.GetTenantsAsync(cancellationToken).ConfigureAwait(false))
         {
-            claimed += await DispatchBatchAsync(store, cancellationToken).ConfigureAwait(false);
+            using var _ = TenantScope.Enter(tenant);
+            foreach (var store in _stores)
+            {
+                claimed += await DispatchBatchAsync(store, cancellationToken).ConfigureAwait(false);
+            }
         }
 
         return claimed;
@@ -118,6 +124,11 @@ internal sealed partial class OutboxDispatcher(
         if (traceParent is not null)
         {
             headers[TransportHeaders.TraceParent] = traceParent;
+        }
+
+        if (message.TenantId is not null)
+        {
+            headers[TransportHeaders.TenantId] = message.TenantId;
         }
 
         try

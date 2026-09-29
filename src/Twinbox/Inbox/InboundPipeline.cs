@@ -6,6 +6,7 @@ using Twinbox.Diagnostics;
 using Twinbox.Messaging;
 using Twinbox.Serialization;
 using Twinbox.Storage;
+using Twinbox.Tenancy;
 using Twinbox.Transport;
 
 namespace Twinbox.Inbox;
@@ -14,7 +15,7 @@ internal sealed partial class InboundPipeline(
     MessageTypeRegistry registry,
     HandlerRegistry handlers,
     IMessageSerializer serializer,
-    IServiceScopeFactory scopeFactory,
+    TwinboxScopeFactory scopeFactory,
     IOptions<TwinboxOptions> options,
     TimeProvider time,
     ILogger<InboundPipeline> logger,
@@ -36,6 +37,8 @@ internal sealed partial class InboundPipeline(
             return;
         }
 
+        message.Headers.TryGetValue(TransportHeaders.TenantId, out var tenant);
+        using var _ = TenantScope.Enter(tenant);
         var body = Deserialize(message, messageType);
         var context = new MessageContext(
             message.MessageId, message.MessageName, message.Source, message.Headers, message.DeliveryAttempt, message.PartitionKey);

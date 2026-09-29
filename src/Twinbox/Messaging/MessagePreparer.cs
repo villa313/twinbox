@@ -13,7 +13,7 @@ internal sealed class MessagePreparer(
     IMessageIdGenerator ids,
     TimeProvider time)
 {
-    public IReadOnlyList<OutboxMessage> Prepare<TMessage>(TMessage message, SendOptions? options)
+    public IReadOnlyList<OutboxMessage> Prepare<TMessage>(TMessage message, SendOptions? options, string? tenantId)
         where TMessage : class
     {
         var messageRoutes = routes.Get(typeof(TMessage));
@@ -40,6 +40,7 @@ internal sealed class MessagePreparer(
                 Transport = messageRoutes[i].Transport ?? transports.ResolveDefaultName(),
                 Destination = messageRoutes[i].Destination,
                 PartitionKey = options?.PartitionKey,
+                TenantId = tenantId,
                 Payload = payload,
                 ContentType = serializer.ContentType,
                 Headers = headers,
