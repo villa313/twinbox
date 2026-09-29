@@ -48,6 +48,13 @@ public static class TwinboxModelBuilderExtensions
                     (a, b) => ReferenceEquals(a, b),
                     headers => headers.Count,
                     headers => headers));
+
+            // Oracle's provider maps unbounded binary and text to RAW(2000) and NVARCHAR2(2000), too small for payloads.
+            if (modelBuilder.Model.GetAnnotations().Any(a => a.Name.StartsWith("Oracle:", StringComparison.Ordinal)))
+            {
+                outbox.Property(m => m.Payload).HasColumnType("BLOB");
+                outbox.Property(m => m.Headers).HasColumnType("NCLOB");
+            }
         });
 
         modelBuilder.SharedTypeEntity<InboxRecord>(TwinboxEntities.Inbox, inbox =>
