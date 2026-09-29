@@ -13,8 +13,8 @@ public static class EntityFrameworkCoreTwinboxBuilderExtensions
 {
     /// <summary>
     /// Stores the outbox and inbox in <typeparamref name="TContext"/>'s database. Messages sent through
-    /// <see cref="IOutbox"/> are saved by the next SaveChanges of any Twinbox-enabled context in the scope. The first
-    /// registered context also hosts the inbox.
+    /// <see cref="IOutbox"/> are saved by the next SaveChanges of a context resolved in the same scope, pooled or not.
+    /// The first registered context also hosts the inbox. Call after AddDbContext.
     /// </summary>
     public static TwinboxBuilder UseEntityFrameworkCore<TContext>(this TwinboxBuilder builder)
         where TContext : DbContext
@@ -24,8 +24,33 @@ public static class EntityFrameworkCoreTwinboxBuilderExtensions
         builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IOutboxStore, EntityFrameworkOutboxStore<TContext>>());
         builder.Services.TryAddSingleton<IInboxStore, EntityFrameworkInboxStore<TContext>>();
         AddInterceptor<TContext>(builder.Services);
+        EnlistResolvedContexts<TContext>(builder.Services);
         return builder;
     }
+
+    /// <summary>Wraps the context's registration so every instance is tied to the outbox of the scope resolving it.</summary>
+    private static void EnlistResolvedContexts<TContext>(IServiceCollection services)
+        where TContext : DbContext
+    {
+        var registration = services.LastOrDefault(d => d.ServiceType == typeof(TContext) && !d.IsKeyedService)
+            ?? throw new InvalidOperationException(
+                $"Call AddDbContext<{typeof(TContext).Name}>() before UseEntityFrameworkCore<{typeof(TContext).Name}>().");
+
+        services.Add(new ServiceDescriptor(
+            typeof(TContext),
+            sp =>
+            {
+                var context = (TContext)Create(registration, sp);
+                OutboxEnlistment.EnlistFromScope(context, sp);
+                return context;
+            },
+            registration.Lifetime));
+    }
+
+    private static object Create(ServiceDescriptor registration, IServiceProvider services) =>
+        registration.ImplementationInstance
+            ?? registration.ImplementationFactory?.Invoke(services)
+            ?? ActivatorUtilities.CreateInstance(services, registration.ImplementationType!);
 
 #if NET9_0_OR_GREATER
     private static void AddInterceptor<TContext>(IServiceCollection services)
@@ -46,10 +71,6 @@ public static class EntityFrameworkCoreTwinboxBuilderExtensions
             registration.Lifetime));
     }
 
-    private static object Create(ServiceDescriptor registration, IServiceProvider services) =>
-        registration.ImplementationInstance
-            ?? registration.ImplementationFactory?.Invoke(services)
-            ?? ActivatorUtilities.CreateInstance(services, registration.ImplementationType!);
 
     private static DbContextOptions<TContext> WithInterceptor<TContext>(DbContextOptions<TContext> options)
         where TContext : DbContext

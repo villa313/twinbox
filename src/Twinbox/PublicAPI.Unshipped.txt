@@ -105,6 +105,7 @@ Twinbox.Storage.IMessageIdGenerator
 Twinbox.Storage.IMessageIdGenerator.NewId(System.DateTimeOffset now) -> System.Guid
 Twinbox.Storage.IOutboxSession
 Twinbox.Storage.IOutboxSession.HasPending.get -> bool
+Twinbox.Storage.IOutboxSession.Services.get -> System.IServiceProvider!
 Twinbox.Storage.IOutboxSession.TakePending() -> System.Collections.Generic.IReadOnlyList<Twinbox.Storage.OutboxMessage!>!
 Twinbox.Storage.IOutboxStore
 Twinbox.Storage.IOutboxStore.AppendAsync(System.Collections.Generic.IReadOnlyList<Twinbox.Storage.OutboxMessage!>! messages, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!

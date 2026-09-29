@@ -2,7 +2,6 @@ using System.Data.Common;
 using System.Runtime.CompilerServices;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Twinbox.Storage;
 
@@ -13,7 +12,7 @@ internal sealed class OutboxInterceptor : ISaveChangesInterceptor, IDbTransactio
 {
     public static readonly OutboxInterceptor Instance = new();
 
-    private static readonly ConditionalWeakTable<DbContext, object> AwaitingCommit = [];
+    private static readonly ConditionalWeakTable<DbContext, IOutboxSession> AwaitingCommit = [];
 
     private OutboxInterceptor()
     {
@@ -55,24 +54,18 @@ internal sealed class OutboxInterceptor : ISaveChangesInterceptor, IDbTransactio
         return Task.CompletedTask;
     }
 
-    private static void Flush(DbContext? context)
+    internal static void Flush(DbContext? context)
     {
-        if (context is null || ApplicationServices(context) is not { } services)
-        {
-            return;
-        }
-
-        var session = TryResolve<IOutboxSession>(services);
-        if (session is not { HasPending: true })
+        if (context is null || OutboxEnlistment.Find(context) is not { HasPending: true } session)
         {
             return;
         }
 
         context.TwinboxOutbox().AddRange(session.TakePending());
-        AwaitingCommit.AddOrUpdate(context, services);
+        AwaitingCommit.AddOrUpdate(context, session);
     }
 
-    private static void NotifyIfCommitted(DbContext? context)
+    internal static void NotifyIfCommitted(DbContext? context)
     {
         if (context?.Database.CurrentTransaction is null)
         {
@@ -82,26 +75,9 @@ internal sealed class OutboxInterceptor : ISaveChangesInterceptor, IDbTransactio
 
     private static void Notify(DbContext? context)
     {
-        if (context is not null && AwaitingCommit.TryGetValue(context, out var services) && AwaitingCommit.Remove(context))
+        if (context is not null && AwaitingCommit.TryGetValue(context, out var session) && AwaitingCommit.Remove(context))
         {
-            TryResolve<IDispatchSignal>((IServiceProvider)services)?.Notify();
-        }
-    }
-
-    private static IServiceProvider? ApplicationServices(DbContext context) =>
-        context.GetService<IDbContextOptions>().FindExtension<CoreOptionsExtension>()?.ApplicationServiceProvider;
-
-    private static T? TryResolve<T>(IServiceProvider services)
-        where T : class
-    {
-        try
-        {
-            return services.GetService<T>();
-        }
-        catch (InvalidOperationException)
-        {
-            // Pooled contexts carry the root provider, which can't hand out scoped services.
-            return null;
+            session.Services.GetService<IDispatchSignal>()?.Notify();
         }
     }
 }

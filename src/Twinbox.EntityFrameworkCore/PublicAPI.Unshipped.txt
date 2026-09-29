@@ -1,4 +1,5 @@
 #nullable enable
+Microsoft.EntityFrameworkCore.OutboxEnlistment
 Microsoft.EntityFrameworkCore.TwinboxModelBuilderExtensions
 Twinbox.EntityFrameworkCore.TwinboxEntities
 Twinbox.EntityFrameworkCore.TwinboxModelOptions
@@ -12,6 +13,7 @@ Twinbox.EntityFrameworkCore.TwinboxModelOptions.TwinboxModelOptions() -> void
 Twinbox.EntityFrameworkCoreTwinboxBuilderExtensions
 const Twinbox.EntityFrameworkCore.TwinboxEntities.Inbox = "TwinboxInbox" -> string!
 const Twinbox.EntityFrameworkCore.TwinboxEntities.Outbox = "TwinboxOutbox" -> string!
+static Microsoft.EntityFrameworkCore.OutboxEnlistment.EnlistOutbox<TContext>(this TContext! context, Twinbox.IOutbox! outbox) -> TContext!
 static Microsoft.EntityFrameworkCore.TwinboxModelBuilderExtensions.AddTwinbox(this Microsoft.EntityFrameworkCore.ModelBuilder! modelBuilder, System.Action<Twinbox.EntityFrameworkCore.TwinboxModelOptions!>? configure = null) -> Microsoft.EntityFrameworkCore.ModelBuilder!
 static Twinbox.EntityFrameworkCore.TwinboxEntities.TwinboxOutbox(this Microsoft.EntityFrameworkCore.DbContext! context) -> Microsoft.EntityFrameworkCore.DbSet<Twinbox.Storage.OutboxMessage!>!
 static Twinbox.EntityFrameworkCoreTwinboxBuilderExtensions.UseEntityFrameworkCore<TContext>(this Twinbox.TwinboxBuilder! builder) -> Twinbox.TwinboxBuilder!

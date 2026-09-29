@@ -16,7 +16,7 @@ internal sealed partial class OutboxBuffer(
     private readonly List<OutboxMessage> _pending = [];
     private readonly object _gate = new();
 
-    internal IServiceProvider Services => services;
+    public IServiceProvider Services => services;
 
     public bool HasPending
     {
@@ -66,6 +66,6 @@ internal sealed partial class OutboxBuffer(
         }
     }
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "{Count} outbox message(s) were sent but never saved; the unit of work ended without committing them.")]
+    [LoggerMessage(Level = LogLevel.Error, Message = "{Count} outbox message(s) were sent but never saved. Save a Twinbox-enabled DbContext resolved in the same scope, call context.EnlistOutbox(outbox) for contexts you create yourself, or use outbox.CommitAsync(transaction) with ADO.NET.")]
     private partial void LogUnsavedMessages(int count);
 }

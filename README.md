@@ -41,8 +41,8 @@ await db.SaveChangesAsync();              // order and message commit together, 
 ```
 
 The outbox tables follow your model's naming conventions (snake_case included). Messages sent from a scope are
-saved by the next `SaveChanges` of a Twinbox-enabled context in that scope. Resolve contexts from DI rather than
-`new`-ing them up.
+saved by the next `SaveChanges` of a context resolved in that scope, pooled contexts included. For a context you
+create yourself, call `context.EnlistOutbox(outbox)`.
 
 ## Quickstart (Dapper / ADO.NET)
 
