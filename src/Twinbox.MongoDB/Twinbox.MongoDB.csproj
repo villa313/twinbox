@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>MongoDB storage for Twinbox: save outbox messages in your own MongoDB transaction and handle inbound messages exactly once.</Description>
+    <PackageTags>$(PackageTags);mongodb</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Twinbox/Twinbox.csproj" />
+    <PackageReference Include="MongoDB.Driver" />
+  </ItemGroup>
+</Project>
