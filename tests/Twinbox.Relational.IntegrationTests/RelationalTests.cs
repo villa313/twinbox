@@ -48,7 +48,7 @@ public abstract class RelationalTests<TDatabase>(TDatabase database) : IClassFix
             await using var connection = database.Connect();
             await connection.OpenAsync();
             await using var transaction = await connection.BeginTransactionAsync();
-            await connection.ExecuteAsync("INSERT INTO orders (reference) VALUES (@reference)", new { reference = "D-1" }, transaction);
+            await connection.ExecuteAsync(database.InsertOrder, new { reference = "D-1" }, transaction);
             outbox.Send(new OrderPlaced("D-1"));
             await outbox.CommitAsync(transaction);
         }
@@ -68,7 +68,7 @@ public abstract class RelationalTests<TDatabase>(TDatabase database) : IClassFix
             await using var connection = database.Connect();
             await connection.OpenAsync();
             await using var transaction = await connection.BeginTransactionAsync();
-            await connection.ExecuteAsync("INSERT INTO orders (reference) VALUES (@reference)", new { reference = "D-2" }, transaction);
+            await connection.ExecuteAsync(database.InsertOrder, new { reference = "D-2" }, transaction);
             outbox.Send(new OrderPlaced("D-2"));
             await outbox.SaveAsync(transaction);
             await transaction.RollbackAsync();
@@ -129,7 +129,7 @@ public abstract class RelationalTests<TDatabase>(TDatabase database) : IClassFix
 
     private async Task<ServiceProvider> StartAsync()
     {
-        var collection = new ServiceCollection().AddLogging();
+        var collection = new ServiceCollection().AddLogging().AddSingleton<Database>(database);
         collection.AddTwinbox(b =>
         {
             database.UseStore(b);
@@ -167,12 +167,12 @@ public abstract class RelationalTests<TDatabase>(TDatabase database) : IClassFix
         1,
         null);
 
-    public sealed class PlaceOrderHandler(HandlerTransaction transaction, IOutbox outbox) : IHandle<PlaceOrder>
+    public sealed class PlaceOrderHandler(HandlerTransaction transaction, IOutbox outbox, Database database) : IHandle<PlaceOrder>
     {
         public async Task HandleAsync(PlaceOrder message, MessageContext context, CancellationToken cancellationToken)
         {
             await transaction.Connection.ExecuteAsync(
-                "INSERT INTO orders (reference) VALUES (@reference)",
+                database.InsertOrder,
                 new { reference = message.Reference },
                 transaction.Transaction);
             outbox.Send(new OrderPlaced(message.Reference));
@@ -196,3 +196,5 @@ public static class StoreCases
 public sealed class PostgreSqlTests(PostgreSqlDatabase database) : RelationalTests<PostgreSqlDatabase>(database);
 
 public sealed class SqlServerTests(SqlServerDatabase database) : RelationalTests<SqlServerDatabase>(database);
+
+public sealed class OracleTests(OracleDatabase database) : RelationalTests<OracleDatabase>(database);

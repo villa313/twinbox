@@ -6,7 +6,7 @@ namespace Twinbox.Sql;
 /// Statements for the operations LINQ can't express (SKIP LOCKED claims, conditional inserts), shared as source by
 /// the relational stores. Callers pass delimited identifiers, so any naming convention works.
 /// </summary>
-internal sealed class TwinboxSql
+internal sealed partial class TwinboxSql
 {
     private const int Pending = (int)OutboxMessageStatus.Pending;
     private const int Processing = (int)OutboxMessageStatus.Processing;
@@ -51,6 +51,7 @@ internal sealed class TwinboxSql
 
         return _provider switch
         {
+            SqlProvider.Oracle => OracleClaim(due),
             SqlProvider.SqlServer => $"""
                 WITH due AS (
                     SELECT TOP (@batch) * FROM {_outbox} AS o WITH (UPDLOCK, READPAST, ROWLOCK)
@@ -85,7 +86,7 @@ internal sealed class TwinboxSql
     }
 
     /// <summary>One statement per outcome; <paramref name="index"/> keeps parameter names unique within a batch.</summary>
-    public string Complete(int index) => $"""
+    public string Complete(int index) => _provider == SqlProvider.Oracle ? OracleComplete(index) : $"""
         UPDATE {_outbox} SET
             {_o("Status")} = @status{index},
             {_o("Attempts")} = @attempts{index},
@@ -97,6 +98,9 @@ internal sealed class TwinboxSql
         WHERE {_o("Id")} = @id{index} AND {_o("LeaseOwner")} = @owner AND {_o("Status")} = {Processing};
         """;
 
+    /// <summary>Joins <see cref="Complete"/> statements into one command text.</summary>
+    public string Batch(string statements) => _provider == SqlProvider.Oracle ? OracleBlock(statements) : statements;
+
     public string PurgeOutbox(bool includeDead)
     {
         var expired = $"({_o("Status")} = {Sent} AND {_o("SentAt")} < @sentBefore)"
@@ -104,6 +108,7 @@ internal sealed class TwinboxSql
 
         return _provider switch
         {
+            SqlProvider.Oracle => OraclePurgeOutbox(expired),
             SqlProvider.SqlServer => $"DELETE TOP (@batch) FROM {_outbox} WITH (READPAST) WHERE {expired};",
             SqlProvider.Sqlite => $"""
                 DELETE FROM {_outbox} WHERE {Sequence} IN (
@@ -122,6 +127,7 @@ internal sealed class TwinboxSql
         var columns = $"{_i("MessageId")}, {_i("Consumer")}, {_i("Source")}, {_i("ProcessedAt")}";
         return _provider switch
         {
+            SqlProvider.Oracle => OracleInsertInbox(columns),
             SqlProvider.SqlServer => $"""
                 INSERT INTO {_inbox} ({columns})
                 SELECT @messageId, @consumer, @source, @processedAt
@@ -136,6 +142,7 @@ internal sealed class TwinboxSql
 
     public string PurgeInbox() => _provider switch
     {
+        SqlProvider.Oracle => OraclePurgeInbox(),
         SqlProvider.SqlServer => $"DELETE TOP (@batch) FROM {_inbox} WITH (READPAST) WHERE {_i("ProcessedAt")} < @before;",
         SqlProvider.Sqlite => $"""
             DELETE FROM {_inbox} WHERE rowid IN (

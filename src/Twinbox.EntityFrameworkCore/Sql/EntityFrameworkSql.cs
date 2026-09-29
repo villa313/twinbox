@@ -12,6 +12,8 @@ internal static class EntityFrameworkSql
 {
     public const string SqliteProvider = "Microsoft.EntityFrameworkCore.Sqlite";
 
+    public const string OracleProvider = "Oracle.EntityFrameworkCore";
+
     private static readonly ConditionalWeakTable<IModel, TwinboxSql> Cache = [];
 
     public static TwinboxSql For(DbContext context) =>
@@ -24,8 +26,9 @@ internal static class EntityFrameworkSql
             "Microsoft.EntityFrameworkCore.SqlServer" => SqlProvider.SqlServer,
             "Npgsql.EntityFrameworkCore.PostgreSQL" => SqlProvider.PostgreSql,
             SqliteProvider => SqlProvider.Sqlite,
+            OracleProvider => SqlProvider.Oracle,
             var other => throw new NotSupportedException(
-                $"Twinbox.EntityFrameworkCore supports SQL Server, PostgreSQL and SQLite; '{other}' is not supported yet."),
+                $"Twinbox.EntityFrameworkCore supports SQL Server, PostgreSQL, SQLite and Oracle; '{other}' is not supported yet."),
         };
 
         var helper = context.GetService<ISqlGenerationHelper>();

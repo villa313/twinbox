@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Testcontainers.MsSql;
+using Testcontainers.Oracle;
 using Testcontainers.PostgreSql;
 
 namespace Twinbox.EntityFrameworkCore.IntegrationTests;
@@ -96,6 +97,48 @@ public sealed class SqlServerFixture : DatabaseFixture
         });
 
     public override async ValueTask InitializeAsync() => await _container.StartAsync();
+
+    public override async ValueTask DisposeAsync() => await _container.DisposeAsync();
+}
+
+public sealed class OracleFixture : DatabaseFixture
+{
+    private readonly OracleContainer _container = new OracleBuilder("gvenzl/oracle-free:23-slim-faststart")
+        .WithDatabase("FREEPDB1")
+        .Build();
+
+    public override string Name => "Oracle";
+
+    public override void Configure(DbContextOptionsBuilder options, bool retryOnFailure) =>
+        options.UseOracle(_container.GetConnectionString(), o =>
+        {
+            if (retryOnFailure)
+            {
+                o.ExecutionStrategy(d => new Oracle.EntityFrameworkCore.OracleRetryingExecutionStrategy(d));
+            }
+        });
+
+    public override async ValueTask InitializeAsync()
+    {
+        await _container.StartAsync();
+
+        // Oracle schemas are users, which EnsureCreated doesn't create; the app user needs rights in them.
+        var system = new Oracle.ManagedDataAccess.Client.OracleConnectionStringBuilder(_container.GetConnectionString()) { UserID = "system" };
+        await using var connection = new Oracle.ManagedDataAccess.Client.OracleConnection(system.ConnectionString);
+        await connection.OpenAsync();
+        string[] statements =
+        [
+            """CREATE USER "messaging" NO AUTHENTICATION QUOTA UNLIMITED ON USERS""",
+            """CREATE USER "billing" NO AUTHENTICATION QUOTA UNLIMITED ON USERS""",
+            "GRANT DBA TO oracle",
+        ];
+        foreach (var statement in statements)
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandText = statement;
+            await command.ExecuteNonQueryAsync();
+        }
+    }
 
     public override async ValueTask DisposeAsync() => await _container.DisposeAsync();
 }

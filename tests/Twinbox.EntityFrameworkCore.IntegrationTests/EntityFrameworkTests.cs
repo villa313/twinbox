@@ -319,3 +319,5 @@ public static class StoreCases
 }
 
 public sealed class SqliteTests(SqliteFixture database) : EntityFrameworkTests<SqliteFixture>(database);
+
+public sealed class OracleTests(OracleFixture database) : EntityFrameworkTests<OracleFixture>(database);

@@ -48,7 +48,7 @@ internal sealed class RelationalOutboxStore(
         await using var lease = await OpenAsync(cancellationToken).ConfigureAwait(false);
         foreach (var chunk in outcomes.Chunk(OutcomesPerCommand))
         {
-            await using var command = lease.Connection.Command(string.Join('\n', chunk.Select((_, i) => dialect.Sql.Complete(i))))
+            await using var command = lease.Connection.Command(dialect.Sql.Batch(string.Join('\n', chunk.Select((_, i) => dialect.Sql.Complete(i)))))
                 .With("@owner", owner, DbType.String);
             for (var i = 0; i < chunk.Length; i++)
             {
@@ -82,13 +82,7 @@ internal sealed class RelationalOutboxStore(
     public async Task<OutboxStatistics> GetStatisticsAsync(CancellationToken cancellationToken)
     {
         await using var lease = await OpenAsync(cancellationToken).ConfigureAwait(false);
-        var unsent = $"{dialect.Quote("Status")} IN ({(int)OutboxMessageStatus.Pending}, {(int)OutboxMessageStatus.Processing})";
-        await using var command = lease.Connection.Command($"""
-            SELECT
-                (SELECT COUNT(*) FROM {dialect.Outbox} WHERE {unsent}),
-                (SELECT MIN({dialect.Quote("CreatedAt")}) FROM {dialect.Outbox} WHERE {unsent}),
-                (SELECT COUNT(*) FROM {dialect.Outbox} WHERE {dialect.Quote("Status")} = {(int)OutboxMessageStatus.Dead});
-            """);
+        await using var command = lease.Connection.Command(dialect.Statistics());
         await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
         await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
         return new OutboxStatistics(

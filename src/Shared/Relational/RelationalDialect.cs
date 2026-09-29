@@ -1,10 +1,11 @@
 using System.Text;
 using Twinbox.Sql;
+using Twinbox.Storage;
 
 namespace Twinbox.Relational;
 
 /// <summary>Fixed table layout for the ADO.NET stores; matches what EF Core's AddTwinbox() creates with default names.</summary>
-internal sealed class RelationalDialect
+internal sealed partial class RelationalDialect
 {
     public static readonly string[] OutboxColumns =
     [
@@ -34,6 +35,11 @@ internal sealed class RelationalDialect
 
     public string Insert(int rows)
     {
+        if (_settings.Provider == SqlProvider.Oracle)
+        {
+            return OracleInsert(rows);
+        }
+
         var sql = new StringBuilder($"INSERT INTO {Outbox} ({string.Join(", ", OutboxColumns.Select(Quote))}) VALUES ");
         for (var row = 0; row < rows; row++)
         {
@@ -45,7 +51,24 @@ internal sealed class RelationalDialect
         return sql.Append(';').ToString();
     }
 
-    public string CreateSchema() => _settings.Provider == SqlProvider.SqlServer ? SqlServerSchema() : PostgreSqlSchema();
+    public string CreateSchema() => _settings.Provider switch
+    {
+        SqlProvider.SqlServer => SqlServerSchema(),
+        SqlProvider.Oracle => OracleSchema(),
+        _ => PostgreSqlSchema(),
+    };
+
+    public string Statistics()
+    {
+        var unsent = $"{Quote("Status")} IN ({(int)OutboxMessageStatus.Pending}, {(int)OutboxMessageStatus.Processing})";
+        var end = _settings.Provider == SqlProvider.Oracle ? " FROM DUAL" : ";";
+        return $"""
+            SELECT
+                (SELECT COUNT(*) FROM {Outbox} WHERE {unsent}),
+                (SELECT MIN({Quote("CreatedAt")}) FROM {Outbox} WHERE {unsent}),
+                (SELECT COUNT(*) FROM {Outbox} WHERE {Quote("Status")} = {(int)OutboxMessageStatus.Dead}){end}
+            """;
+    }
 
     private string Table(string name) =>
         _settings.Schema is null ? Quote(name) : $"{Quote(_settings.Schema)}.{Quote(name)}";

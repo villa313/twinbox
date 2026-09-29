@@ -18,6 +18,17 @@ internal static class Parameters
             type = DbType.String;
         }
 
+        // ODP.NET names parameters without the '@', and Oracle's EF provider stores GUIDs as RAW(16) in .NET byte order.
+        if (context.Database.ProviderName == EntityFrameworkSql.OracleProvider)
+        {
+            parameter.ParameterName = name.TrimStart('@');
+            if (value is Guid oracleGuid)
+            {
+                value = oracleGuid.ToByteArray();
+                type = DbType.Binary;
+            }
+        }
+
         parameter.DbType = type;
         parameter.Value = value ?? DBNull.Value;
         return parameter;

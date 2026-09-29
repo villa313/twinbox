@@ -1,7 +1,9 @@
 using System.Data.Common;
 using Microsoft.Data.SqlClient;
 using Npgsql;
+using Oracle.ManagedDataAccess.Client;
 using Testcontainers.MsSql;
+using Testcontainers.Oracle;
 using Testcontainers.PostgreSql;
 
 namespace Twinbox.Relational.IntegrationTests;
@@ -12,6 +14,8 @@ public abstract class Database : IAsyncLifetime
 
     /// <summary>Table the tests' own handlers and requests write to, next to the Twinbox tables.</summary>
     public abstract string CreateOrdersTable { get; }
+
+    public virtual string InsertOrder => "INSERT INTO orders (reference) VALUES (@reference)";
 
     public abstract void UseStore(TwinboxBuilder builder);
 
@@ -64,6 +68,55 @@ public sealed class SqlServerDatabase : Database
     public override DbConnection Connect() => new SqlConnection(ConnectionString);
 
     public override async ValueTask InitializeAsync() => await _container.StartAsync();
+
+    public override async ValueTask DisposeAsync() => await _container.DisposeAsync();
+}
+
+public sealed class OracleDatabase : Database
+{
+    private readonly OracleContainer _container = new OracleBuilder("gvenzl/oracle-free:23-slim-faststart")
+        .WithDatabase("FREEPDB1")
+        .Build();
+
+    public override string ConnectionString => _container.GetConnectionString();
+
+    public override string CreateOrdersTable => """
+        BEGIN
+            EXECUTE IMMEDIATE 'CREATE TABLE orders (reference NVARCHAR2(64) PRIMARY KEY)';
+        EXCEPTION
+            WHEN OTHERS THEN
+                IF SQLCODE != -955 THEN RAISE; END IF;
+        END;
+        """;
+
+    public override string InsertOrder => "INSERT INTO orders (reference) VALUES (:reference)";
+
+    // Unquoted, so the tests' messaging."TwinboxOutbox" resolves to it.
+    public override void UseStore(TwinboxBuilder builder) =>
+        builder.UseOracle(o =>
+        {
+            o.ConnectionString = ConnectionString;
+            o.Schema = "MESSAGING";
+        });
+
+    public override DbConnection Connect() => new OracleConnection(ConnectionString);
+
+    public override async ValueTask InitializeAsync()
+    {
+        await _container.StartAsync();
+
+        // Oracle schemas are users; the app user needs rights to create and write tables in it.
+        var system = new OracleConnectionStringBuilder(ConnectionString) { UserID = "system" };
+        await using var connection = new OracleConnection(system.ConnectionString);
+        await connection.OpenAsync();
+        string[] statements = ["CREATE USER MESSAGING NO AUTHENTICATION QUOTA UNLIMITED ON USERS", "GRANT DBA TO oracle"];
+        foreach (var statement in statements)
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandText = statement;
+            await command.ExecuteNonQueryAsync();
+        }
+    }
 
     public override async ValueTask DisposeAsync() => await _container.DisposeAsync();
 }

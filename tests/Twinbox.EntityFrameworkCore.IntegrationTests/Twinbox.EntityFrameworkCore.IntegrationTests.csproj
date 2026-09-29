@@ -14,6 +14,8 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="Testcontainers.MsSql" />
+    <PackageReference Include="Oracle.EntityFrameworkCore" />
+    <PackageReference Include="Testcontainers.Oracle" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Twinbox.EntityFrameworkCore/Twinbox.EntityFrameworkCore.csproj" />

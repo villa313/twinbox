@@ -72,7 +72,7 @@ internal sealed class EntityFrameworkOutboxStore<TContext>(TwinboxScopeFactory s
                     parameters.AddRange(OutcomeParameters(context, chunk[i], i));
                 }
 
-                await context.Database.ExecuteSqlRawAsync(statements.ToString(), parameters, cancellationToken).ConfigureAwait(false);
+                await context.Database.ExecuteSqlRawAsync(sql.Batch(statements.ToString()), parameters, cancellationToken).ConfigureAwait(false);
             }
         }
     }

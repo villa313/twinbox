@@ -12,10 +12,12 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="Testcontainers.MsSql" />
+    <PackageReference Include="Testcontainers.Oracle" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Twinbox.SqlServer/Twinbox.SqlServer.csproj" />
     <ProjectReference Include="../../src/Twinbox.PostgreSql/Twinbox.PostgreSql.csproj" />
+    <ProjectReference Include="../../src/Twinbox.Oracle/Twinbox.Oracle.csproj" />
     <ProjectReference Include="../../src/Twinbox.Testing/Twinbox.Testing.csproj" />
   </ItemGroup>
 </Project>
