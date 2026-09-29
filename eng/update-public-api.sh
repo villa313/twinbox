@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 for pass in 1 2 3; do
-dotnet build Twinbox.slnx -c Release 2>&1 | python3 -c '
+dotnet build Twinbox.slnx -c Release -tl:off 2>&1 | python3 -c '
 import re, sys, collections
 added = collections.defaultdict(set)
 removed = collections.defaultdict(set)
