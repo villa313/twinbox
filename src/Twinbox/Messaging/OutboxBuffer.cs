@@ -94,6 +94,6 @@ internal sealed partial class OutboxBuffer(
         return headers;
     }
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "{Count} outbox message(s) were sent but never saved. Save a Twinbox-enabled DbContext resolved in the same scope, call context.EnlistOutbox(outbox) for contexts you create yourself, or use outbox.CommitAsync(transaction) with ADO.NET.")]
+    [LoggerMessage(Level = LogLevel.Error, Message = "{Count} outbox message(s) were sent but never saved. Save a Twinbox-enabled DbContext resolved in the same scope, call context.EnlistOutbox(outbox) for contexts you create yourself, or use outbox.CommitAsync(transaction or session) with ADO.NET or MongoDB.")]
     private partial void LogUnsavedMessages(int count);
 }

@@ -31,5 +31,5 @@ public sealed class HandlerTransaction
     }
 
     private static InvalidOperationException NotActive() => new(
-        "No handler transaction is active. HandlerTransaction is only available inside a handler run by the SQL Server or PostgreSQL inbox.");
+        "No handler transaction is active. HandlerTransaction is only available inside a handler run by a relational (ADO.NET) inbox; MongoDB handlers use MongoHandlerSession.");
 }
