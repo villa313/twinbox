@@ -2,21 +2,131 @@
 
 **Transactional outbox & inbox for .NET.** The one you add, not the framework you adopt.
 
-Twinbox writes your messages in the same transaction as your data and delivers them to any broker,
-with built-in deduplication on the receiving side. It works with EF Core, plain ADO.NET and Dapper,
-and needs no base classes, no bus abstraction and no special transaction API.
+Twinbox saves your messages in the same transaction as your data, delivers them to any broker, and
+deduplicates them on the way in. It works with EF Core, Dapper or plain ADO.NET. You don't need base classes,
+a bus abstraction or a special transaction API.
 
-> **Status:** early development. Not ready for production use.
+> **Status:** early development (0.1.0-alpha). APIs may still change.
 
-## Goals
+## Why
 
-- Three-line setup on an existing app
-- Outbox **and** inbox: at-least-once delivery, effectively-once processing
-- Any broker: Azure Service Bus, RabbitMQ, Kafka, Amazon SQS/SNS, NATS, Redis Streams, Pulsar, HTTP, and more
-- Any store: SQL Server, PostgreSQL, MySQL, SQLite, Oracle, MongoDB
-- Webhook ingress with signature verification
-- OpenTelemetry, health checks, dashboard, Aspire, Native AOT
-- A test harness that makes messaging code easy to test
+A service that writes to its database and then publishes to a broker can fail between the two. It either loses
+the message or publishes something that never committed. The outbox pattern fixes this by writing the message to
+the database in the same transaction and publishing it afterwards. The inbox pattern fixes the other side: it
+makes processing a redelivered message safe.
+
+## Quickstart (EF Core)
+
+```csharp
+builder.Services.AddDbContext<ShopContext>(o => o.UseSqlServer(connectionString));
+builder.Services.AddTwinbox(twinbox => twinbox
+    .UseEntityFrameworkCore<ShopContext>()
+    .UseAzureServiceBus(serviceBusConnectionString)
+    .Route<OrderPlaced>().To("orders"));
+```
+
+```csharp
+public class ShopContext(DbContextOptions<ShopContext> options) : DbContext(options)
+{
+    protected override void OnModelCreating(ModelBuilder modelBuilder) => modelBuilder.AddTwinbox();
+}
+```
+
+Add a migration and you're done. Then use it like this:
+
+```csharp
+db.Orders.Add(order);
+outbox.Send(new OrderPlaced(order.Id));   // IOutbox is injected
+await db.SaveChangesAsync();              // order and message commit together, then the message is sent
+```
+
+The outbox tables follow your model's naming conventions (snake_case included). Messages sent from a scope are
+saved by the next `SaveChanges` of a Twinbox-enabled context in that scope. Resolve contexts from DI rather than
+`new`-ing them up.
+
+## Quickstart (Dapper / ADO.NET)
+
+```csharp
+builder.Services.AddTwinbox(twinbox => twinbox
+    .UseSqlServer(connectionString)        // or .UsePostgreSql(connectionString)
+    .UseRabbitMq(o => o.ConnectionUri = new Uri(rabbitUri))
+    .Route<OrderPlaced>().To("orders"));
+```
+
+```csharp
+await using var transaction = await connection.BeginTransactionAsync();
+await connection.ExecuteAsync("INSERT INTO orders ...", order, transaction);
+outbox.Send(new OrderPlaced(order.Id));
+await outbox.CommitAsync(transaction);     // saves the message, commits, wakes the dispatcher
+```
+
+Tables are created on startup. Set `CreateSchemaIfMissing = false` if your migrations own the schema.
+
+## Handling messages
+
+```csharp
+public class ShipOrder(ShopContext db) : IHandle<OrderPlaced>
+{
+    public async Task HandleAsync(OrderPlaced message, MessageContext context, CancellationToken ct)
+    {
+        // Runs once per message id, even if the broker redelivers it.
+        // Your writes, the inbox entry and any messages you send commit together.
+    }
+}
+```
+
+Register handlers with `AddHandler<ShipOrder, OrderPlaced>()`, or let the bundled source generator do it for
+the whole assembly without reflection (Native AOT friendly):
+
+```csharp
+builder.Services.AddTwinbox(twinbox => twinbox.AddHandlersFromMyApp());
+```
+
+With Dapper, write through the handler's transaction:
+`await tx.Connection.ExecuteAsync(sql, args, tx.Transaction)`, where `tx` is an injected `HandlerTransaction`.
+
+## In-process events without a broker
+
+`UseLocalDelivery()` has the dispatcher call your own handlers. You get durable, retried domain events with
+nothing else to run:
+
+```csharp
+twinbox.UseLocalDelivery().Route<DomainEvent>().To("domain-events", transport: "local");
+```
+
+A route or handler registered for a base class or interface covers all of its subtypes.
+
+## Features
+
+- **Storage:** EF Core (SQL Server, PostgreSQL, SQLite), Dapper/ADO.NET (SQL Server, PostgreSQL), in-memory
+- **Transports:** Azure Service Bus, RabbitMQ, local delivery, in-memory
+- **Delivery:** at-least-once, plus an inbox for effectively-once processing that is deduplicated per handler
+- **Retries:** exponential backoff with jitter and a circuit breaker per destination, configurable from
+  `appsettings.json` (`Twinbox:Destinations:{name}:Retry`)
+- **Ordering:** messages with the same partition key are delivered in order; everything else goes in parallel
+- **Scaling out:** safe across instances through row leasing (`SKIP LOCKED` / `READPAST`), with no external lock
+- **Delayed sends:** `new SendOptions { Delay = TimeSpan.FromMinutes(5) }`
+- **Multi-tenancy:** a database per tenant through `UseTenants(...)`, plus several DbContexts per app
+- **Observability:** OpenTelemetry tracing and metrics (`TwinboxDiagnostics.SourceName`), and health checks
+  (`AddHealthChecks().AddTwinbox()`)
+- **Dead letters:** a policy for giving up, `IDeadLetterObserver` notifications, and configurable handling of
+  unknown messages
+
+Payloads are JSON with camelCase property names (`JsonSerializerDefaults.Web`). Pass your own
+`JsonSerializerOptions` to `UseSerializer(new SystemTextJsonMessageSerializer(options))` if you need something else.
+
+## Testing
+
+```csharp
+services.AddTwinbox(twinbox => twinbox.UseTestHarness().Route<OrderPlaced>().To("orders"));
+
+var harness = provider.GetTwinboxHarness();
+await harness.DrainAsync();                          // dispatches and delivers deterministically
+Assert.Single(harness.Sent<OrderPlaced>());
+```
+
+Store authors can run `OutboxStoreConformance.Cases` from any test framework to check their store against the
+storage contract.
 
 ## License
 
