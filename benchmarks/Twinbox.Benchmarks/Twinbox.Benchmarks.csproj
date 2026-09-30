@@ -1,12 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <!-- net8.0 too, so the pre-.NET 9 UUIDv7 fallback can be benchmarked alongside the net10.0 path. -->
+    <TargetFrameworks>net10.0;net8.0</TargetFrameworks>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Testcontainers.MsSql" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Twinbox/Twinbox.csproj" />
+    <ProjectReference Include="../../src/Twinbox.InMemory/Twinbox.InMemory.csproj" />
+    <ProjectReference Include="../../src/Twinbox.EntityFrameworkCore/Twinbox.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="../../src/Twinbox.PostgreSql/Twinbox.PostgreSql.csproj" />
+    <ProjectReference Include="../../src/Twinbox.SqlServer/Twinbox.SqlServer.csproj" />
   </ItemGroup>
 </Project>
