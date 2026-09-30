@@ -16,7 +16,7 @@ public sealed partial class HttpTransport : ITransport
     private readonly TimeProvider _time;
     private readonly ILogger _logger;
     private readonly Dictionary<string, HttpEndpoint> _endpoints;
-    private readonly string? _destinationPrefix;
+    private readonly TwinboxOptions _twinboxOptions;
 
     internal HttpTransport(
         IHttpClientFactory clients,
@@ -29,7 +29,7 @@ public sealed partial class HttpTransport : ITransport
         _time = time;
         _logger = logger;
         _endpoints = options.Value.Endpoints.ToDictionary(e => e.Key, e => HttpEndpoint.Create(e.Key, e.Value), StringComparer.OrdinalIgnoreCase);
-        _destinationPrefix = twinboxOptions.Value.DestinationPrefix;
+        _twinboxOptions = twinboxOptions.Value;
     }
 
     public string Name => TransportName;
@@ -105,11 +105,7 @@ public sealed partial class HttpTransport : ITransport
         }
 
         // Routes get Twinbox:DestinationPrefix prepended, while endpoints keep their plain names.
-        return !string.IsNullOrEmpty(_destinationPrefix)
-            && destination.StartsWith(_destinationPrefix, StringComparison.Ordinal)
-            && _endpoints.TryGetValue(destination[_destinationPrefix.Length..], out endpoint)
-                ? endpoint
-                : null;
+        return _endpoints.TryGetValue(_twinboxOptions.ToLogicalDestination(destination), out endpoint) ? endpoint : null;
     }
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Delivered message {MessageId} to HTTP endpoint {Endpoint} ({StatusCode}).")]
