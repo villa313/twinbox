@@ -27,8 +27,9 @@ public sealed class DeliveryLog
 
     public int CallsFor(Guid messageId) => _calls.GetValueOrDefault(messageId);
 
-    public static Numbered Read(TransportMessage message) =>
-        JsonSerializer.Deserialize<Numbered>(message.Body.Span, Json)!;
+    public static Numbered Read(TransportMessage message) => Read(message.Body.Span);
+
+    public static Numbered Read(ReadOnlySpan<byte> body) => JsonSerializer.Deserialize<Numbered>(body, Json)!;
 
     public static int AttemptOf(TransportMessage message) =>
         int.Parse(message.Headers[TransportHeaders.DeliveryAttempt], CultureInfo.InvariantCulture);

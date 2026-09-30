@@ -199,4 +199,8 @@ public sealed class OutboxRow
     public string? LeaseOwner { get; init; }
 
     public string? LastError { get; init; }
+
+    public byte[] Payload { get; init; } = [];
+
+    public Numbered Message => DeliveryLog.Read(Payload);
 }
