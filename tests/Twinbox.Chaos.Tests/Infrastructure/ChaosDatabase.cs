@@ -1,6 +1,4 @@
 using System.Data.Common;
-using System.Net;
-using System.Net.Sockets;
 using Dapper;
 using DotNet.Testcontainers.Containers;
 using Microsoft.Data.SqlClient;
@@ -80,18 +78,12 @@ public abstract class ChaosDatabase : IAsyncLifetime
 
     public string InsertEffect(string schema) =>
         $"INSERT INTO {Table(schema, "effects")} (message_id, consumer) VALUES (@messageId, @consumer)";
-
-    protected static int FreePort()
-    {
-        using var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        return ((IPEndPoint)listener.LocalEndpoint).Port;
-    }
 }
 
 public class PostgreSqlDatabase : ChaosDatabase
 {
     private readonly PostgreSqlContainer _container;
+    private string? _connectionString;
 
     public PostgreSqlDatabase()
         : this(fixedPort: false)
@@ -102,10 +94,11 @@ public class PostgreSqlDatabase : ChaosDatabase
     protected PostgreSqlDatabase(bool fixedPort)
     {
         var builder = new PostgreSqlBuilder("postgres:17-alpine").WithCommand("-c", "max_connections=400");
-        _container = (fixedPort ? builder.WithPortBinding(FreePort(), 5432) : builder).Build();
+        _container = (fixedPort ? builder.WithPortBinding(Ports.Free(), 5432) : builder).Build();
     }
 
-    public override string ConnectionString => _container.GetConnectionString();
+    // Read once: while the container is stopped the port lookup throws, and with a fixed port the address never changes.
+    public override string ConnectionString => _connectionString ?? throw new InvalidOperationException("The database hasn't started.");
 
     protected IContainer Container => _container;
 
@@ -123,7 +116,11 @@ public class PostgreSqlDatabase : ChaosDatabase
             o.Schema = schema;
         });
 
-    public override async ValueTask InitializeAsync() => await _container.StartAsync();
+    public override async ValueTask InitializeAsync()
+    {
+        await _container.StartAsync();
+        _connectionString = _container.GetConnectionString();
+    }
 
     public override async ValueTask DisposeAsync() => await _container.DisposeAsync();
 }
