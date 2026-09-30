@@ -37,7 +37,12 @@ public sealed class DatabaseBlipTests(RestartablePostgreSqlDatabase database) : 
         await Task.Delay(TimeSpan.FromSeconds(1));
         await database.RestartAsync();
         var committedBeforeRestart = await CountCommittedAsync(schema);
-        await Task.Delay(TimeSpan.FromSeconds(2));
+
+        // Pooled connections broken by the restart fail once each, so under load recovery can take a few seconds.
+        await Eventually.HoldsAsync(
+            async () => await CountCommittedAsync(schema) > committedBeforeRestart,
+            Timeout,
+            () => "the producer never committed again after the restart");
         await stop.CancelAsync();
         await producing;
 
