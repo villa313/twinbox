@@ -22,7 +22,8 @@ internal sealed partial class InboxSeedService(
         foreach (var tenant in await tenants.GetTenantsAsync(cancellationToken).ConfigureAwait(false))
         {
             using var _ = TenantScope.Enter(tenant);
-            LogSeeded(await SeedTenantAsync(cancellationToken).ConfigureAwait(false), tenant);
+            var seeded = await SeedTenantAsync(cancellationToken).ConfigureAwait(false);
+            LogSeeded(seeded, tenant);
         }
     }
 

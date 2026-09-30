@@ -14,9 +14,8 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: |
-            8.0.x
-            10.0.x
+          dotnet-version: 8.0.x
+          global-json-file: global.json
       - run: dotnet restore Twinbox.slnx
       - run: dotnet build Twinbox.slnx -c Release --no-restore
       # Integration tests start database and broker containers; capping modules keeps runners from running out of memory.
@@ -33,7 +32,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.x
+          global-json-file: global.json
       - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends clang zlib1g-dev
       # Trim and AOT warnings fail the publish; the binary exits nonzero unless every message was handled exactly once.
       - run: dotnet publish samples/Twinbox.AotSmoke/Twinbox.AotSmoke.csproj -c Release -r linux-x64 -o artifacts/aot-smoke
