@@ -96,10 +96,57 @@ twinbox.UseLocalDelivery().Route<DomainEvent>().To("domain-events", transport: "
 
 A route or handler registered for a base class or interface covers all of its subtypes.
 
+## Calling HTTP APIs and delivering webhooks
+
+`Twinbox.Http` sends each message as an HTTP request, so a vendor API call or a webhook gets the outbox's
+retries, backoff and circuit breaker instead of a hand-written dispatcher:
+
+```csharp
+twinbox
+    .UseHttp(http => http.AddEndpoint("valuelink", e =>
+    {
+        e.Url = new Uri("https://api.vendor.com/tenants/{tenant}/orders");
+        e.Headers["X-Api-Key"] = apiKey;
+        e.TreatAsSuccess(409);   // the vendor answers 409 to a repeat it already applied
+    }))
+    .Route<OrderPlaced>().To("valuelink", transport: "http");
+```
+
+```json
+{
+  "Twinbox": {
+    "Http": {
+      "Endpoints": {
+        "partner-webhook": {
+          "Url": "https://partner.example/hooks/orders",
+          "Method": "POST",
+          "Timeout": "00:00:10",
+          "WebhookSecret": "whsec_...",
+          "TransientStatusCodes": [ 423 ]
+        }
+      }
+    }
+  }
+}
+```
+
+- The body is the message payload with its content type, and `Idempotency-Key` carries the message id, so a
+  retried request can be deduplicated. `traceparent` is always sent; `ForwardHeaders = true` adds the Twinbox
+  headers too.
+- URL placeholders: `{messageId}`, `{messageName}`, `{partitionKey}`, `{tenant}`, or any message header by name.
+  Values are URL-escaped, and a message missing one is dead-lettered.
+- 2xx is delivered. 408, 429 and 5xx, timeouts and network errors are retried, waiting at least as long as
+  `Retry-After` asks. Other statuses are dead-lettered with the status and the start of the response body.
+- `WebhookSecret` adds [Standard Webhooks](https://www.standardwebhooks.com/) signature headers, so receivers can
+  verify requests with any Standard Webhooks library.
+- Each endpoint uses the `IHttpClientFactory` client `twinbox-http:{name}`. Add auth handlers with
+  `e.ConfigureHttpClient = c => c.AddHttpMessageHandler<VendorAuthHandler>()`, or with
+  `services.AddHttpClient(HttpTransport.HttpClientName("partner-webhook"))` for endpoints defined in configuration.
+
 ## Features
 
 - **Storage:** EF Core (SQL Server, PostgreSQL, MySQL, Oracle, SQLite), Dapper/ADO.NET (SQL Server, PostgreSQL, MySQL, Oracle), MongoDB, in-memory
-- **Transports:** Azure Service Bus, Amazon SQS/SNS, RabbitMQ, Kafka, NATS JetStream, Redis Streams, Apache Pulsar, local delivery, in-memory
+- **Transports:** Azure Service Bus, Amazon SQS/SNS, RabbitMQ, Kafka, NATS JetStream, Redis Streams, Apache Pulsar, HTTP APIs and webhooks, local delivery, in-memory
 - **Delivery:** at-least-once, plus an inbox for effectively-once processing that is deduplicated per handler
 - **Retries:** exponential backoff with jitter and a circuit breaker per destination, configurable from
   `appsettings.json` (`Twinbox:Destinations:{name}:Retry`)

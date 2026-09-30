@@ -9,6 +9,7 @@
     <Project Path="src/Twinbox.AzureFunctions/Twinbox.AzureFunctions.csproj" />
     <Project Path="src/Twinbox.AzureServiceBus/Twinbox.AzureServiceBus.csproj" />
     <Project Path="src/Twinbox.InMemory/Twinbox.InMemory.csproj" />
+    <Project Path="src/Twinbox.Http/Twinbox.Http.csproj" />
     <Project Path="src/Twinbox.Kafka/Twinbox.Kafka.csproj" />
     <Project Path="src/Twinbox.MongoDB/Twinbox.MongoDB.csproj" />
     <Project Path="src/Twinbox.Nats/Twinbox.Nats.csproj" />
@@ -29,6 +30,7 @@
     <Project Path="tests/Twinbox.RabbitMQ.Tests/Twinbox.RabbitMQ.Tests.csproj" />
     <Project Path="tests/Twinbox.AzureFunctions.Tests/Twinbox.AzureFunctions.Tests.csproj" />
     <Project Path="tests/Twinbox.AzureServiceBus.Tests/Twinbox.AzureServiceBus.Tests.csproj" />
+    <Project Path="tests/Twinbox.Http.Tests/Twinbox.Http.Tests.csproj" />
     <Project Path="tests/Twinbox.Kafka.Tests/Twinbox.Kafka.Tests.csproj" />
     <Project Path="tests/Twinbox.Pulsar.Tests/Twinbox.Pulsar.Tests.csproj" />
     <Project Path="tests/Twinbox.RedisStreams.Tests/Twinbox.RedisStreams.Tests.csproj" />
