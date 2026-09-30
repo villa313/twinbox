@@ -2,6 +2,9 @@
   <Folder Name="/benchmarks/">
     <Project Path="benchmarks/Twinbox.Benchmarks/Twinbox.Benchmarks.csproj" />
   </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/Twinbox.AotSmoke/Twinbox.AotSmoke.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Twinbox.Abstractions/Twinbox.Abstractions.csproj" />
     <Project Path="src/Twinbox.AmazonSqs/Twinbox.AmazonSqs.csproj" />
