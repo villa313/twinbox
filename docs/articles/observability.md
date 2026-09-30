@@ -58,14 +58,16 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = c => c
 | Parameter | Default | Meaning |
 |---|---|---|
 | `name` | `"twinbox"` | Registration name. |
-| `maxPendingAge` | 5 minutes | Report `failureStatus` when the oldest pending message is older than this. |
+| `maxPendingAge` | 5 minutes | Report `failureStatus` when a pending message has been due for longer than this. |
 | `maxDeadMessages` | `0` | Report `deadLetterStatus` when more messages than this are dead. |
 | `failureStatus` | `Degraded` | Status for a stale backlog. |
 | `deadLetterStatus` | same as `failureStatus` | Status for too many dead messages. |
 | `tags` | none | Tags for filtering, e.g. `ready`. |
 
 The check reads statistics from every store and tenant and reports `pending` and `dead` counts in its data. Pending
-age is measured from when the message was created, so long [delayed sends](concepts/delayed-send.md) count as backlog.
+age is measured from when a message became due (its `AvailableAt`), so [delayed sends](concepts/delayed-send.md) don't
+count as backlog until their time comes. A retried message becomes due again at its next attempt, so a destination that
+keeps failing shows up in the dead count and the `twinbox.outbox.failed` metric rather than in pending age.
 
 Keep it out of liveness probes: a broker outage grows the backlog, and restarting the app doesn't fix the broker.
 

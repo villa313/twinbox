@@ -262,11 +262,11 @@ Twinbox.Storage.OutboxStatistics
 Twinbox.Storage.OutboxStatistics.<Clone>$() -> Twinbox.Storage.OutboxStatistics!
 Twinbox.Storage.OutboxStatistics.DeadCount.get -> long
 Twinbox.Storage.OutboxStatistics.DeadCount.init -> void
-Twinbox.Storage.OutboxStatistics.Deconstruct(out long PendingCount, out System.DateTimeOffset? OldestPendingCreatedAt, out long DeadCount) -> void
+Twinbox.Storage.OutboxStatistics.Deconstruct(out long PendingCount, out System.DateTimeOffset? OldestPendingAvailableAt, out long DeadCount) -> void
 Twinbox.Storage.OutboxStatistics.Equals(Twinbox.Storage.OutboxStatistics? other) -> bool
-Twinbox.Storage.OutboxStatistics.OldestPendingCreatedAt.get -> System.DateTimeOffset?
-Twinbox.Storage.OutboxStatistics.OldestPendingCreatedAt.init -> void
-Twinbox.Storage.OutboxStatistics.OutboxStatistics(long PendingCount, System.DateTimeOffset? OldestPendingCreatedAt, long DeadCount) -> void
+Twinbox.Storage.OutboxStatistics.OldestPendingAvailableAt.get -> System.DateTimeOffset?
+Twinbox.Storage.OutboxStatistics.OldestPendingAvailableAt.init -> void
+Twinbox.Storage.OutboxStatistics.OutboxStatistics(long PendingCount, System.DateTimeOffset? OldestPendingAvailableAt, long DeadCount) -> void
 Twinbox.Storage.OutboxStatistics.PendingCount.get -> long
 Twinbox.Storage.OutboxStatistics.PendingCount.init -> void
 Twinbox.Storage.Uuid7MessageIdGenerator

@@ -35,4 +35,5 @@ public sealed record DispatchOutcome(
 
 public sealed record OutboxPurge(DateTimeOffset SentBefore, DateTimeOffset? DeadBefore, int BatchSize);
 
-public sealed record OutboxStatistics(long PendingCount, DateTimeOffset? OldestPendingCreatedAt, long DeadCount);
+/// <summary><see cref="OldestPendingAvailableAt"/> is when the longest-waiting unsent message became due, so delayed sends only age once due.</summary>
+public sealed record OutboxStatistics(long PendingCount, DateTimeOffset? OldestPendingAvailableAt, long DeadCount);

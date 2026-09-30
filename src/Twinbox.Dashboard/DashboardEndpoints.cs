@@ -430,7 +430,7 @@ internal sealed partial class DashboardEndpoints
         try
         {
             var stats = await DashboardStores.InTenantAsync(tenant, () => store.Store.GetStatisticsAsync(cancellationToken)).ConfigureAwait(false);
-            var age = stats.OldestPendingCreatedAt is { } oldest ? Math.Max(0, (now - oldest).TotalSeconds) : (double?)null;
+            var age = stats.OldestPendingAvailableAt is { } oldest ? Math.Max(0, (now - oldest).TotalSeconds) : (double?)null;
             return new StoreStats(store.Id, store.Name, tenant, stats.PendingCount, stats.DeadCount, age, null);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)

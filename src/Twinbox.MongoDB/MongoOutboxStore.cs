@@ -140,13 +140,13 @@ internal sealed class MongoOutboxStore(MongoSettings settings, MongoIndexInitial
         var outbox = settings.Outbox(lease.Database);
         var pending = await outbox.CountDocumentsAsync(Unsent, cancellationToken: cancellationToken).ConfigureAwait(false);
         var oldest = await outbox.Find(Unsent)
-            .Sort(new BsonDocument(OutboxDocument.CreatedAt, 1))
+            .Sort(new BsonDocument(OutboxDocument.AvailableAt, 1))
             .Limit(1)
-            .Project(new BsonDocument(OutboxDocument.CreatedAt, 1))
+            .Project(new BsonDocument(OutboxDocument.AvailableAt, 1))
             .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
         var dead = await outbox.CountDocumentsAsync(new BsonDocument(OutboxDocument.Status, Dead), cancellationToken: cancellationToken)
             .ConfigureAwait(false);
-        return new OutboxStatistics(pending, oldest is null ? null : OutboxDocument.ReadTimestamp(oldest[OutboxDocument.CreatedAt]), dead);
+        return new OutboxStatistics(pending, oldest is null ? null : OutboxDocument.ReadTimestamp(oldest[OutboxDocument.AvailableAt]), dead);
     }
 
     public async Task<OutboxPage> QueryAsync(OutboxQuery query, CancellationToken cancellationToken)

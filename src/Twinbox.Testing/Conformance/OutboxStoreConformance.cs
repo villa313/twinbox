@@ -177,15 +177,18 @@ public static class OutboxStoreConformance
     {
         var dead = NewMessage();
         var pending = NewMessage(createdAt: T0.AddMinutes(-3));
-        await store.AppendAsync([dead, pending], default);
+
+        // Created first but due last, like a delayed send: its age counts from when it becomes due.
+        var delayed = NewMessage(createdAt: T0.AddMinutes(-10), availableAt: T0.AddMinutes(5));
+        await store.AppendAsync([dead, pending, delayed], default);
         await ClaimAsync(store, Owner, T0, batchSize: 1);
         await store.CompleteAsync(Owner, [new DispatchOutcome(dead.Id, OutboxMessageStatus.Dead, 1, Error: "x")], default);
 
         var stats = await store.GetStatisticsAsync(default);
 
-        Expect(stats.PendingCount == 1, $"expected 1 pending, got {stats.PendingCount}");
+        Expect(stats.PendingCount == 2, $"expected 2 pending, got {stats.PendingCount}");
         Expect(stats.DeadCount == 1, $"expected 1 dead, got {stats.DeadCount}");
-        Expect(stats.OldestPendingCreatedAt == pending.CreatedAt, $"expected oldest pending {pending.CreatedAt}, got {stats.OldestPendingCreatedAt}");
+        Expect(stats.OldestPendingAvailableAt == pending.AvailableAt, $"expected oldest pending due at {pending.AvailableAt}, got {stats.OldestPendingAvailableAt}");
     }
 
     private static async Task RoundTripsFields(IOutboxStore store)

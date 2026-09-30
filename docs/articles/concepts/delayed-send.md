@@ -20,5 +20,5 @@ Things to know:
 - **Ordering.** A delayed message with a partition key holds back later messages with the same key until it is sent.
   See [Ordering](ordering.md).
 - **Retention.** Pending rows are never purged, however far in the future they are due.
-- **Health checks.** The pending-age check measures from the time the row was created, so a long delay can look like
-  a stuck backlog. Size `maxPendingAge` with your longest delay in mind.
+- **Health checks.** The pending-age check measures from the time a row became due, so a long delay never looks like
+  a stuck backlog.

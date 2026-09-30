@@ -69,7 +69,7 @@ internal sealed partial class RelationalDialect
         return $"""
             SELECT
                 (SELECT COUNT(*) FROM {Outbox} WHERE {unsent}),
-                (SELECT MIN({Quote("CreatedAt")}) FROM {Outbox} WHERE {unsent}),
+                (SELECT MIN({Quote("AvailableAt")}) FROM {Outbox} WHERE {unsent}),
                 (SELECT COUNT(*) FROM {Outbox} WHERE {Quote("Status")} = {(int)OutboxMessageStatus.Dead}){end}
             """;
     }
