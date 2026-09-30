@@ -6,6 +6,8 @@ Twinbox.BatchItem<TMessage>.Context.init -> void
 Twinbox.BatchItem<TMessage>.Deconstruct(out TMessage! Message, out Twinbox.MessageContext! Context) -> void
 Twinbox.BatchItem<TMessage>.Message.get -> TMessage!
 Twinbox.BatchItem<TMessage>.Message.init -> void
+Twinbox.IBatchMessageFilter
+Twinbox.IBatchMessageFilter.InvokeAsync(System.Collections.Generic.IReadOnlyList<Twinbox.BatchItem<object!>!>! batch, System.Func<System.Threading.Tasks.Task!>! continuation, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.IHandle<TMessage>
 Twinbox.IHandle<TMessage>.HandleAsync(TMessage! message, Twinbox.MessageContext! context, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.IHandleBatch<TMessage>

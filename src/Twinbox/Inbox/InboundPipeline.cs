@@ -139,7 +139,7 @@ internal sealed partial class InboundPipeline(
             var unguarded = scopeFactory.CreateAsyncScope();
             await using (unguarded.ConfigureAwait(false))
             {
-                await handler.InvokeBatchAsync(unguarded.ServiceProvider, [.. items.Select(i => (i.Body, i.Context))], cancellationToken).ConfigureAwait(false);
+                await RunBatchAsync(unguarded.ServiceProvider, handler, [.. items.Select(i => (i.Body, i.Context))], cancellationToken).ConfigureAwait(false);
                 TwinboxDiagnostics.MessagesProcessed.Add(items.Length);
                 return;
             }
@@ -153,7 +153,7 @@ internal sealed partial class InboundPipeline(
             var processed = await batchInbox.TryProcessBatchAsync(
                 entries,
                 scope.ServiceProvider,
-                (fresh, ct) => handler.InvokeBatchAsync(scope.ServiceProvider, [.. fresh.Select(i => (items[i].Body, items[i].Context))], ct),
+                (fresh, ct) => RunBatchAsync(scope.ServiceProvider, handler, [.. fresh.Select(i => (items[i].Body, items[i].Context))], ct),
                 cancellationToken).ConfigureAwait(false);
 
             TwinboxDiagnostics.MessagesProcessed.Add(processed);
@@ -204,12 +204,41 @@ internal sealed partial class InboundPipeline(
         MessageContext context,
         CancellationToken cancellationToken)
     {
+        if (handler is BatchHandlerDescriptor batchHandler)
+        {
+            await RunBatchAsync(services, batchHandler, [(body, context)], cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
         using var _ = InboundContext.Enter(context);
         Func<Task> next = () => handler.InvokeAsync(services, body, context, cancellationToken);
         foreach (var filter in services.GetServices<IMessageFilter>().Reverse())
         {
             var inner = next;
             next = () => filter.InvokeAsync(body, context, inner, cancellationToken);
+        }
+
+        await next().ConfigureAwait(false);
+    }
+
+    private static async Task RunBatchAsync(
+        IServiceProvider services,
+        BatchHandlerDescriptor handler,
+        IReadOnlyList<(object Message, MessageContext Context)> items,
+        CancellationToken cancellationToken)
+    {
+        // Messages sent from a batch of one still inherit its correlation; a larger batch has no single context.
+        using var _ = InboundContext.Enter(items.Count == 1 ? items[0].Context : null);
+        Func<Task> next = () => handler.InvokeBatchAsync(services, items, cancellationToken);
+        var filters = services.GetServices<IBatchMessageFilter>().Reverse().ToArray();
+        if (filters.Length > 0)
+        {
+            IReadOnlyList<BatchItem<object>> batch = [.. items.Select(i => new BatchItem<object>(i.Message, i.Context))];
+            foreach (var filter in filters)
+            {
+                var inner = next;
+                next = () => filter.InvokeAsync(batch, inner, cancellationToken);
+            }
         }
 
         await next().ConfigureAwait(false);

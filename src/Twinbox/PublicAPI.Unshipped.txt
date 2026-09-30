@@ -367,6 +367,7 @@ Twinbox.Transport.TransportMessage.PartitionKey.get -> string?
 Twinbox.Transport.TransportMessage.PartitionKey.init -> void
 Twinbox.Transport.TransportMessage.TransportMessage(string! MessageId, string! MessageName, string! Destination, System.ReadOnlyMemory<byte> Body, string! ContentType, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Headers, string? PartitionKey) -> void
 Twinbox.TwinboxBuilder
+Twinbox.TwinboxBuilder.AddBatchFilter<TFilter>() -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.AddBatchHandler<THandler, TMessage>(string? consumerName = null) -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.AddFilter<TFilter>() -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.AddHandler<THandler, TMessage>(string? consumerName = null) -> Twinbox.TwinboxBuilder!
