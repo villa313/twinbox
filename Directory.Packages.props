@@ -67,6 +67,7 @@
     <PackageVersion Include="Testcontainers.Oracle" Version="4.15.0" />
     <PackageVersion Include="Testcontainers.Pulsar" Version="4.15.0" />
     <PackageVersion Include="Testcontainers.MySql" Version="4.15.0" />
+    <PackageVersion Include="Testcontainers.PubSub" Version="4.15.0" />
     <!-- Oracle's provider: Pomelo has no EF Core 10 release. Its net8.0 build targets EF Core 8. -->
     <PackageVersion Include="MySql.EntityFrameworkCore" Version="10.0.9" />
     <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.21.0" />
@@ -82,6 +83,8 @@
     <PackageVersion Include="AWSSDK.SimpleNotificationService" Version="4.0.2.7" />
     <!-- Earlier releases can leave a producer permanently disconnected after a reconnect race (fixed in 5.3.3). -->
     <PackageVersion Include="DotPulsar" Version="5.3.3" />
+    <!-- The first release with PublisherClientBuilder and SubscriberClientBuilder; no advisories are published against it or its dependencies. -->
+    <PackageVersion Include="Google.Cloud.PubSub.V1" Version="3.1.0" />
     <PackageVersion Include="Dapper" Version="2.1.89" />
     <!-- The first release with a net8.0 build; no advisories are published against it. -->
     <PackageVersion Include="Oracle.ManagedDataAccess.Core" Version="23.4.0" />
