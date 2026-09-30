@@ -376,3 +376,8 @@ dotnet_naming_style.s_camelcase.required_suffix =
 dotnet_naming_style.s_camelcase.word_separator = 
 dotnet_naming_style.s_camelcase.capitalization = camel_case
 
+
+[*.cs]
+
+# Newer SDKs flag cheap arguments to rare log calls; the generated LoggerMessage methods already skip formatting when disabled.
+dotnet_diagnostic.CA1873.severity = suggestion
