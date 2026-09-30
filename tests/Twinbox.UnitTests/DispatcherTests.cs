@@ -43,7 +43,7 @@ public sealed class DispatcherTests
         await host.SendAsync(o => o.Send(new OrderPlaced(1)));
         await host.Harness.DrainAsync();
 
-        var dead = Assert.Single(host.Harness.DeadLettered());
+        var dead = Assert.Single(host.Harness.DeadLetteredOutgoing());
         Assert.Equal(1, dead.Attempts);
         Assert.Equal(dead.Id, Assert.Single(observer.MessageIds));
     }
@@ -67,7 +67,7 @@ public sealed class DispatcherTests
             host.Time.Advance(TimeSpan.FromMinutes(10));
         }
 
-        Assert.Equal(3, Assert.Single(host.Harness.DeadLettered()).Attempts);
+        Assert.Equal(3, Assert.Single(host.Harness.DeadLetteredOutgoing()).Attempts);
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public sealed class DispatcherTests
         await host.SendAsync(o => o.Send(new OrderPlaced(1)));
         await host.Harness.DrainAsync();
 
-        Assert.Single(host.Harness.DeadLettered());
+        Assert.Single(host.Harness.DeadLetteredOutgoing());
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public sealed class DispatcherTests
         await host.SendAsync(o => o.Send(new OrderPlaced(1)));
         await host.Harness.DrainAsync();
 
-        Assert.Contains("missing", Assert.Single(host.Harness.DeadLettered()).LastError, StringComparison.Ordinal);
+        Assert.Contains("missing", Assert.Single(host.Harness.DeadLetteredOutgoing()).LastError, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -167,7 +167,7 @@ public sealed class DispatcherTests
         await host.SendAsync(o => o.Send(new OrderPlaced(1)));
         await host.Harness.DrainAsync();
 
-        Assert.Single(host.Harness.DeadLettered());
+        Assert.Single(host.Harness.DeadLetteredOutgoing());
     }
 
     private sealed class RecordingObserver : IDeadLetterObserver

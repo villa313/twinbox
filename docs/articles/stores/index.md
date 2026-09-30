@@ -10,7 +10,7 @@ browsing. Pick the one that matches how your app already talks to its database.
 | [PostgreSQL](postgresql.md) | `Twinbox.PostgreSql` | `outbox.CommitAsync(transaction)` | `HandlerTransaction` | Created on startup, or yours |
 | [MySQL](mysql.md) | `Twinbox.MySql` | `outbox.CommitAsync(transaction)` | `HandlerTransaction` | Created on startup, or yours |
 | [Oracle](oracle.md) | `Twinbox.Oracle` | `outbox.CommitAsync(transaction)` | `HandlerTransaction` | Created on startup, or yours |
-| [MongoDB](mongodb.md) | `Twinbox.MongoDB` | `outbox.CommitAsync(session)` | `MongoHandlerSession` | Indexes created on startup |
+| [MongoDB](mongodb.md) | `Twinbox.MongoDB` | `outbox.CommitAsync(session)` | `MongoDBHandlerSession` | Indexes created on startup |
 | [In-memory](in-memory.md) | `Twinbox.InMemory` | `InMemoryUnitOfWork.CommitAsync()` | Nothing to do | None |
 
 All built-in stores:

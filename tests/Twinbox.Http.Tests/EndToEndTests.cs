@@ -44,7 +44,7 @@ public sealed class EndToEndTests
         await SendAsync(host, new OrderPlaced(1));
         await host.Harness.DrainAsync(TestContext.Current.CancellationToken);
 
-        var dead = Assert.Single(host.Harness.DeadLettered());
+        var dead = Assert.Single(host.Harness.DeadLetteredOutgoing());
         Assert.Equal(1, dead.Attempts);
         Assert.Contains("sku unknown", dead.LastError, StringComparison.Ordinal);
         Assert.Single(host.Handler.Requests);

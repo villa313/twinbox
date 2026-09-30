@@ -14,7 +14,7 @@ Twinbox.Testing.Conformance.ConformanceException.ConformanceException(string! me
 Twinbox.Testing.Conformance.OutboxAdminConformance
 Twinbox.Testing.Conformance.OutboxStoreConformance
 Twinbox.Testing.TwinboxTestHarness
-Twinbox.Testing.TwinboxTestHarness.DeadLettered() -> System.Collections.Generic.IReadOnlyList<Twinbox.OutboxMessage!>!
+Twinbox.Testing.TwinboxTestHarness.DeadLetteredOutgoing() -> System.Collections.Generic.IReadOnlyList<Twinbox.OutboxMessage!>!
 Twinbox.Testing.TwinboxTestHarness.DrainAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Twinbox.Testing.TwinboxTestHarness.Sent<TMessage>() -> System.Collections.Generic.IReadOnlyList<TMessage!>!
 Twinbox.Testing.TwinboxTestHarness.Store.get -> Twinbox.InMemory.InMemoryOutboxStore!

@@ -3,7 +3,7 @@ using MongoDB.Driver;
 namespace Twinbox;
 
 /// <summary>The session a handler must pass to its MongoDB writes so they commit with the inbox entry and its messages.</summary>
-public sealed class MongoHandlerSession
+public sealed class MongoDBHandlerSession
 {
     private IClientSessionHandle? _session;
     private IMongoDatabase? _database;
@@ -28,5 +28,5 @@ public sealed class MongoHandlerSession
     }
 
     private static InvalidOperationException NotActive() => new(
-        "No handler session is active. MongoHandlerSession is only available inside a handler run by the MongoDB inbox.");
+        "No handler session is active. MongoDBHandlerSession is only available inside a handler run by the MongoDB inbox.");
 }

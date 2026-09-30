@@ -5,7 +5,7 @@ using Twinbox.Storage;
 
 namespace Twinbox;
 
-public static class MongoTransactionalOutboxExtensions
+public static class MongoDBTransactionalOutboxExtensions
 {
     /// <summary>Inserts the messages sent so far through <paramref name="session"/>; they're dispatched once its transaction commits.</summary>
     public static async Task SaveAsync(this IOutbox outbox, IClientSessionHandle session, CancellationToken cancellationToken = default)

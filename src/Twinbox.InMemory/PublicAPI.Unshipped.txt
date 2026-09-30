@@ -5,10 +5,6 @@ Twinbox.InMemory.InMemoryInboxStore.InMemoryInboxStore(Twinbox.Storage.IOutboxSt
 Twinbox.InMemory.InMemoryInboxStore.PurgeAsync(System.DateTimeOffset processedBefore, int batchSize, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
 Twinbox.InMemory.InMemoryInboxStore.TryProcessAsync(Twinbox.Storage.InboxEntry! entry, System.IServiceProvider! scopedServices, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! handler, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<bool>!
 Twinbox.InMemory.InMemoryInboxStore.TryProcessBatchAsync(System.Collections.Generic.IReadOnlyList<Twinbox.Storage.InboxEntry!>! entries, System.IServiceProvider! scopedServices, System.Func<System.Collections.Generic.IReadOnlyList<int>!, System.Threading.CancellationToken, System.Threading.Tasks.Task!>! handler, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
-Twinbox.InMemory.InMemoryOptions
-Twinbox.InMemory.InMemoryOptions.AutoDeliver.get -> bool
-Twinbox.InMemory.InMemoryOptions.AutoDeliver.set -> void
-Twinbox.InMemory.InMemoryOptions.InMemoryOptions() -> void
 Twinbox.InMemory.InMemoryOutboxStore
 Twinbox.InMemory.InMemoryOutboxStore.AppendAsync(System.Collections.Generic.IReadOnlyList<Twinbox.OutboxMessage!>! messages, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.InMemory.InMemoryOutboxStore.ClaimAsync(Twinbox.Storage.OutboxClaim! claim, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Twinbox.OutboxMessage!>!>!
@@ -22,7 +18,7 @@ Twinbox.InMemory.InMemoryOutboxStore.QueryAsync(Twinbox.Storage.OutboxQuery! que
 Twinbox.InMemory.InMemoryOutboxStore.ReplayAsync(System.Collections.Generic.IReadOnlyCollection<System.Guid>! ids, System.DateTimeOffset now, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
 Twinbox.InMemory.InMemoryOutboxStore.Snapshot() -> System.Collections.Generic.IReadOnlyList<Twinbox.OutboxMessage!>!
 Twinbox.InMemory.InMemoryTransport
-Twinbox.InMemory.InMemoryTransport.DeadLettered.get -> System.Collections.Generic.IReadOnlyList<Twinbox.Transport.TransportMessage!>!
+Twinbox.InMemory.InMemoryTransport.DeadLetteredIncoming.get -> System.Collections.Generic.IReadOnlyList<Twinbox.Transport.TransportMessage!>!
 Twinbox.InMemory.InMemoryTransport.DeliverAsync(Twinbox.Transport.IInboundPipeline! pipeline, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
 Twinbox.InMemory.InMemoryTransport.Dispose() -> void
 Twinbox.InMemory.InMemoryTransport.InMemoryTransport() -> void
@@ -32,11 +28,15 @@ Twinbox.InMemory.InMemoryTransport.OnSend.set -> void
 Twinbox.InMemory.InMemoryTransport.SendAsync(Twinbox.Transport.TransportMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.InMemory.InMemoryTransport.Sent.get -> System.Collections.Generic.IReadOnlyList<Twinbox.Transport.TransportMessage!>!
 Twinbox.InMemory.InMemoryTransport.WaitForMessagesAsync(System.TimeSpan timeout, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.InMemory.InMemoryTransportOptions
+Twinbox.InMemory.InMemoryTransportOptions.AutoDeliver.get -> bool
+Twinbox.InMemory.InMemoryTransportOptions.AutoDeliver.set -> void
+Twinbox.InMemory.InMemoryTransportOptions.InMemoryTransportOptions() -> void
 Twinbox.InMemory.InMemoryUnitOfWork
 Twinbox.InMemory.InMemoryUnitOfWork.CommitAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Twinbox.InMemory.InMemoryUnitOfWork.InMemoryUnitOfWork(Twinbox.Storage.IOutboxSession! session, Twinbox.Storage.IOutboxStore! store, Twinbox.Storage.IDispatchSignal! signal) -> void
 Twinbox.InMemoryTwinboxBuilderExtensions
 const Twinbox.InMemory.InMemoryTransport.DefaultName = "inmemory" -> string!
-static Twinbox.InMemoryTwinboxBuilderExtensions.UseInMemory(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.InMemory.InMemoryOptions!>? configure = null) -> Twinbox.TwinboxBuilder!
+static Twinbox.InMemoryTwinboxBuilderExtensions.UseInMemory(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.InMemory.InMemoryTransportOptions!>? configure = null) -> Twinbox.TwinboxBuilder!
 static Twinbox.InMemoryTwinboxBuilderExtensions.UseInMemoryStore(this Twinbox.TwinboxBuilder! builder) -> Twinbox.TwinboxBuilder!
-static Twinbox.InMemoryTwinboxBuilderExtensions.UseInMemoryTransport(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.InMemory.InMemoryOptions!>? configure = null) -> Twinbox.TwinboxBuilder!
+static Twinbox.InMemoryTwinboxBuilderExtensions.UseInMemoryTransport(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.InMemory.InMemoryTransportOptions!>? configure = null) -> Twinbox.TwinboxBuilder!

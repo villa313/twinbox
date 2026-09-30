@@ -44,7 +44,7 @@ Handler writes must go through the inbox's transaction:
 |---|---|
 | EF Core | Inject your `DbContext`. The inbox begins the transaction and calls `SaveChanges` after the handler. |
 | SQL Server, PostgreSQL, MySQL, Oracle | Inject `HandlerTransaction` and use `tx.Connection` with `tx.Transaction`. |
-| MongoDB | Inject `MongoHandlerSession` and pass `session.Session` to every write; use `session.Database`. |
+| MongoDB | Inject `MongoDBHandlerSession` and pass `session.Session` to every write; use `session.Database`. |
 | In-memory | Nothing to do; handler failures discard the messages it sent. |
 
 ## Messages the inbox can't process

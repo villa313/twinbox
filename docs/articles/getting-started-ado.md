@@ -89,5 +89,5 @@ false and `tx.Connection` throws.
 
 - Store pages: [SQL Server](stores/sql-server.md), [PostgreSQL](stores/postgresql.md), [MySQL](stores/mysql.md),
   [Oracle](stores/oracle.md).
-- [MongoDB](stores/mongodb.md) works the same way with `outbox.CommitAsync(session)` and `MongoHandlerSession`.
+- [MongoDB](stores/mongodb.md) works the same way with `outbox.CommitAsync(session)` and `MongoDBHandlerSession`.
 - [Handlers](concepts/handlers.md) and [delivery guarantees](concepts/delivery-guarantees.md).
