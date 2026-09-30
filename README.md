@@ -7,6 +7,8 @@ deduplicates them on the way in. It works with EF Core, Dapper or plain ADO.NET.
 a bus abstraction or a special transaction API.
 
 > **Status:** early development (0.1.0-alpha). APIs may still change.
+>
+> **Docs:** https://twinbox-dotnet.github.io/twinbox/
 
 ## Why
 
@@ -96,10 +98,11 @@ twinbox.UseLocalDelivery().Route<DomainEvent>().To("domain-events", transport: "
 
 A route or handler registered for a base class or interface covers all of its subtypes.
 
-## Calling HTTP APIs and delivering webhooks
+## HTTP APIs and webhooks
 
-`Twinbox.Http` sends each message as an HTTP request, so a vendor API call or a webhook gets the outbox's
-retries, backoff and circuit breaker instead of a hand-written dispatcher:
+`Twinbox.Http` sends messages as HTTP requests, so a vendor API call or an outgoing webhook gets the outbox's retries,
+backoff, circuit breaker and an `Idempotency-Key`, plus optional [Standard Webhooks](https://www.standardwebhooks.com/)
+signatures:
 
 ```csharp
 twinbox
@@ -112,70 +115,16 @@ twinbox
     .Route<OrderPlaced>().To("valuelink", transport: "http");
 ```
 
-```json
-{
-  "Twinbox": {
-    "Http": {
-      "Endpoints": {
-        "partner-webhook": {
-          "Url": "https://partner.example/hooks/orders",
-          "Method": "POST",
-          "Timeout": "00:00:10",
-          "WebhookSecret": "whsec_...",
-          "TransientStatusCodes": [ 423 ]
-        }
-      }
-    }
-  }
-}
-```
-
-- The body is the message payload with its content type, and `Idempotency-Key` carries the message id, so a
-  retried request can be deduplicated. `traceparent` is always sent; `ForwardHeaders = true` adds the Twinbox
-  headers too.
-- URL placeholders: `{messageId}`, `{messageName}`, `{partitionKey}`, `{tenant}`, or any message header by name.
-  Values are URL-escaped, and a message missing one is dead-lettered.
-- 2xx is delivered. 408, 429 and 5xx, timeouts and network errors are retried, waiting at least as long as
-  `Retry-After` asks. Other statuses are dead-lettered with the status and the start of the response body.
-- `WebhookSecret` adds [Standard Webhooks](https://www.standardwebhooks.com/) signature headers, so receivers can
-  verify requests with any Standard Webhooks library.
-- Each endpoint uses the `IHttpClientFactory` client `twinbox-http:{name}`. Add auth handlers with
-  `e.ConfigureHttpClient = c => c.AddHttpMessageHandler<VendorAuthHandler>()`, or with
-  `services.AddHttpClient(HttpTransport.HttpClientName("partner-webhook"))` for endpoints defined in configuration.
-## Receiving webhooks
-
-`Twinbox.Webhooks` verifies a webhook's signature over the raw body, stores it in the outbox and answers 200 right
-away. Your handler runs afterwards through the dispatcher, with retries, and once per provider event id, so a
-provider retrying an event it already delivered doesn't run your code twice.
+`Twinbox.Webhooks` receives them: it verifies the signature (Stripe, Shopify, GitHub, Standard Webhooks or any HMAC),
+stores the webhook and answers 200 right away, then runs your handler with retries, once per provider event id.
 
 ```csharp
-builder.Services.AddTwinbox(twinbox => twinbox
-    .UseSqlServer(connectionString)
-    .AddWebhooks()
-    .AddHandler<StripeEvents, StripeEvent>());
-
 app.MapWebhookInbox<StripeEvent>("/webhooks/stripe",
     w => w.VerifyStripe(WebhookSecrets.FromConfiguration("Stripe:WebhookSecret")));
-app.MapWebhookInbox("/webhooks/github", w => w.VerifyGitHub(WebhookSecrets.Of(gitHubSecret)));
-
-public sealed record StripeEvent : WebhookReceived;
-
-public class StripeEvents : IHandle<StripeEvent>
-{
-    public Task HandleAsync(StripeEvent webhook, MessageContext context, CancellationToken ct)
-    {
-        // webhook.EventId, webhook.EventType, webhook.Body (raw JSON), webhook.Headers
-    }
-}
 ```
 
-Built-in verifiers: `VerifyStripe`, `VerifyShopify`, `VerifyGitHub`, `VerifyStandardWebhooks` (also Svix) and
-`VerifyHmac` for any header-borne HMAC; `Verify(IWebhookVerifier)` plugs in your own. Every endpoint needs one.
-Pass several secrets, or a configuration array, to rotate without dropping webhooks. Bad or stale signatures get
-401 (timestamps must be within 5 minutes where the scheme signs one), bodies over 1 MB get 413
-(`WithMaxBodySize`), and a failed write gets 500 so the provider retries. The event type and id of Shopify, GitHub
-and generic-HMAC webhooks come from headers their signatures don't cover, so don't trust them beyond routing.
-Endpoints without a derived type deliver `WebhookReceived`; handle it with `IHandle<WebhookReceived>`.
+See [HTTP transport](https://twinbox-dotnet.github.io/twinbox/articles/transports/http.html) and
+[Webhooks](https://twinbox-dotnet.github.io/twinbox/articles/webhooks.html).
 
 ## Features
 
@@ -202,130 +151,22 @@ Endpoints without a derived type deliver `WebhookReceived`; handle it with `IHan
 Payloads are JSON with camelCase property names (`JsonSerializerDefaults.Web`). Pass your own
 `JsonSerializerOptions` to `UseSerializer(new SystemTextJsonMessageSerializer(options))` if you need something else.
 
-## Azure Functions
+## Hosting and operations
 
-Functions apps (isolated worker) can't count on background services, so `Twinbox.AzureFunctions` turns them off
-and lets your own functions do the work:
-
-```csharp
-builder.Services.AddTwinbox(twinbox => twinbox
-    .UseEntityFrameworkCore<AppDbContext>()
-    .UseAzureServiceBus(serviceBusConnectionString)
-    .UseAzureFunctions()
-    .AddHandler<ShipOrderHandler, OrderPlaced>());
-
-public sealed class TwinboxFunctions(IOutboxDispatcher dispatcher, TwinboxServiceBusTrigger twinbox)
-{
-    [Function("twinbox-dispatch")]
-    public Task Dispatch([TimerTrigger("*/10 * * * * *")] TimerInfo timer, CancellationToken ct) =>
-        dispatcher.DispatchPendingAsync(ct);
-
-    [Function("orders")]
-    public Task Receive(
-        [ServiceBusTrigger("orders", Connection = "ServiceBus", AutoCompleteMessages = false)] ServiceBusReceivedMessage message,
-        ServiceBusMessageActions messageActions,
-        CancellationToken ct) =>
-        twinbox.ProcessServiceBusMessageAsync(message, messageActions, ct);
-}
-```
-
-`DispatchPendingAsync` drains the outbox until it is empty or 50 seconds have passed (pass a `TimeSpan` to change
-that). Received messages are completed on success, dead-lettered on `PermanentDeliveryException`, and abandoned on
-any other failure so Service Bus redelivers them until the entity's max delivery count. Call
-`ITwinboxMaintenance.RunCleanupAsync` from an hourly timer to apply retention. On plans with always-ready instances,
-`Twinbox:Dispatcher:Enabled = true` turns the background dispatcher back on.
-## Dashboard
-
-`Twinbox.Dashboard` serves a small operations page from your app: pending and dead counts per store and tenant,
-the age of the oldest pending message, a filterable message list, and replay or removal of dead messages.
-
-```csharp
-builder.Services.AddAuthorizationBuilder().AddPolicy("ops", p => p.RequireRole("ops"));
-
-app.MapTwinboxDashboard("/twinbox", o =>
-    {
-        o.ReadOnly = false;      // true hides replay and delete
-        o.ShowPayloads = false;  // payloads can hold personal data, so they're hidden unless you opt in
-    })
-    .RequireAuthorization("ops");
-```
-
-It refuses every request (403) until an authorization policy is attached. `o.AllowAnonymous = true` lifts that for
-local development and logs a warning. The page makes no external requests and runs under a strict Content Security
-Policy. Its POSTs need an `X-Twinbox-Csrf` header whose token is bound to the signed-in user; it's shared across
-instances when data protection keys are.
-
-The JSON API lives under the same prefix: `GET api/stats`, `GET api/messages?status=Dead&destination=&name=&search=&cursor=`,
-`GET api/messages/{id}`, `POST api/messages/replay` and `POST api/messages/delete` (`{ "ids": [...] }`), and
-`POST api/dead/replay-all` (by filter). Stores opt in to browsing by implementing `IOutboxAdmin`; every built-in
-store does.
-
-## .NET Aspire
-
-`Twinbox.Aspire` goes in your ServiceDefaults project. It adds Twinbox's trace source and meter to OpenTelemetry and
-registers the health check tagged `ready`, so it shows up on `/health` but not `/alive`. Exporters stay with your
-ServiceDefaults, and calling it twice is harmless.
-
-```csharp
-public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
-{
-    builder.ConfigureOpenTelemetry();
-    builder.AddDefaultHealthChecks();
-    builder.AddTwinboxServiceDefaults(o => o.MaxDeadMessages = 10); // o.IncludeInLiveness also tags it "live"
-    // ...
-}
-```
-
-`Twinbox.Aspire.Hosting` goes in the AppHost. It links the app's Twinbox dashboard from the Aspire dashboard and adds
-two resource commands: *Open Twinbox dashboard* and *Replay dead letters*. Both are disabled unless the resource is
-running.
-
-```csharp
-builder.AddProject<Projects.Orders>("orders")
-    .WithTwinboxDashboard("/twinbox"); // the same prefix as MapTwinboxDashboard; endpointName: picks the endpoint
-```
-
-*Replay dead letters* calls the dashboard's API from the AppHost: it fetches `api/config` for the CSRF token and then
-posts `api/dead/replay-all` for every browsable store and tenant. The replayed count goes to the resource's console
-log. The command can't sign in, so it only works when the dashboard doesn't need interactive auth. In development,
-map it with `o.AllowAnonymous = true` or a development-only policy:
-
-```csharp
-var dashboard = app.MapTwinboxDashboard("/twinbox", o => o.AllowAnonymous = app.Environment.IsDevelopment());
-if (!app.Environment.IsDevelopment())
-{
-    dashboard.RequireAuthorization("ops");
-}
-```
-
-*Open Twinbox dashboard* starts a browser on the machine running the AppHost; use the link when the Aspire dashboard is
-remote. The package targets Aspire.Hosting 9.5 or later, which serves both .NET 8 and .NET 10 AppHosts.
+- **Azure Functions:** `UseAzureFunctions()` hands dispatching, cleanup and Service Bus triggers to your own functions.
+  [Guide](https://twinbox-dotnet.github.io/twinbox/articles/azure-functions.html)
+- **Dashboard:** `app.MapTwinboxDashboard("/twinbox").RequireAuthorization("ops")` serves stats, message browsing and
+  dead-letter replay. It refuses every request until an authorization policy is attached.
+  [Guide](https://twinbox-dotnet.github.io/twinbox/articles/dashboard.html)
+- **.NET Aspire:** `builder.AddTwinboxServiceDefaults()` in ServiceDefaults and `.WithTwinboxDashboard("/twinbox")` in
+  the AppHost. [Guide](https://twinbox-dotnet.github.io/twinbox/articles/aspire.html)
 
 ## Moving over from another outbox
 
-You can switch one service at a time without a big-bang cutover:
-
-```csharp
-twinbox
-    // Keep talking to services that haven't moved yet, in both directions.
-    .UseHeaderProfile(HeaderProfile.Prefixed("legacy"))       // legacy-msg-id, legacy-msg-name
-    // Drain messages the old outbox never sent.
-    .ImportFromExistingOutbox(o =>
-    {
-        o.CreateConnection = _ => new SqlConnection(connectionString);
-        o.SelectPending = "SELECT TOP (@batch) Id, Name, Content FROM old.Published WHERE Status = 'Scheduled'";
-        o.MarkImported = "UPDATE old.Published SET Status = 'Migrated' WHERE Id = @id";
-    })
-    // Remember what the old inbox already processed, so redeliveries are skipped.
-    .SeedInboxFromExisting(o =>
-    {
-        o.CreateConnection = _ => new SqlConnection(connectionString);
-        o.SelectProcessed = "SELECT Id AS MessageId, 'MyApp.ShipOrder' AS Consumer FROM old.Received WHERE Status = 'Succeeded'";
-    });
-```
-
-Give message types their old names with `[MessageName("old.name")]`. Imported rows get deterministic ids, so if
-a row is imported twice, the inbox discards the repeat.
+Switch one service at a time: `UseHeaderProfile(...)` keeps the wire format compatible in both directions,
+`ImportFromExistingOutbox(...)` drains messages the old outbox never sent, and `SeedInboxFromExisting(...)` stops
+redeliveries of already-processed messages from running again. See the
+[migration guide](https://twinbox-dotnet.github.io/twinbox/articles/migration.html).
 
 ## Testing
 
@@ -337,8 +178,13 @@ await harness.DrainAsync();                          // dispatches and delivers 
 Assert.Single(harness.Sent<OrderPlaced>());
 ```
 
-Store authors can run `OutboxStoreConformance.Cases` from any test framework to check their store against the
-storage contract, and `OutboxAdminConformance.Cases` if it also implements `IOutboxAdmin`.
+Store authors can run `OutboxStoreConformance.Cases` and `OutboxAdminConformance.Cases` from any test framework.
+[Guide](https://twinbox-dotnet.github.io/twinbox/articles/testing.html)
+
+## Documentation
+
+Full documentation, one page per store and transport, and the API reference:
+**https://twinbox-dotnet.github.io/twinbox/**
 
 ## License
 
