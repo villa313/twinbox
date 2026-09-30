@@ -107,6 +107,52 @@ public sealed class RecordingHandler(Journal journal, FailureGate gate) : IHandl
     }
 }
 
+public sealed class BatchLog
+{
+    private readonly List<int> _sizes = [];
+
+    public IReadOnlyList<int> Sizes
+    {
+        get
+        {
+            lock (_sizes)
+            {
+                return [.. _sizes];
+            }
+        }
+    }
+
+    public void Add(int size)
+    {
+        lock (_sizes)
+        {
+            _sizes.Add(size);
+        }
+    }
+}
+
+/// <summary>Journals whole batches; a batch holding <see cref="Poison"/> fails permanently before anything is journaled.</summary>
+public sealed class RecordingBatchHandler(Journal journal, BatchLog log) : IHandleBatch<OrderPlaced>
+{
+    public const int Poison = 99;
+
+    public Task HandleAsync(IReadOnlyList<BatchItem<OrderPlaced>> batch, CancellationToken cancellationToken)
+    {
+        if (batch.Any(item => item.Message.OrderId == Poison))
+        {
+            throw new PermanentDeliveryException($"Order {Poison} can never be handled.");
+        }
+
+        log.Add(batch.Count);
+        foreach (var item in batch)
+        {
+            journal.Add(item.Message.OrderId, item.Context.PartitionKey);
+        }
+
+        return Task.CompletedTask;
+    }
+}
+
 public sealed class RejectingHandler : IHandle<OrderPlaced>
 {
     public Task HandleAsync(OrderPlaced message, MessageContext context, CancellationToken cancellationToken) =>

@@ -28,6 +28,8 @@ public static class KafkaTwinboxBuilderExtensions
             .Validate(o => o.SendTimeout > TimeSpan.Zero && o.SendTimeout.TotalMilliseconds <= int.MaxValue, "Kafka SendTimeout must be positive.")
             .Validate(o => o.RetryDelay > TimeSpan.Zero, "Kafka RetryDelay must be positive.")
             .Validate(o => o.MaxRetryDelay >= o.RetryDelay, "Kafka MaxRetryDelay cannot be shorter than RetryDelay.")
+            .Validate(o => o.MaxBatchSize > 0, "Kafka MaxBatchSize must be positive.")
+            .Validate(o => o.MaxBatchWait >= TimeSpan.Zero && o.MaxBatchWait.TotalMilliseconds <= int.MaxValue, "Kafka MaxBatchWait cannot be negative.")
             .Validate(o => o.DeadLetterTopic is null || !string.IsNullOrWhiteSpace(o.DeadLetterTopic), "Kafka DeadLetterTopic cannot be blank.");
 
         builder.Services.TryAddSingleton<KafkaClients>();

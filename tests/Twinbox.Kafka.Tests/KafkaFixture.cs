@@ -1,4 +1,5 @@
 using Confluent.Kafka;
+using Confluent.Kafka.Admin;
 using Testcontainers.Kafka;
 
 namespace Twinbox.Kafka.Tests;
@@ -38,6 +39,22 @@ public sealed class KafkaFixture : IAsyncLifetime
         finally
         {
             consumer.Close();
+        }
+    }
+
+    public async Task CreateTopicAsync(string topic, int partitions)
+    {
+        using var admin = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = BootstrapServers }).Build();
+        await admin.CreateTopicsAsync([new TopicSpecification { Name = topic, NumPartitions = partitions, ReplicationFactor = 1 }]);
+    }
+
+    /// <summary>Writes straight to one partition, so a test controls placement and can queue records before a consumer starts.</summary>
+    public async Task ProduceAsync(string topic, int partition, IEnumerable<Message<string?, byte[]>> messages)
+    {
+        using var producer = new ProducerBuilder<string?, byte[]>(new ProducerConfig { BootstrapServers = BootstrapServers }).Build();
+        foreach (var message in messages)
+        {
+            await producer.ProduceAsync(new TopicPartition(topic, partition), message);
         }
     }
 }

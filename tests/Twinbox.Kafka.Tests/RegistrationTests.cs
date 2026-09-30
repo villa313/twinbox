@@ -70,6 +70,33 @@ public sealed class RegistrationTests
         Assert.Throws<OptionsValidationException>(() => services.GetRequiredService<IOptions<KafkaOptions>>().Value);
     }
 
+    [Fact]
+    public void Batching_IsOffByDefault()
+    {
+        var options = new KafkaOptions();
+
+        Assert.Equal(1, options.MaxBatchSize);
+        Assert.Equal(TimeSpan.FromMilliseconds(50), options.MaxBatchWait);
+    }
+
+    [Theory]
+    [InlineData(0, 50)]
+    [InlineData(-1, 50)]
+    [InlineData(10, -1)]
+    public async Task InvalidBatchSettings_FailValidation(int maxBatchSize, int maxBatchWaitMilliseconds)
+    {
+        await using var services = new ServiceCollection()
+            .AddTwinbox(b => b.UseInMemoryStore().UseKafka(o =>
+            {
+                o.BootstrapServers = "localhost:9092";
+                o.MaxBatchSize = maxBatchSize;
+                o.MaxBatchWait = TimeSpan.FromMilliseconds(maxBatchWaitMilliseconds);
+            }))
+            .BuildServiceProvider();
+
+        Assert.Throws<OptionsValidationException>(() => services.GetRequiredService<IOptions<KafkaOptions>>().Value);
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
