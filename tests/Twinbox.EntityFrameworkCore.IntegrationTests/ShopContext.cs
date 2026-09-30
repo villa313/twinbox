@@ -24,6 +24,8 @@ public sealed class Order
 
 public sealed record PlaceOrder(string Reference, bool Fail = false);
 
+public sealed record ReserveStock(string Reference);
+
 public sealed record OrderPlaced(string Reference);
 
 /// <summary>Second module with its own outbox table, as in a modular monolith.</summary>

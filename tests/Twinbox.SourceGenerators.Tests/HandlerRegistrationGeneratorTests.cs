@@ -80,6 +80,19 @@ public sealed class HandlerRegistrationGeneratorTests
     }
 
     [Fact]
+    public void BatchHandler_IsRegisteredWithAddBatchHandler()
+    {
+        var result = GeneratorHarness.Run(Messages + """
+            public sealed class ImportHandler : Twinbox.IHandleBatch<OrderPlaced>
+            {
+                public Task HandleAsync(System.Collections.Generic.IReadOnlyList<Twinbox.BatchItem<OrderPlaced>> batch, CancellationToken cancellationToken) => Task.CompletedTask;
+            }
+            """);
+
+        Assert.Equal(["builder.AddBatchHandler<global::MyApp.ImportHandler, global::MyApp.OrderPlaced>();"], Registrations(result));
+    }
+
+    [Fact]
     public void NestedPublicHandler_IsRegistered()
     {
         var result = GeneratorHarness.Run(Messages + $$"""
@@ -257,5 +270,5 @@ public sealed class HandlerRegistrationGeneratorTests
         $"public Task HandleAsync({messageType} message, Twinbox.MessageContext context, CancellationToken cancellationToken) => Task.CompletedTask;";
 
     private static string[] Registrations(GeneratorResult result) =>
-        [.. result.Source!.Split('\n').Select(l => l.Trim()).Where(l => l.StartsWith("builder.AddHandler<", StringComparison.Ordinal))];
+        [.. result.Source!.Split('\n').Select(l => l.Trim()).Where(l => l.StartsWith("builder.Add", StringComparison.Ordinal))];
 }

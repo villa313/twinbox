@@ -45,7 +45,9 @@ internal static class RegistrationEmitter
 
         foreach (var (handler, message) in registrations)
         {
-            source.Append("            builder.AddHandler<").Append(handler).Append(", ").Append(message).Append(">();\n");
+            var separator = message.IndexOf('|');
+            source.Append("            builder.").Append(message.Substring(0, separator)).Append('<').Append(handler).Append(", ")
+                .Append(message.Substring(separator + 1)).Append(">();\n");
         }
 
         return source

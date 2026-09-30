@@ -1,13 +1,10 @@
 #nullable enable
-const Twinbox.InMemory.InMemoryTransport.DefaultName = "inmemory" -> string!
-static Twinbox.InMemoryTwinboxBuilderExtensions.UseInMemory(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.InMemory.InMemoryOptions!>? configure = null) -> Twinbox.TwinboxBuilder!
-static Twinbox.InMemoryTwinboxBuilderExtensions.UseInMemoryStore(this Twinbox.TwinboxBuilder! builder) -> Twinbox.TwinboxBuilder!
-static Twinbox.InMemoryTwinboxBuilderExtensions.UseInMemoryTransport(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.InMemory.InMemoryOptions!>? configure = null) -> Twinbox.TwinboxBuilder!
 Twinbox.InMemory.InMemoryInboxStore
 Twinbox.InMemory.InMemoryInboxStore.HasProcessed(string! messageId, string! consumer) -> bool
 Twinbox.InMemory.InMemoryInboxStore.InMemoryInboxStore(Twinbox.Storage.IOutboxStore! outbox, Twinbox.Storage.IDispatchSignal! signal, System.TimeProvider! time) -> void
 Twinbox.InMemory.InMemoryInboxStore.PurgeAsync(System.DateTimeOffset processedBefore, int batchSize, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
 Twinbox.InMemory.InMemoryInboxStore.TryProcessAsync(Twinbox.Storage.InboxEntry! entry, System.IServiceProvider! scopedServices, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! handler, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<bool>!
+Twinbox.InMemory.InMemoryInboxStore.TryProcessBatchAsync(System.Collections.Generic.IReadOnlyList<Twinbox.Storage.InboxEntry!>! entries, System.IServiceProvider! scopedServices, System.Func<System.Collections.Generic.IReadOnlyList<int>!, System.Threading.CancellationToken, System.Threading.Tasks.Task!>! handler, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
 Twinbox.InMemory.InMemoryOptions
 Twinbox.InMemory.InMemoryOptions.AutoDeliver.get -> bool
 Twinbox.InMemory.InMemoryOptions.AutoDeliver.set -> void
@@ -35,3 +32,7 @@ Twinbox.InMemory.InMemoryUnitOfWork
 Twinbox.InMemory.InMemoryUnitOfWork.CommitAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Twinbox.InMemory.InMemoryUnitOfWork.InMemoryUnitOfWork(Twinbox.Storage.IOutboxSession! session, Twinbox.Storage.IOutboxStore! store, Twinbox.Storage.IDispatchSignal! signal) -> void
 Twinbox.InMemoryTwinboxBuilderExtensions
+const Twinbox.InMemory.InMemoryTransport.DefaultName = "inmemory" -> string!
+static Twinbox.InMemoryTwinboxBuilderExtensions.UseInMemory(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.InMemory.InMemoryOptions!>? configure = null) -> Twinbox.TwinboxBuilder!
+static Twinbox.InMemoryTwinboxBuilderExtensions.UseInMemoryStore(this Twinbox.TwinboxBuilder! builder) -> Twinbox.TwinboxBuilder!
+static Twinbox.InMemoryTwinboxBuilderExtensions.UseInMemoryTransport(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.InMemory.InMemoryOptions!>? configure = null) -> Twinbox.TwinboxBuilder!

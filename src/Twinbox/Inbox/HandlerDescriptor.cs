@@ -20,3 +20,29 @@ internal sealed class HandlerDescriptor<THandler, TMessage>(string consumerName)
     public override Task InvokeAsync(IServiceProvider services, object message, MessageContext context, CancellationToken cancellationToken) =>
         services.GetRequiredService<THandler>().HandleAsync((TMessage)message, context, cancellationToken);
 }
+
+internal abstract class BatchHandlerDescriptor(Type messageType, string consumerName)
+    : HandlerDescriptor(messageType, consumerName)
+{
+    public abstract Task InvokeBatchAsync(
+        IServiceProvider services,
+        IReadOnlyList<(object Message, MessageContext Context)> items,
+        CancellationToken cancellationToken);
+
+    public override Task InvokeAsync(IServiceProvider services, object message, MessageContext context, CancellationToken cancellationToken) =>
+        InvokeBatchAsync(services, [(message, context)], cancellationToken);
+}
+
+internal sealed class BatchHandlerDescriptor<THandler, TMessage>(string consumerName)
+    : BatchHandlerDescriptor(typeof(TMessage), consumerName)
+    where THandler : class, IHandleBatch<TMessage>
+    where TMessage : class
+{
+    public override Task InvokeBatchAsync(
+        IServiceProvider services,
+        IReadOnlyList<(object Message, MessageContext Context)> items,
+        CancellationToken cancellationToken) =>
+        services.GetRequiredService<THandler>().HandleAsync(
+            [.. items.Select(i => new BatchItem<TMessage>((TMessage)i.Message, i.Context))],
+            cancellationToken);
+}

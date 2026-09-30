@@ -80,10 +80,10 @@ public sealed class HandlerRegistrationGenerator : IIncrementalGenerator
             return null;
         }
 
-        var messages = type.AllInterfaces
-            .Where(IsHandleInterface)
-            .Select(i => i.TypeArguments[0])
+        var handled = type.AllInterfaces
+            .Where(i => IsTwinboxInterface(i, "IHandle") || IsTwinboxInterface(i, "IHandleBatch"))
             .ToList();
+        var messages = handled.Select(i => i.TypeArguments[0]).ToList();
         if (messages.Count == 0)
         {
             return null;
@@ -98,12 +98,15 @@ public sealed class HandlerRegistrationGenerator : IIncrementalGenerator
             type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
             type.ToDisplayString(),
             kind,
-            new EquatableArray<string>(messages.Select(m => m.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)).ToArray()),
+            // Each entry is "{registration method}|{message type}" so batch handlers get AddBatchHandler.
+            new EquatableArray<string>(handled
+                .Select(i => (i.Name == "IHandleBatch" ? "AddBatchHandler" : "AddHandler") + "|" + i.TypeArguments[0].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))
+                .ToArray()),
             LocationInfo.From(((BaseTypeDeclarationSyntax)context.Node).Identifier.GetLocation()));
     }
 
-    private static bool IsHandleInterface(INamedTypeSymbol type) =>
-        type is { Name: "IHandle", Arity: 1, ContainingNamespace: { Name: "Twinbox", ContainingNamespace.IsGlobalNamespace: true } };
+    private static bool IsTwinboxInterface(INamedTypeSymbol type, string name) =>
+        type.Name == name && type is { Arity: 1, ContainingNamespace: { Name: "Twinbox", ContainingNamespace.IsGlobalNamespace: true } };
 
     private static bool IsAccessible(ITypeSymbol type) => type switch
     {

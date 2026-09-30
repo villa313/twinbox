@@ -27,21 +27,65 @@ internal sealed partial class InboundPipeline(
     public async Task ProcessAsync(IncomingMessage message, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(message);
+        using var activity = StartActivity(message);
+        if (Prepare(message) is not { } prepared)
+        {
+            return;
+        }
+
+        using var _ = TenantScope.Enter(prepared.Tenant);
+        foreach (var handler in prepared.Handlers)
+        {
+            await InvokeAsync(handler, prepared.Message, prepared.Body, prepared.Context, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    public async Task ProcessBatchAsync(IReadOnlyList<IncomingMessage> messages, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(messages);
+        var prepared = new List<PreparedMessage>(messages.Count);
+        foreach (var message in messages)
+        {
+            if (Prepare(message) is { } item)
+            {
+                prepared.Add(item);
+            }
+        }
+
+        // Grouped by type and tenant so each batch handler call stays within one tenant's database.
+        foreach (var group in prepared.GroupBy(p => (p.MessageType, p.Tenant)))
+        {
+            var items = group.ToArray();
+            using var _ = TenantScope.Enter(group.Key.Tenant);
+            foreach (var handler in items[0].Handlers)
+            {
+                if (handler is BatchHandlerDescriptor batchHandler)
+                {
+                    await InvokeBatchAsync(batchHandler, items, cancellationToken).ConfigureAwait(false);
+                    continue;
+                }
+
+                foreach (var item in items)
+                {
+                    await InvokeAsync(handler, item.Message, item.Body, item.Context, cancellationToken).ConfigureAwait(false);
+                }
+            }
+        }
+    }
+
+    /// <summary>Returns null for a message that should be acknowledged without handling (ignored unknown messages).</summary>
+    private PreparedMessage? Prepare(IncomingMessage message)
+    {
         message = headerProfiles.Read(message);
         if (string.IsNullOrEmpty(message.MessageId))
         {
             throw new PermanentDeliveryException($"A message from {message.Source} has no message id, so it can't be deduplicated.");
         }
 
-        message.Headers.TryGetValue(TransportHeaders.TraceParent, out var traceParent);
-        using var activity = TwinboxDiagnostics.StartActivity($"{message.Source} process", ActivityKind.Consumer, traceParent);
-        activity?.SetTag("messaging.message.id", message.MessageId);
-        activity?.SetTag("messaging.source.name", message.Source);
-
         if (!registry.TryResolve(message.MessageName, out var messageType))
         {
             HandleUnknown(message, "no message type is registered");
-            return;
+            return null;
         }
 
         var messageHandlers = handlers.For(messageType);
@@ -49,12 +93,9 @@ internal sealed partial class InboundPipeline(
         {
             // Acknowledging a message nobody handled would look like a successful delivery.
             HandleUnknown(message, "no handler is registered");
-            return;
+            return null;
         }
 
-        message.Headers.TryGetValue(TransportHeaders.TenantId, out var tenant);
-        using var _ = TenantScope.Enter(tenant);
-        var body = Deserialize(message, messageType);
         var context = new MessageContext(
             message.MessageId, message.MessageName, message.Source, message.Headers, message.DeliveryAttempt, message.PartitionKey)
         {
@@ -62,9 +103,61 @@ internal sealed partial class InboundPipeline(
             ReplyTo = message.Headers.GetValueOrDefault(TransportHeaders.ReplyTo),
         };
 
-        foreach (var handler in messageHandlers)
+        return new PreparedMessage(
+            message,
+            messageType,
+            Deserialize(message, messageType),
+            context,
+            message.Headers.GetValueOrDefault(TransportHeaders.TenantId),
+            messageHandlers);
+    }
+
+    private static Activity? StartActivity(IncomingMessage message)
+    {
+        message.Headers.TryGetValue(TransportHeaders.TraceParent, out var traceParent);
+        var activity = TwinboxDiagnostics.StartActivity($"{message.Source} process", ActivityKind.Consumer, traceParent);
+        activity?.SetTag("messaging.message.id", message.MessageId);
+        activity?.SetTag("messaging.source.name", message.Source);
+        return activity;
+    }
+
+    private async Task InvokeBatchAsync(BatchHandlerDescriptor handler, PreparedMessage[] items, CancellationToken cancellationToken)
+    {
+        if (inbox is not IBatchInboxStore batchInbox || !options.Value.Inbox.Enabled)
         {
-            await InvokeAsync(handler, message, body, context, cancellationToken).ConfigureAwait(false);
+            if (inbox is not null && options.Value.Inbox.Enabled)
+            {
+                // The store can only deduplicate one message at a time, so fall back to batches of one.
+                foreach (var item in items)
+                {
+                    await InvokeAsync(handler, item.Message, item.Body, item.Context, cancellationToken).ConfigureAwait(false);
+                }
+
+                return;
+            }
+
+            var unguarded = scopeFactory.CreateAsyncScope();
+            await using (unguarded.ConfigureAwait(false))
+            {
+                await handler.InvokeBatchAsync(unguarded.ServiceProvider, [.. items.Select(i => (i.Body, i.Context))], cancellationToken).ConfigureAwait(false);
+                TwinboxDiagnostics.MessagesProcessed.Add(items.Length);
+                return;
+            }
+        }
+
+        var scope = scopeFactory.CreateAsyncScope();
+        await using (scope.ConfigureAwait(false))
+        {
+            var now = time.GetUtcNow();
+            var entries = items.Select(i => new InboxEntry(i.Message.MessageId, handler.ConsumerName, i.Message.Source, now)).ToArray();
+            var processed = await batchInbox.TryProcessBatchAsync(
+                entries,
+                scope.ServiceProvider,
+                (fresh, ct) => handler.InvokeBatchAsync(scope.ServiceProvider, [.. fresh.Select(i => (items[i].Body, items[i].Context))], ct),
+                cancellationToken).ConfigureAwait(false);
+
+            TwinboxDiagnostics.MessagesProcessed.Add(processed);
+            TwinboxDiagnostics.DuplicatesSkipped.Add(items.Length - processed);
         }
     }
 
@@ -150,4 +243,12 @@ internal sealed partial class InboundPipeline(
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Ignoring message {MessageId} ('{MessageName}'): {Reason}.")]
     private partial void LogUnknownIgnored(string messageId, string messageName, string reason);
+
+    private sealed record PreparedMessage(
+        IncomingMessage Message,
+        Type MessageType,
+        object Body,
+        MessageContext Context,
+        string? Tenant,
+        IReadOnlyList<HandlerDescriptor> Handlers);
 }

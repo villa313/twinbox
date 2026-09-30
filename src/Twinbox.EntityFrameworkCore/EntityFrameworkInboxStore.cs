@@ -7,7 +7,7 @@ using Twinbox.Tenancy;
 
 namespace Twinbox.EntityFrameworkCore;
 
-internal sealed class EntityFrameworkInboxStore<TContext>(TwinboxScopeFactory scopeFactory) : IInboxStore
+internal sealed class EntityFrameworkInboxStore<TContext>(TwinboxScopeFactory scopeFactory) : IInboxStore, IBatchInboxStore
     where TContext : DbContext
 {
     public async Task<bool> TryProcessAsync(
@@ -44,6 +44,53 @@ internal sealed class EntityFrameworkInboxStore<TContext>(TwinboxScopeFactory sc
                     await context.SaveChangesAsync(ct).ConfigureAwait(false);
                     await transaction.CommitAsync(ct).ConfigureAwait(false);
                     return true;
+                }
+            },
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<int> TryProcessBatchAsync(
+        IReadOnlyList<InboxEntry> entries,
+        IServiceProvider scopedServices,
+        Func<IReadOnlyList<int>, CancellationToken, Task> handler,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(entries);
+        ArgumentNullException.ThrowIfNull(scopedServices);
+        ArgumentNullException.ThrowIfNull(handler);
+
+        var context = scopedServices.GetRequiredService<TContext>();
+        var session = scopedServices.GetRequiredService<IOutboxSession>();
+        var strategy = context.Database.CreateExecutionStrategy();
+
+        return await strategy.ExecuteAsync(
+            async ct =>
+            {
+                context.ChangeTracker.Clear();
+                session.TakePending();
+
+                var transaction = await context.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
+                await using (transaction.ConfigureAwait(false))
+                {
+                    var fresh = new List<int>();
+                    for (var i = 0; i < entries.Count; i++)
+                    {
+                        if (await TryInsertAsync(context, entries[i], ct).ConfigureAwait(false))
+                        {
+                            fresh.Add(i);
+                        }
+                    }
+
+                    if (fresh.Count == 0)
+                    {
+                        await transaction.RollbackAsync(ct).ConfigureAwait(false);
+                        return 0;
+                    }
+
+                    await handler(fresh, ct).ConfigureAwait(false);
+                    await context.SaveChangesAsync(ct).ConfigureAwait(false);
+                    await transaction.CommitAsync(ct).ConfigureAwait(false);
+                    return fresh.Count;
                 }
             },
             cancellationToken).ConfigureAwait(false);

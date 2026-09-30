@@ -1,6 +1,15 @@
 #nullable enable
+Twinbox.BatchItem<TMessage>
+Twinbox.BatchItem<TMessage>.BatchItem(TMessage! Message, Twinbox.MessageContext! Context) -> void
+Twinbox.BatchItem<TMessage>.Context.get -> Twinbox.MessageContext!
+Twinbox.BatchItem<TMessage>.Context.init -> void
+Twinbox.BatchItem<TMessage>.Deconstruct(out TMessage! Message, out Twinbox.MessageContext! Context) -> void
+Twinbox.BatchItem<TMessage>.Message.get -> TMessage!
+Twinbox.BatchItem<TMessage>.Message.init -> void
 Twinbox.IHandle<TMessage>
 Twinbox.IHandle<TMessage>.HandleAsync(TMessage! message, Twinbox.MessageContext! context, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.IHandleBatch<TMessage>
+Twinbox.IHandleBatch<TMessage>.HandleAsync(System.Collections.Generic.IReadOnlyList<Twinbox.BatchItem<TMessage!>!>! batch, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.IMessageFilter
 Twinbox.IMessageFilter.InvokeAsync(object! message, Twinbox.MessageContext! context, System.Func<System.Threading.Tasks.Task!>! continuation, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.IOutbox
@@ -49,6 +58,9 @@ Twinbox.SendOptions.ReplyTo.init -> void
 Twinbox.SendOptions.SendOptions() -> void
 Twinbox.SendOptions.Transport.get -> string?
 Twinbox.SendOptions.Transport.init -> void
+override Twinbox.BatchItem<TMessage>.Equals(object? obj) -> bool
+override Twinbox.BatchItem<TMessage>.GetHashCode() -> int
+override Twinbox.BatchItem<TMessage>.ToString() -> string!
 override Twinbox.MessageContext.Equals(object? obj) -> bool
 override Twinbox.MessageContext.GetHashCode() -> int
 override Twinbox.MessageContext.ToString() -> string!
@@ -59,3 +71,7 @@ static Twinbox.MessageContext.operator !=(Twinbox.MessageContext? left, Twinbox.
 static Twinbox.MessageContext.operator ==(Twinbox.MessageContext? left, Twinbox.MessageContext? right) -> bool
 static Twinbox.SendOptions.operator !=(Twinbox.SendOptions? left, Twinbox.SendOptions? right) -> bool
 static Twinbox.SendOptions.operator ==(Twinbox.SendOptions? left, Twinbox.SendOptions? right) -> bool
+~Twinbox.BatchItem<TMessage>.<Clone>$() -> Twinbox.BatchItem<TMessage>!
+~Twinbox.BatchItem<TMessage>.Equals(Twinbox.BatchItem<TMessage>? other) -> bool
+~static Twinbox.BatchItem<TMessage>.operator !=(Twinbox.BatchItem<TMessage>? left, Twinbox.BatchItem<TMessage>? right) -> bool
+~static Twinbox.BatchItem<TMessage>.operator ==(Twinbox.BatchItem<TMessage>? left, Twinbox.BatchItem<TMessage>? right) -> bool

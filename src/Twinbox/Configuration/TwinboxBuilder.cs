@@ -38,6 +38,18 @@ public sealed class TwinboxBuilder
         return this;
     }
 
+    /// <summary>The consumer name is the handler's inbox identity; keep it stable across renames to preserve deduplication.</summary>
+    public TwinboxBuilder AddBatchHandler<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler, TMessage>(string? consumerName = null)
+        where THandler : class, IHandleBatch<TMessage>
+        where TMessage : class
+    {
+        MessageTypes.GetOrAdd(typeof(TMessage));
+        Services.TryAddScoped<THandler>();
+        Services.AddSingleton<HandlerDescriptor>(
+            new BatchHandlerDescriptor<THandler, TMessage>(consumerName ?? ConsumerNames.For(typeof(THandler))));
+        return this;
+    }
+
     /// <summary>Registers <typeparamref name="THandler"/> for every <see cref="IHandle{TMessage}"/> it implements.</summary>
     [RequiresDynamicCode("Closes generic handler types at runtime. Use AddHandler<THandler, TMessage>() for Native AOT.")]
     [RequiresUnreferencedCode("Closes generic handler types at runtime. Use AddHandler<THandler, TMessage>() for trimmed apps.")]

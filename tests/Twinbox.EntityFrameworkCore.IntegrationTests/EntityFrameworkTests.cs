@@ -147,6 +147,18 @@ public abstract class EntityFrameworkTests<TFixture>(TFixture database) : IClass
     }
 
     [Fact]
+    public async Task Inbox_Batch_SkipsDuplicatesAndCommitsTogether()
+    {
+        await using var services = BuildServices();
+        var pipeline = services.GetRequiredService<IInboundPipeline>();
+
+        await pipeline.ProcessBatchAsync([Reserve("s-1", "R-1"), Reserve("s-2", "R-2")], default);
+        await pipeline.ProcessBatchAsync([Reserve("s-2", "R-2"), Reserve("s-3", "R-3")], default);
+
+        Assert.Equal(3, await CountOrdersAsync(services));
+    }
+
+    [Fact]
     public async Task Inbox_ConcurrentDuplicates_AreHandledOnce()
     {
         await using var services = BuildServices();
@@ -240,6 +252,7 @@ public abstract class EntityFrameworkTests<TFixture>(TFixture database) : IClass
             .UseInMemoryTransport(o => o.AutoDeliver = false)
             .Route<OrderPlaced>().To("orders")
             .AddHandler<PlaceOrderHandler, PlaceOrder>()
+            .AddBatchHandler<ReserveStockHandler, ReserveStock>()
             .Configure(o =>
             {
                 o.Dispatcher.Enabled = false;
@@ -277,6 +290,16 @@ public abstract class EntityFrameworkTests<TFixture>(TFixture database) : IClass
         return await scope.ServiceProvider.GetRequiredService<ShopContext>().Orders.CountAsync();
     }
 
+    private static IncomingMessage Reserve(string id, string reference) => new(
+        id,
+        nameof(ReserveStock),
+        "stock",
+        Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(new ReserveStock(reference), WebJson)),
+        "application/json",
+        new Dictionary<string, string>(),
+        1,
+        null);
+
     private static IncomingMessage Incoming(string id, PlaceOrder message) => new(
         id,
         nameof(PlaceOrder),
@@ -286,6 +309,15 @@ public abstract class EntityFrameworkTests<TFixture>(TFixture database) : IClass
         new Dictionary<string, string>(),
         1,
         null);
+
+    public sealed class ReserveStockHandler(ShopContext db) : IHandleBatch<ReserveStock>
+    {
+        public Task HandleAsync(IReadOnlyList<BatchItem<ReserveStock>> batch, CancellationToken cancellationToken)
+        {
+            db.Orders.AddRange(batch.Select(b => new Order { Reference = b.Message.Reference }));
+            return Task.CompletedTask;
+        }
+    }
 
     public sealed class PlaceOrderHandler(ShopContext db, IOutbox outbox) : IHandle<PlaceOrder>
     {

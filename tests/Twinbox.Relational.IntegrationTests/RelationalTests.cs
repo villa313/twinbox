@@ -107,6 +107,18 @@ public abstract class RelationalTests<TDatabase>(TDatabase database) : IClassFix
     }
 
     [Fact]
+    public async Task Inbox_Batch_SkipsDuplicatesAndCommitsTogether()
+    {
+        await using var services = await StartAsync();
+        var pipeline = services.GetRequiredService<IInboundPipeline>();
+
+        await pipeline.ProcessBatchAsync([Reserve("s-1", "R-1"), Reserve("s-2", "R-2")], default);
+        await pipeline.ProcessBatchAsync([Reserve("s-2", "R-2"), Reserve("s-3", "R-3")], default);
+
+        Assert.Equal(3, await CountAsync("orders"));
+    }
+
+    [Fact]
     public async Task Inbox_ConcurrentDuplicates_AreHandledOnce()
     {
         await using var services = await StartAsync();
@@ -175,6 +187,7 @@ public abstract class RelationalTests<TDatabase>(TDatabase database) : IClassFix
             b.UseInMemoryTransport(o => o.AutoDeliver = false)
                 .Route<OrderPlaced>().To("orders")
                 .AddHandler<PlaceOrderHandler, PlaceOrder>()
+                .AddBatchHandler<ReserveStockHandler, ReserveStock>()
                 .Configure(o =>
                 {
                     o.Dispatcher.Enabled = false;
@@ -209,6 +222,16 @@ public abstract class RelationalTests<TDatabase>(TDatabase database) : IClassFix
         _ => $"messaging.\"{name}\"",
     };
 
+    private static IncomingMessage Reserve(string id, string reference) => new(
+        id,
+        nameof(ReserveStock),
+        "stock",
+        Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new ReserveStock(reference), WebJson)),
+        "application/json",
+        new Dictionary<string, string>(),
+        1,
+        null);
+
     private static IncomingMessage Incoming(string id, PlaceOrder message) => new(
         id,
         nameof(PlaceOrder),
@@ -218,6 +241,17 @@ public abstract class RelationalTests<TDatabase>(TDatabase database) : IClassFix
         new Dictionary<string, string>(),
         1,
         null);
+
+    public sealed class ReserveStockHandler(HandlerTransaction transaction, Database database) : IHandleBatch<ReserveStock>
+    {
+        public async Task HandleAsync(IReadOnlyList<BatchItem<ReserveStock>> batch, CancellationToken cancellationToken)
+        {
+            foreach (var item in batch)
+            {
+                await transaction.Connection.ExecuteAsync(database.InsertOrder, new { reference = item.Message.Reference }, transaction.Transaction);
+            }
+        }
+    }
 
     public sealed class PlaceOrderHandler(HandlerTransaction transaction, IOutbox outbox, Database database) : IHandle<PlaceOrder>
     {
@@ -237,6 +271,8 @@ public abstract class RelationalTests<TDatabase>(TDatabase database) : IClassFix
 }
 
 public sealed record PlaceOrder(string Reference, bool Fail = false);
+
+public sealed record ReserveStock(string Reference);
 
 public sealed record OrderPlaced(string Reference);
 

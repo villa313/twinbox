@@ -118,6 +118,8 @@ Twinbox.Storage.DispatchOutcome.SentAt.get -> System.DateTimeOffset?
 Twinbox.Storage.DispatchOutcome.SentAt.init -> void
 Twinbox.Storage.DispatchOutcome.Status.get -> Twinbox.Storage.OutboxMessageStatus
 Twinbox.Storage.DispatchOutcome.Status.init -> void
+Twinbox.Storage.IBatchInboxStore
+Twinbox.Storage.IBatchInboxStore.TryProcessBatchAsync(System.Collections.Generic.IReadOnlyList<Twinbox.Storage.InboxEntry!>! entries, System.IServiceProvider! scopedServices, System.Func<System.Collections.Generic.IReadOnlyList<int>!, System.Threading.CancellationToken, System.Threading.Tasks.Task!>! handler, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
 Twinbox.Storage.IDispatchSignal
 Twinbox.Storage.IDispatchSignal.Notify() -> void
 Twinbox.Storage.IInboxStore
@@ -268,6 +270,7 @@ Twinbox.Transport.HeaderProfile.SentTime.get -> string?
 Twinbox.Transport.HeaderProfile.SentTime.init -> void
 Twinbox.Transport.IInboundPipeline
 Twinbox.Transport.IInboundPipeline.ProcessAsync(Twinbox.Transport.IncomingMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.Transport.IInboundPipeline.ProcessBatchAsync(System.Collections.Generic.IReadOnlyList<Twinbox.Transport.IncomingMessage!>! messages, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.Transport.ITransport
 Twinbox.Transport.ITransport.Name.get -> string!
 Twinbox.Transport.ITransport.SendAsync(Twinbox.Transport.TransportMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
@@ -317,6 +320,7 @@ Twinbox.Transport.TransportMessage.PartitionKey.get -> string?
 Twinbox.Transport.TransportMessage.PartitionKey.init -> void
 Twinbox.Transport.TransportMessage.TransportMessage(string! MessageId, string! MessageName, string! Destination, System.ReadOnlyMemory<byte> Body, string! ContentType, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Headers, string? PartitionKey) -> void
 Twinbox.TwinboxBuilder
+Twinbox.TwinboxBuilder.AddBatchHandler<THandler, TMessage>(string? consumerName = null) -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.AddFilter<TFilter>() -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.AddHandler<THandler, TMessage>(string? consumerName = null) -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.AddHandler<THandler>(string? consumerName = null) -> Twinbox.TwinboxBuilder!
