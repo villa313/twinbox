@@ -4,8 +4,15 @@ namespace Twinbox.Transport;
 /// Delivers straight to this app's own handlers, so the outbox gives durable in-process events without a broker:
 /// a handler failure fails the send and the message is retried from the outbox.
 /// </summary>
-internal sealed class LocalTransport(IInboundPipeline pipeline) : ITransport
+public sealed class LocalTransport : ITransport
 {
+    private readonly IInboundPipeline _pipeline;
+
+    internal LocalTransport(IInboundPipeline pipeline)
+    {
+        _pipeline = pipeline;
+    }
+
     public const string TransportName = "local";
 
     public string Name => TransportName;
@@ -14,7 +21,7 @@ internal sealed class LocalTransport(IInboundPipeline pipeline) : ITransport
     {
         ArgumentNullException.ThrowIfNull(message);
         message.Headers.TryGetValue(TransportHeaders.DeliveryAttempt, out var attempt);
-        return pipeline.ProcessAsync(
+        return _pipeline.ProcessAsync(
             new IncomingMessage(
                 message.MessageId,
                 message.MessageName,

@@ -42,7 +42,7 @@ internal sealed class DashboardStores
 
     public static async Task<T> InTenantAsync<T>(string? tenant, Func<Task<T>> action)
     {
-        using var _ = TenantScope.Enter(tenant);
+        using var _ = TenantDirectory.Enter(tenant);
         return await action().ConfigureAwait(false);
     }
 

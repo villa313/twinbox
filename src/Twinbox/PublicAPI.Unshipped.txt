@@ -39,6 +39,8 @@ Twinbox.HandlerTransaction.IsActive.get -> bool
 Twinbox.HandlerTransaction.Transaction.get -> System.Data.Common.DbTransaction!
 Twinbox.IDeadLetterObserver
 Twinbox.IDeadLetterObserver.OnDeadLetteredAsync(Twinbox.Storage.OutboxMessage! message, System.Exception! exception, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.IMessageNames
+Twinbox.IMessageNames.GetName(System.Type! messageType) -> string!
 Twinbox.IOutboxDispatcher
 Twinbox.IOutboxDispatcher.DispatchBatchAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
 Twinbox.InboxOptions
@@ -270,6 +272,7 @@ Twinbox.Storage.Uuid7MessageIdGenerator.Uuid7MessageIdGenerator() -> void
 Twinbox.Tenancy.TenantDirectory
 Twinbox.Tenancy.TenantDirectory.Dispose() -> void
 Twinbox.Tenancy.TenantDirectory.ForEachTenantAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! action, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.Tenancy.TenantDirectory.GetTenantsAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyCollection<string?>!>!
 Twinbox.Tenancy.TenantDirectory.TenantDirectory(Twinbox.Tenancy.TwinboxScopeFactory! scopes, System.TimeProvider! time, Twinbox.TenancyOptions? tenancy = null) -> void
 Twinbox.Tenancy.TwinboxScopeFactory
 Twinbox.Tenancy.TwinboxScopeFactory.CreateAsyncScope() -> Microsoft.Extensions.DependencyInjection.AsyncServiceScope
@@ -327,6 +330,9 @@ Twinbox.Transport.IncomingMessage.PartitionKey.get -> string?
 Twinbox.Transport.IncomingMessage.PartitionKey.init -> void
 Twinbox.Transport.IncomingMessage.Source.get -> string!
 Twinbox.Transport.IncomingMessage.Source.init -> void
+Twinbox.Transport.LocalTransport
+Twinbox.Transport.LocalTransport.Name.get -> string!
+Twinbox.Transport.LocalTransport.SendAsync(Twinbox.Transport.TransportMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.Transport.PermanentDeliveryException
 Twinbox.Transport.PermanentDeliveryException.PermanentDeliveryException() -> void
 Twinbox.Transport.PermanentDeliveryException.PermanentDeliveryException(string! message) -> void
@@ -392,6 +398,7 @@ Twinbox.UnknownMessagePolicy
 Twinbox.UnknownMessagePolicy.DeadLetter = 0 -> Twinbox.UnknownMessagePolicy
 Twinbox.UnknownMessagePolicy.Ignore = 1 -> Twinbox.UnknownMessagePolicy
 const Twinbox.Diagnostics.TwinboxDiagnostics.SourceName = "Twinbox" -> string!
+const Twinbox.Transport.LocalTransport.TransportName = "local" -> string!
 const Twinbox.Transport.TransportHeaders.CorrelationId = "twinbox-correlation-id" -> string!
 const Twinbox.Transport.TransportHeaders.DeliveryAttempt = "twinbox-delivery-attempt" -> string!
 const Twinbox.Transport.TransportHeaders.MessageId = "twinbox-message-id" -> string!
@@ -457,6 +464,7 @@ static Twinbox.Storage.OutboxQuery.operator !=(Twinbox.Storage.OutboxQuery? left
 static Twinbox.Storage.OutboxQuery.operator ==(Twinbox.Storage.OutboxQuery? left, Twinbox.Storage.OutboxQuery? right) -> bool
 static Twinbox.Storage.OutboxStatistics.operator !=(Twinbox.Storage.OutboxStatistics? left, Twinbox.Storage.OutboxStatistics? right) -> bool
 static Twinbox.Storage.OutboxStatistics.operator ==(Twinbox.Storage.OutboxStatistics? left, Twinbox.Storage.OutboxStatistics? right) -> bool
+static Twinbox.Tenancy.TenantDirectory.Enter(string? tenant) -> System.IDisposable!
 static Twinbox.TransactionalOutboxExtensions.CommitAsync(this Twinbox.IOutbox! outbox, System.Data.Common.DbTransaction! transaction, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 static Twinbox.TransactionalOutboxExtensions.SaveAsync(this Twinbox.IOutbox! outbox, System.Data.Common.DbTransaction! transaction, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 static Twinbox.Transport.HeaderProfile.CloudEvents(string! source, string! prefix = "ce-") -> Twinbox.Transport.HeaderProfile!

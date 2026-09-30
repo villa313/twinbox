@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace Twinbox.Messaging;
 
-internal sealed class MessageTypeRegistry
+internal sealed class MessageTypeRegistry : IMessageNames
 {
     private readonly ConcurrentDictionary<Type, string> _names = new();
     private readonly ConcurrentDictionary<string, Type> _types = new(StringComparer.Ordinal);
@@ -30,6 +30,8 @@ internal sealed class MessageTypeRegistry
             return name;
         }
     }
+
+    public string GetName(Type messageType) => GetOrAdd(messageType);
 
     public bool TryResolve(string name, out Type messageType) =>
         _types.TryGetValue(name, out messageType!);

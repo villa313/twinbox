@@ -28,6 +28,7 @@ public static class TwinboxServiceCollectionExtensions
         {
             services.AddSingleton(builder.Routes);
             services.AddSingleton(builder.MessageTypes);
+            services.AddSingleton<IMessageNames>(builder.MessageTypes);
         }
 
         services.TryAddSingleton(TimeProvider.System);

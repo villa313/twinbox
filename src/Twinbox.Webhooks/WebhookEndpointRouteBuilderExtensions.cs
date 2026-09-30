@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
-using Twinbox.Messaging;
+using Twinbox;
 using Twinbox.Webhooks;
 
 namespace Microsoft.AspNetCore.Builder;
@@ -42,7 +42,7 @@ public static class WebhookEndpointRouteBuilderExtensions
             options.ForwardedHeaders,
             options.MaxBodySize,
             // Registering the name here lets the inbound pipeline resolve it even if only a base-type handler exists.
-            services.GetRequiredService<MessageTypeRegistry>().GetOrAdd(typeof(TWebhook)),
+            services.GetRequiredService<IMessageNames>().GetName(typeof(TWebhook)),
             typeof(TWebhook),
             new TWebhook());
 

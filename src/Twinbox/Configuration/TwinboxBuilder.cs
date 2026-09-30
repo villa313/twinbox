@@ -85,7 +85,7 @@ public sealed class TwinboxBuilder
     /// </summary>
     public TwinboxBuilder UseLocalDelivery()
     {
-        Services.TryAddEnumerable(ServiceDescriptor.Singleton<ITransport, LocalTransport>());
+        Services.TryAddEnumerable(ServiceDescriptor.Singleton<ITransport, LocalTransport>(sp => new LocalTransport(sp.GetRequiredService<IInboundPipeline>())));
         return this;
     }
 

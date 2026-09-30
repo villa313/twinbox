@@ -23,8 +23,11 @@ public sealed class TenantDirectory(TwinboxScopeFactory scopes, TimeProvider tim
         }
     }
 
+    /// <summary>Makes <paramref name="tenant"/> current until disposed, so Twinbox scopes and stores resolve its services.</summary>
+    public static IDisposable Enter(string? tenant) => TenantScope.Enter(tenant);
+
     /// <summary>Returns a single null entry when tenancy isn't configured, so callers can always loop.</summary>
-    internal async Task<IReadOnlyCollection<string?>> GetTenantsAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<string?>> GetTenantsAsync(CancellationToken cancellationToken)
     {
         if (tenancy?.ListTenants is not { } list)
         {
