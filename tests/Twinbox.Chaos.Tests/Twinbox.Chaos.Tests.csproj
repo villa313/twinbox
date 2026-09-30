@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- One target: these tests exercise delivery guarantees rather than framework compatibility, and a run takes minutes. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Serial: faults are timing-sensitive and some tests stop the containers other tests would be using. -->
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Dapper" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Testcontainers.MsSql" />
+    <PackageReference Include="Testcontainers.RabbitMq" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Twinbox.PostgreSql/Twinbox.PostgreSql.csproj" />
+    <ProjectReference Include="../../src/Twinbox.SqlServer/Twinbox.SqlServer.csproj" />
+    <ProjectReference Include="../../src/Twinbox.RabbitMQ/Twinbox.RabbitMQ.csproj" />
+  </ItemGroup>
+</Project>

@@ -36,6 +36,7 @@
     <Project Path="tests/Twinbox.Aspire.Tests/Twinbox.Aspire.Tests.csproj" />
     <Project Path="tests/Twinbox.RabbitMQ.Tests/Twinbox.RabbitMQ.Tests.csproj" />
     <Project Path="tests/Twinbox.AzureFunctions.Tests/Twinbox.AzureFunctions.Tests.csproj" />
+    <Project Path="tests/Twinbox.Chaos.Tests/Twinbox.Chaos.Tests.csproj" />
     <Project Path="tests/Twinbox.AzureServiceBus.Tests/Twinbox.AzureServiceBus.Tests.csproj" />
     <Project Path="tests/Twinbox.Http.Tests/Twinbox.Http.Tests.csproj" />
     <Project Path="tests/Twinbox.EventHubs.Tests/Twinbox.EventHubs.Tests.csproj" />
