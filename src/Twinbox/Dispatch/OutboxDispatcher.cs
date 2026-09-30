@@ -189,7 +189,13 @@ internal sealed partial class OutboxDispatcher(
         }
 
         breaker.RecordFailure(now);
-        var availableAt = now + RetrySchedule.GetDelay(retry, attempts, Random.Shared);
+        var delay = RetrySchedule.GetDelay(retry, attempts, Random.Shared);
+        if (error is RetryAfterException { RetryAfter: var retryAfter } && retryAfter > delay)
+        {
+            delay = retryAfter;
+        }
+
+        var availableAt = now + delay;
         LogSendFailed(error, message.Id, message.Destination, attempts, availableAt);
         return new DispatchOutcome(message.Id, OutboxMessageStatus.Pending, attempts, AvailableAt: availableAt, Error: Describe(error));
     }

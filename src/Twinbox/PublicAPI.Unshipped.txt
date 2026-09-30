@@ -127,6 +127,11 @@ Twinbox.Storage.IInboxStore.PurgeAsync(System.DateTimeOffset processedBefore, in
 Twinbox.Storage.IInboxStore.TryProcessAsync(Twinbox.Storage.InboxEntry! entry, System.IServiceProvider! scopedServices, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! handler, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<bool>!
 Twinbox.Storage.IMessageIdGenerator
 Twinbox.Storage.IMessageIdGenerator.NewId(System.DateTimeOffset now) -> System.Guid
+Twinbox.Storage.IOutboxAdmin
+Twinbox.Storage.IOutboxAdmin.DeleteAsync(System.Collections.Generic.IReadOnlyCollection<System.Guid>! ids, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
+Twinbox.Storage.IOutboxAdmin.GetAsync(System.Guid id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Twinbox.Storage.OutboxMessage?>!
+Twinbox.Storage.IOutboxAdmin.QueryAsync(Twinbox.Storage.OutboxQuery! query, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Twinbox.Storage.OutboxPage!>!
+Twinbox.Storage.IOutboxAdmin.ReplayAsync(System.Collections.Generic.IReadOnlyCollection<System.Guid>! ids, System.DateTimeOffset now, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
 Twinbox.Storage.IOutboxSession
 Twinbox.Storage.IOutboxSession.HasPending.get -> bool
 Twinbox.Storage.IOutboxSession.Services.get -> System.IServiceProvider!
@@ -210,6 +215,15 @@ Twinbox.Storage.OutboxMessageStatus.Dead = 3 -> Twinbox.Storage.OutboxMessageSta
 Twinbox.Storage.OutboxMessageStatus.Pending = 0 -> Twinbox.Storage.OutboxMessageStatus
 Twinbox.Storage.OutboxMessageStatus.Processing = 1 -> Twinbox.Storage.OutboxMessageStatus
 Twinbox.Storage.OutboxMessageStatus.Sent = 2 -> Twinbox.Storage.OutboxMessageStatus
+Twinbox.Storage.OutboxPage
+Twinbox.Storage.OutboxPage.<Clone>$() -> Twinbox.Storage.OutboxPage!
+Twinbox.Storage.OutboxPage.Deconstruct(out System.Collections.Generic.IReadOnlyList<Twinbox.Storage.OutboxMessage!>! Messages, out string? NextCursor) -> void
+Twinbox.Storage.OutboxPage.Equals(Twinbox.Storage.OutboxPage? other) -> bool
+Twinbox.Storage.OutboxPage.Messages.get -> System.Collections.Generic.IReadOnlyList<Twinbox.Storage.OutboxMessage!>!
+Twinbox.Storage.OutboxPage.Messages.init -> void
+Twinbox.Storage.OutboxPage.NextCursor.get -> string?
+Twinbox.Storage.OutboxPage.NextCursor.init -> void
+Twinbox.Storage.OutboxPage.OutboxPage(System.Collections.Generic.IReadOnlyList<Twinbox.Storage.OutboxMessage!>! Messages, string? NextCursor) -> void
 Twinbox.Storage.OutboxPurge
 Twinbox.Storage.OutboxPurge.<Clone>$() -> Twinbox.Storage.OutboxPurge!
 Twinbox.Storage.OutboxPurge.BatchSize.get -> int
@@ -221,6 +235,22 @@ Twinbox.Storage.OutboxPurge.Equals(Twinbox.Storage.OutboxPurge? other) -> bool
 Twinbox.Storage.OutboxPurge.OutboxPurge(System.DateTimeOffset SentBefore, System.DateTimeOffset? DeadBefore, int BatchSize) -> void
 Twinbox.Storage.OutboxPurge.SentBefore.get -> System.DateTimeOffset
 Twinbox.Storage.OutboxPurge.SentBefore.init -> void
+Twinbox.Storage.OutboxQuery
+Twinbox.Storage.OutboxQuery.<Clone>$() -> Twinbox.Storage.OutboxQuery!
+Twinbox.Storage.OutboxQuery.Cursor.get -> string?
+Twinbox.Storage.OutboxQuery.Cursor.init -> void
+Twinbox.Storage.OutboxQuery.Destination.get -> string?
+Twinbox.Storage.OutboxQuery.Destination.init -> void
+Twinbox.Storage.OutboxQuery.Equals(Twinbox.Storage.OutboxQuery? other) -> bool
+Twinbox.Storage.OutboxQuery.MessageName.get -> string?
+Twinbox.Storage.OutboxQuery.MessageName.init -> void
+Twinbox.Storage.OutboxQuery.OutboxQuery() -> void
+Twinbox.Storage.OutboxQuery.Search.get -> string?
+Twinbox.Storage.OutboxQuery.Search.init -> void
+Twinbox.Storage.OutboxQuery.Status.get -> Twinbox.Storage.OutboxMessageStatus?
+Twinbox.Storage.OutboxQuery.Status.init -> void
+Twinbox.Storage.OutboxQuery.Take.get -> int
+Twinbox.Storage.OutboxQuery.Take.init -> void
 Twinbox.Storage.OutboxStatistics
 Twinbox.Storage.OutboxStatistics.<Clone>$() -> Twinbox.Storage.OutboxStatistics!
 Twinbox.Storage.OutboxStatistics.DeadCount.get -> long
@@ -299,6 +329,12 @@ Twinbox.Transport.PermanentDeliveryException
 Twinbox.Transport.PermanentDeliveryException.PermanentDeliveryException() -> void
 Twinbox.Transport.PermanentDeliveryException.PermanentDeliveryException(string! message) -> void
 Twinbox.Transport.PermanentDeliveryException.PermanentDeliveryException(string! message, System.Exception! innerException) -> void
+Twinbox.Transport.RetryAfterException
+Twinbox.Transport.RetryAfterException.RetryAfter.get -> System.TimeSpan
+Twinbox.Transport.RetryAfterException.RetryAfterException() -> void
+Twinbox.Transport.RetryAfterException.RetryAfterException(string! message) -> void
+Twinbox.Transport.RetryAfterException.RetryAfterException(string! message, System.Exception! innerException) -> void
+Twinbox.Transport.RetryAfterException.RetryAfterException(string! message, System.TimeSpan retryAfter) -> void
 Twinbox.Transport.TransportHeaders
 Twinbox.Transport.TransportMessage
 Twinbox.Transport.TransportMessage.<Clone>$() -> Twinbox.Transport.TransportMessage!
@@ -375,9 +411,15 @@ override Twinbox.Storage.OutboxClaim.ToString() -> string!
 override Twinbox.Storage.OutboxMessage.Equals(object? obj) -> bool
 override Twinbox.Storage.OutboxMessage.GetHashCode() -> int
 override Twinbox.Storage.OutboxMessage.ToString() -> string!
+override Twinbox.Storage.OutboxPage.Equals(object? obj) -> bool
+override Twinbox.Storage.OutboxPage.GetHashCode() -> int
+override Twinbox.Storage.OutboxPage.ToString() -> string!
 override Twinbox.Storage.OutboxPurge.Equals(object? obj) -> bool
 override Twinbox.Storage.OutboxPurge.GetHashCode() -> int
 override Twinbox.Storage.OutboxPurge.ToString() -> string!
+override Twinbox.Storage.OutboxQuery.Equals(object? obj) -> bool
+override Twinbox.Storage.OutboxQuery.GetHashCode() -> int
+override Twinbox.Storage.OutboxQuery.ToString() -> string!
 override Twinbox.Storage.OutboxStatistics.Equals(object? obj) -> bool
 override Twinbox.Storage.OutboxStatistics.GetHashCode() -> int
 override Twinbox.Storage.OutboxStatistics.ToString() -> string!
@@ -405,8 +447,12 @@ static Twinbox.Storage.OutboxClaim.operator !=(Twinbox.Storage.OutboxClaim? left
 static Twinbox.Storage.OutboxClaim.operator ==(Twinbox.Storage.OutboxClaim? left, Twinbox.Storage.OutboxClaim? right) -> bool
 static Twinbox.Storage.OutboxMessage.operator !=(Twinbox.Storage.OutboxMessage? left, Twinbox.Storage.OutboxMessage? right) -> bool
 static Twinbox.Storage.OutboxMessage.operator ==(Twinbox.Storage.OutboxMessage? left, Twinbox.Storage.OutboxMessage? right) -> bool
+static Twinbox.Storage.OutboxPage.operator !=(Twinbox.Storage.OutboxPage? left, Twinbox.Storage.OutboxPage? right) -> bool
+static Twinbox.Storage.OutboxPage.operator ==(Twinbox.Storage.OutboxPage? left, Twinbox.Storage.OutboxPage? right) -> bool
 static Twinbox.Storage.OutboxPurge.operator !=(Twinbox.Storage.OutboxPurge? left, Twinbox.Storage.OutboxPurge? right) -> bool
 static Twinbox.Storage.OutboxPurge.operator ==(Twinbox.Storage.OutboxPurge? left, Twinbox.Storage.OutboxPurge? right) -> bool
+static Twinbox.Storage.OutboxQuery.operator !=(Twinbox.Storage.OutboxQuery? left, Twinbox.Storage.OutboxQuery? right) -> bool
+static Twinbox.Storage.OutboxQuery.operator ==(Twinbox.Storage.OutboxQuery? left, Twinbox.Storage.OutboxQuery? right) -> bool
 static Twinbox.Storage.OutboxStatistics.operator !=(Twinbox.Storage.OutboxStatistics? left, Twinbox.Storage.OutboxStatistics? right) -> bool
 static Twinbox.Storage.OutboxStatistics.operator ==(Twinbox.Storage.OutboxStatistics? left, Twinbox.Storage.OutboxStatistics? right) -> bool
 static Twinbox.TransactionalOutboxExtensions.CommitAsync(this Twinbox.IOutbox! outbox, System.Data.Common.DbTransaction! transaction, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
