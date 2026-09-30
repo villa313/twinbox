@@ -18,8 +18,6 @@
     <PackageReference Include="Twinbox.MySql" Version="TWINBOX_VERSION" />
 <!--#elif (MongoDB) -->
     <PackageReference Include="Twinbox.MongoDB" Version="TWINBOX_VERSION" />
-<!--#else -->
-    <PackageReference Include="Twinbox.InMemory" Version="TWINBOX_VERSION" />
 <!--#endif -->
 <!--#if (AzureServiceBus) -->
     <PackageReference Include="Twinbox.AzureServiceBus" Version="TWINBOX_VERSION" />
