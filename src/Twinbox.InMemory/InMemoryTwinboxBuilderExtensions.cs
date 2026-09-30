@@ -10,7 +10,7 @@ namespace Twinbox;
 public static class InMemoryTwinboxBuilderExtensions
 {
     /// <summary>Uses in-memory storage and an in-memory loopback transport. Nothing survives a restart.</summary>
-    public static TwinboxBuilder UseInMemory(this TwinboxBuilder builder, Action<InMemoryOptions>? configure = null) =>
+    public static TwinboxBuilder UseInMemory(this TwinboxBuilder builder, Action<InMemoryTransportOptions>? configure = null) =>
         builder.UseInMemoryStore().UseInMemoryTransport(configure);
 
     public static TwinboxBuilder UseInMemoryStore(this TwinboxBuilder builder)
@@ -24,10 +24,10 @@ public static class InMemoryTwinboxBuilderExtensions
         return builder;
     }
 
-    public static TwinboxBuilder UseInMemoryTransport(this TwinboxBuilder builder, Action<InMemoryOptions>? configure = null)
+    public static TwinboxBuilder UseInMemoryTransport(this TwinboxBuilder builder, Action<InMemoryTransportOptions>? configure = null)
     {
         ArgumentNullException.ThrowIfNull(builder);
-        var options = builder.Services.AddOptions<InMemoryOptions>();
+        var options = builder.Services.AddOptions<InMemoryTransportOptions>();
         if (configure is not null)
         {
             options.Configure(configure);

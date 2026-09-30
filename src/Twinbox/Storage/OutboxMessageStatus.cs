@@ -1,4 +1,4 @@
-namespace Twinbox.Storage;
+namespace Twinbox;
 
 public enum OutboxMessageStatus
 {

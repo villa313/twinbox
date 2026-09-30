@@ -7,7 +7,7 @@ namespace Twinbox.InMemory;
 internal sealed class InMemoryReceiverService(
     InMemoryTransport transport,
     IInboundPipeline pipeline,
-    IOptions<InMemoryOptions> options) : BackgroundService
+    IOptions<InMemoryTransportOptions> options) : BackgroundService
 {
     private static readonly TimeSpan IdleWait = TimeSpan.FromSeconds(1);
 

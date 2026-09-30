@@ -134,6 +134,10 @@ internal sealed partial class TwinboxSql
         };
     }
 
+    /// <summary>Returns one column named Value, as EF Core's SqlQueryRaw expects.</summary>
+    public string OldestUnsentAvailableAt() =>
+        $"SELECT MIN({_o("AvailableAt")}) AS \"Value\" FROM {_outbox} WHERE {_o("Status")} IN ({Pending}, {Processing})";
+
     /// <summary>Inserts the entry unless it exists; a concurrent duplicate waits for the first to commit or roll back.</summary>
     public string InsertInbox()
     {

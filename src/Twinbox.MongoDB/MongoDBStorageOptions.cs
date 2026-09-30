@@ -2,7 +2,7 @@ using MongoDB.Driver;
 
 namespace Twinbox.MongoDB;
 
-public sealed class MongoStorageOptions
+public sealed class MongoDBStorageOptions
 {
     public string? ConnectionString { get; set; }
 

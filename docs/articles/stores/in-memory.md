@@ -31,7 +31,7 @@ Messages sent from handlers are committed automatically when the handler succeed
 
 | Option | Default | Description |
 |---|---|---|
-| `InMemoryOptions.AutoDeliver` | `true` | Deliver sent messages to handlers in the background. Turn off to pump them yourself with `InMemoryTransport.DeliverAsync`. |
+| `InMemoryTransportOptions.AutoDeliver` | `true` | Deliver sent messages to handlers in the background. Turn off to pump them yourself with `InMemoryTransport.DeliverAsync`. |
 
 ## The loopback transport
 
@@ -40,7 +40,7 @@ Messages sent from handlers are committed automatically when the handler succeed
 | Member | Use |
 |---|---|
 | `Sent` | Every message sent, in order. |
-| `DeadLettered` | Messages that failed permanently on delivery, or failed 10 times. |
+| `DeadLetteredIncoming` | Messages whose delivery to handlers failed permanently, or failed 10 times. |
 | `OnSend` | A callback run before each send; throw from it to simulate a broker outage. |
 | `DeliverAsync(pipeline, ct)` | Deliver everything queued right now; returns how many deliveries were attempted. |
 | `WaitForMessagesAsync(timeout, ct)` | Wait until something is queued. |

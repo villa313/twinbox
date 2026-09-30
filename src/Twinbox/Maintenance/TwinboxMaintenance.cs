@@ -2,16 +2,40 @@ using Microsoft.Extensions.Options;
 using Twinbox.Storage;
 using Twinbox.Tenancy;
 
-namespace Twinbox.AzureFunctions;
+namespace Twinbox.Maintenance;
 
-// Mirrors the core retention service's purge, which isn't reachable outside its hosted service.
 internal sealed class TwinboxMaintenance(
+    IOutboxDispatcher dispatcher,
     IEnumerable<IOutboxStore> outboxes,
     TenantDirectory tenants,
     IOptions<TwinboxOptions> options,
     TimeProvider time,
     IInboxStore? inbox = null) : ITwinboxMaintenance
 {
+    public async Task<int> DispatchPendingAsync(TimeSpan budget, CancellationToken cancellationToken)
+    {
+        var unlimited = budget == Timeout.InfiniteTimeSpan;
+        if (!unlimited)
+        {
+            ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(budget, TimeSpan.Zero);
+        }
+
+        var started = time.GetTimestamp();
+        var total = 0;
+        while (!cancellationToken.IsCancellationRequested && (unlimited || time.GetElapsedTime(started) < budget))
+        {
+            var claimed = await dispatcher.DispatchBatchAsync(cancellationToken).ConfigureAwait(false);
+            if (claimed == 0)
+            {
+                break;
+            }
+
+            total += claimed;
+        }
+
+        return total;
+    }
+
     public async Task<int> RunCleanupAsync(CancellationToken cancellationToken)
     {
         var retention = options.Value.Retention;

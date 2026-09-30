@@ -7,7 +7,7 @@ internal static class InboundContext
 
     public static MessageContext? Current => CurrentContext.Value;
 
-    public static Restore Enter(MessageContext context)
+    public static Restore Enter(MessageContext? context)
     {
         var previous = CurrentContext.Value;
         CurrentContext.Value = context;

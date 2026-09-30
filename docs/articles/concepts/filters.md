@@ -2,7 +2,7 @@
 
 ## Incoming: `IMessageFilter`
 
-An `IMessageFilter` wraps every handler call, like middleware. It runs inside the handler's DI scope and inside its
+An `IMessageFilter` wraps every `IHandle<T>` call, like middleware. It runs inside the handler's DI scope and inside its
 inbox transaction, so a filter that throws rolls the handler back just like the handler throwing would.
 
 ```csharp
@@ -30,6 +30,30 @@ twinbox.AddFilter<LogHandling>();
 - Skipping `continuation()` skips the handler, and the message still counts as handled (the inbox entry commits).
   Throw `PermanentDeliveryException` instead if the message should be dead-lettered.
 - Duplicates never reach filters: the inbox check happens first.
+- `IMessageFilter` never sees [batch handlers](batch-handlers.md); those get `IBatchMessageFilter` instead.
+
+## Batches: `IBatchMessageFilter`
+
+A batch handler receives several messages in one call, so there's no single message for an `IMessageFilter` to wrap.
+An `IBatchMessageFilter` wraps each `IHandleBatch<T>` call instead, once per call, with every message and its context:
+
+```csharp
+public class LogBatches(ILogger<LogBatches> logger) : IBatchMessageFilter
+{
+    public async Task InvokeAsync(IReadOnlyList<BatchItem<object>> batch, Func<Task> continuation, CancellationToken ct)
+    {
+        var started = Stopwatch.GetTimestamp();
+        await continuation();
+        logger.LogInformation("Handled a batch of {Count} in {Elapsed}", batch.Count, Stopwatch.GetElapsedTime(started));
+    }
+}
+
+twinbox.AddBatchFilter<LogBatches>();
+```
+
+Batch filters follow the same rules as message filters: scoped, registration order, inside the batch's inbox
+transaction, and only the messages that aren't duplicates. They run for every batch handler call, including the
+batches of one that single-message transports (and stores without batch deduplication) produce.
 
 ## Outgoing: `IOutgoingMessageFilter`
 

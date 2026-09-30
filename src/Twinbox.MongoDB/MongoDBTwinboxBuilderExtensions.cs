@@ -7,9 +7,9 @@ using Twinbox.Storage;
 
 namespace Twinbox;
 
-public static class MongoTwinboxBuilderExtensions
+public static class MongoDBTwinboxBuilderExtensions
 {
-    /// <summary>Transactions need a replica set. Save with <c>outbox.CommitAsync(session)</c>; handlers write through <see cref="MongoHandlerSession"/>.</summary>
+    /// <summary>Transactions need a replica set. Save with <c>outbox.CommitAsync(session)</c>; handlers write through <see cref="MongoDBHandlerSession"/>.</summary>
     public static TwinboxBuilder UseMongoDB(this TwinboxBuilder builder, string connectionString, string databaseName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
@@ -21,11 +21,11 @@ public static class MongoTwinboxBuilderExtensions
         });
     }
 
-    public static TwinboxBuilder UseMongoDB(this TwinboxBuilder builder, Action<MongoStorageOptions> configure)
+    public static TwinboxBuilder UseMongoDB(this TwinboxBuilder builder, Action<MongoDBStorageOptions> configure)
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(configure);
-        var options = new MongoStorageOptions();
+        var options = new MongoDBStorageOptions();
         configure(options);
         ArgumentException.ThrowIfNullOrWhiteSpace(options.OutboxCollection, nameof(configure));
         ArgumentException.ThrowIfNullOrWhiteSpace(options.InboxCollection, nameof(configure));
@@ -56,7 +56,7 @@ public static class MongoTwinboxBuilderExtensions
         services.TryAddSingleton<MongoOutboxStore>();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IOutboxStore, MongoOutboxStore>(sp => sp.GetRequiredService<MongoOutboxStore>()));
         services.TryAddSingleton<IInboxStore, MongoInboxStore>();
-        services.TryAddScoped<MongoHandlerSession>();
+        services.TryAddScoped<MongoDBHandlerSession>();
 
         // Inserted first so the indexes exist before the dispatcher or any request touches the collections.
         services.Insert(0, ServiceDescriptor.Singleton<IHostedService, IndexStartupService>());

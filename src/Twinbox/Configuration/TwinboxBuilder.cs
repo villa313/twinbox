@@ -91,11 +91,19 @@ public sealed class TwinboxBuilder
         return this;
     }
 
-    /// <summary>Runs <typeparamref name="TFilter"/> around every handler call; filters run in registration order.</summary>
+    /// <summary>Runs <typeparamref name="TFilter"/> around every <see cref="IHandle{TMessage}"/> call; filters run in registration order.</summary>
     public TwinboxBuilder AddFilter<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TFilter>()
         where TFilter : class, IMessageFilter
     {
         Services.AddScoped<IMessageFilter, TFilter>();
+        return this;
+    }
+
+    /// <summary>Runs <typeparamref name="TFilter"/> around every <see cref="IHandleBatch{TMessage}"/> call; filters run in registration order.</summary>
+    public TwinboxBuilder AddBatchFilter<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TFilter>()
+        where TFilter : class, IBatchMessageFilter
+    {
+        Services.AddScoped<IBatchMessageFilter, TFilter>();
         return this;
     }
 

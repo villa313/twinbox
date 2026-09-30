@@ -17,19 +17,18 @@ public sealed class HandlerTransaction
 
     public DbTransaction Transaction => _transaction ?? throw NotActive();
 
-    /// <summary>Called by store packages around a handler run.</summary>
-    public void Attach(DbConnection connection, DbTransaction transaction)
+    internal void Attach(DbConnection connection, DbTransaction transaction)
     {
-        _connection = connection ?? throw new ArgumentNullException(nameof(connection));
-        _transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
+        _connection = connection;
+        _transaction = transaction;
     }
 
-    public void Detach()
+    internal void Detach()
     {
         _connection = null;
         _transaction = null;
     }
 
     private static InvalidOperationException NotActive() => new(
-        "No handler transaction is active. HandlerTransaction is only available inside a handler run by a relational (ADO.NET) inbox; MongoDB handlers use MongoHandlerSession.");
+        "No handler transaction is active. HandlerTransaction is only available inside a handler run by a relational (ADO.NET) inbox; MongoDB handlers use MongoDBHandlerSession.");
 }

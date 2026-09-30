@@ -16,6 +16,8 @@ public sealed class InMemoryOutboxStore : IOutboxStore, IOutboxAdmin
         }
     }
 
+    public string Name => "InMemory";
+
     public Task AppendAsync(IReadOnlyList<OutboxMessage> messages, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(messages);
@@ -117,7 +119,7 @@ public sealed class InMemoryOutboxStore : IOutboxStore, IOutboxAdmin
             var unsent = messages.Where(m => m.Status is OutboxMessageStatus.Pending or OutboxMessageStatus.Processing).ToArray();
             return Task.FromResult(new OutboxStatistics(
                 unsent.Length,
-                unsent.Length == 0 ? null : unsent.Min(m => m.CreatedAt),
+                unsent.Length == 0 ? null : unsent.Min(m => m.AvailableAt),
                 messages.Count(m => m.Status == OutboxMessageStatus.Dead)));
         }
     }

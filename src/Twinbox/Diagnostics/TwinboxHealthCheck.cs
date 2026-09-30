@@ -26,7 +26,7 @@ internal sealed class TwinboxHealthCheck(
 
         var stats = new OutboxStatistics(
             all.Sum(s => s.PendingCount),
-            all.Min(s => s.OldestPendingCreatedAt),
+            all.Min(s => s.OldestPendingAvailableAt),
             all.Sum(s => s.DeadCount));
         var data = new Dictionary<string, object>
         {
@@ -34,7 +34,7 @@ internal sealed class TwinboxHealthCheck(
             ["dead"] = stats.DeadCount,
         };
 
-        if (stats.OldestPendingCreatedAt is { } oldest && time.GetUtcNow() - oldest > maxPendingAge)
+        if (stats.OldestPendingAvailableAt is { } oldest && time.GetUtcNow() - oldest > maxPendingAge)
         {
             return new HealthCheckResult(context.Registration.FailureStatus, $"Oldest pending outbox message is older than {maxPendingAge}.", data: data);
         }

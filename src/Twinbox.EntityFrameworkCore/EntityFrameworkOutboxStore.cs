@@ -21,6 +21,8 @@ internal sealed class EntityFrameworkOutboxStore<TContext>(TwinboxScopeFactory s
     // Ids go in as individual parameters: collection parameters aren't translated the same way by every provider.
     private const int IdsPerCommand = 100;
 
+    public string Name => typeof(TContext).Name;
+
     public async Task AppendAsync(IReadOnlyList<OutboxMessage> messages, CancellationToken cancellationToken)
     {
         var scope = scopeFactory.CreateAsyncScope();
@@ -118,16 +120,11 @@ internal sealed class EntityFrameworkOutboxStore<TContext>(TwinboxScopeFactory s
         var scope = scopeFactory.CreateAsyncScope();
         await using (scope.ConfigureAwait(false))
         {
-            var messages = scope.ServiceProvider.GetRequiredService<TContext>().TwinboxOutbox().AsNoTracking();
+            var context = scope.ServiceProvider.GetRequiredService<TContext>();
+            var messages = context.TwinboxOutbox().AsNoTracking();
             var unsent = messages.Where(m => m.Status == OutboxMessageStatus.Pending || m.Status == OutboxMessageStatus.Processing);
             var pendingCount = await unsent.LongCountAsync(cancellationToken).ConfigureAwait(false);
-            // Ordering by the key rather than MIN(CreatedAt), which SQLite can't evaluate on DateTimeOffset.
-            var oldest = pendingCount == 0
-                ? null
-                : await unsent
-                    .OrderBy(m => EF.Property<long>(m, TwinboxModelBuilderExtensions.SequenceProperty))
-                    .Select(m => (DateTimeOffset?)m.CreatedAt)
-                    .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+            var oldest = pendingCount == 0 ? null : await OldestAvailableAtAsync(context, unsent, cancellationToken).ConfigureAwait(false);
             var deadCount = await messages.LongCountAsync(m => m.Status == OutboxMessageStatus.Dead, cancellationToken).ConfigureAwait(false);
             return new OutboxStatistics(pendingCount, oldest, deadCount);
         }
@@ -210,6 +207,24 @@ internal sealed class EntityFrameworkOutboxStore<TContext>(TwinboxScopeFactory s
 
             return deleted;
         }
+    }
+
+    private static async Task<DateTimeOffset?> OldestAvailableAtAsync(
+        DbContext context,
+        IQueryable<OutboxMessage> unsent,
+        CancellationToken cancellationToken)
+    {
+        if (context.Database.ProviderName != EntityFrameworkSql.SqliteProvider)
+        {
+            return await unsent.MinAsync(m => (DateTimeOffset?)m.AvailableAt, cancellationToken).ConfigureAwait(false);
+        }
+
+        // SQLite can't aggregate DateTimeOffset in LINQ; its ISO text sorts correctly because every write is UTC.
+        var text = await context.Database
+            .SqlQueryRaw<string>(EntityFrameworkSql.For(context).OldestUnsentAvailableAt())
+            .SingleAsync(cancellationToken)
+            .ConfigureAwait(false);
+        return DateTimeOffset.Parse(text, CultureInfo.InvariantCulture);
     }
 
     private static Task<IReadOnlyList<OutboxMessage>> ClaimInTransactionAsync(

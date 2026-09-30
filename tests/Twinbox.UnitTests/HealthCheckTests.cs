@@ -21,6 +21,22 @@ public sealed class HealthCheckTests
     }
 
     [Fact]
+    public async Task DelayedSend_OnlyAgesOnceDue()
+    {
+        await using var host = TestHost.Create(
+            b => b.Route<OrderPlaced>().To("orders"),
+            s => s.AddHealthChecks().AddTwinbox(maxPendingAge: TimeSpan.FromMinutes(1)));
+        var health = host.Services.GetRequiredService<HealthCheckService>();
+
+        await host.SendAsync(o => o.Send(new OrderPlaced(1), new SendOptions { Delay = TimeSpan.FromHours(1) }));
+        host.Time.Advance(TimeSpan.FromMinutes(59));
+        Assert.Equal(HealthStatus.Healthy, (await health.CheckHealthAsync()).Status);
+
+        host.Time.Advance(TimeSpan.FromMinutes(3));
+        Assert.Equal(HealthStatus.Degraded, (await health.CheckHealthAsync()).Status);
+    }
+
+    [Fact]
     public async Task DeadLetteredMessages_ReportDegraded()
     {
         await using var host = TestHost.Create(

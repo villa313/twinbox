@@ -41,5 +41,6 @@ Every instance runs the retention service; deletes skip rows another instance is
 where the database has it), so running it everywhere is safe. In hosts that only send, or to keep one instance
 responsible, set `Twinbox:Retention:Enabled` to `false` on the others.
 
-In Azure Functions, background services aren't reliable, so `UseAzureFunctions()` turns retention off; call
-`ITwinboxMaintenance.RunCleanupAsync` from a timer instead. See [Azure Functions](../azure-functions.md).
+To run cleanup from a scheduler of your own instead (a cron job, a timer function), set `Retention:Enabled` to `false`
+and call `ITwinboxMaintenance.RunCleanupAsync`, which every host can resolve. In Azure Functions, `UseAzureFunctions()`
+turns retention off for you. See [Azure Functions](../azure-functions.md).

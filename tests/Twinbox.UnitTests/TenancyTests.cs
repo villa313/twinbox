@@ -122,6 +122,8 @@ public sealed class TenancyTests
 
     private sealed class TenantRecordingStore(TwinboxScopeFactory scopes, TenantLog log) : IOutboxStore
     {
+        public string Name => "TenantRecording";
+
         public async Task<IReadOnlyList<OutboxMessage>> ClaimAsync(OutboxClaim claim, CancellationToken cancellationToken)
         {
             await using var scope = scopes.CreateAsyncScope();

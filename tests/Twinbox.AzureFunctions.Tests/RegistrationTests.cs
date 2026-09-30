@@ -58,18 +58,30 @@ public sealed class RegistrationTests
             .Route<OrderPlaced>().To("orders")
             .AddHandler<OrderPlacedHandler, OrderPlaced>());
         await host.SendAsync([new OrderPlaced(1)]);
-        await host.Dispatcher.DispatchPendingAsync(default);
+        await host.Maintenance.DispatchPendingAsync(default);
         await host.Services.GetRequiredService<TwinboxServiceBusTrigger>().ProcessServiceBusMessageAsync(
             ServiceBusModelFactory.ServiceBusReceivedMessage(body: BinaryData.FromString("""{"orderId":2}"""), messageId: "in-1", subject: "OrderPlaced"),
             new RecordingMessageActions(),
             default);
-        var maintenance = host.Services.GetRequiredService<ITwinboxMaintenance>();
+        var maintenance = host.Maintenance;
 
         Assert.Equal(0, await maintenance.RunCleanupAsync(default));
 
         host.Time.Advance(TimeSpan.FromDays(8));
         Assert.Equal(2, await maintenance.RunCleanupAsync(default));
         Assert.Empty(host.Harness.Store.Snapshot());
+    }
+
+    [Fact]
+    public async Task DispatchPending_DrainsTheOutboxWithinTheDefaultBudget()
+    {
+        await using var host = FunctionsHost.Create(b => b.Route<OrderPlaced>().To("orders"));
+        await host.SendAsync(Enumerable.Range(1, 5).Select(i => new OrderPlaced(i)));
+
+        var claimed = await host.Maintenance.DispatchPendingAsync(default);
+
+        Assert.Equal(5, claimed);
+        Assert.Equal(5, host.Harness.Sent<OrderPlaced>().Count);
     }
 
     private static async Task<List<BackgroundService>> StartTwinboxServicesAsync(IServiceProvider services)

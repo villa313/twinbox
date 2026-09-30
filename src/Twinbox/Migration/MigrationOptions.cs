@@ -7,11 +7,14 @@ public sealed class OutboxImportOptions
 {
     public Func<IServiceProvider, DbConnection>? CreateConnection { get; set; }
 
-    /// <summary>Returns up to <c>@batch</c> unsent rows with columns <c>Id</c>, <c>Name</c> and <c>Content</c> (the message body).</summary>
+    /// <summary>Returns up to <c>@batch</c> rows with <c>Id</c>, <c>Name</c>, <c>Content</c> and optionally <c>Headers</c> (a JSON object) and <c>PartitionKey</c>.</summary>
     public string? SelectPending { get; set; }
 
-    /// <summary>Marks one imported row so it isn't selected again; receives <c>@id</c>.</summary>
+    /// <summary>Marks one imported row so it isn't selected again; receives <c>@id</c> with the type <c>Id</c> was read as.</summary>
     public string? MarkImported { get; set; }
+
+    /// <summary>The <see cref="Storage.IOutboxStore.Name"/> to import into; required only when several stores are registered.</summary>
+    public string? Store { get; set; }
 
     public int BatchSize { get; set; } = 100;
 

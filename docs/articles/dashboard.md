@@ -1,7 +1,7 @@
 # Dashboard
 
 `Twinbox.Dashboard` serves a small operations page and JSON API from your ASP.NET Core app: pending and dead counts per
-store and tenant, the age of the oldest pending message, a filterable message list with details, and replay or
+store and tenant, how long the oldest pending message has been due, a filterable message list with details, and replay or
 removal of dead messages.
 
 ```csharp

@@ -50,25 +50,38 @@ outbox.Send(e);   // routed and serialized as OrderPlaced
 
 ## Sending to an explicit address
 
-`SendOptions.Destination` bypasses the type's routes, for example to answer on a reply queue:
+`SendOptions.Destination` bypasses the type's routes:
 
 ```csharp
-outbox.Send(new PriceQuote(42m), new SendOptions { Destination = "quotes-replies", Transport = "rabbitmq" });
+outbox.Send(new PriceQuote(42m), new SendOptions { Destination = "quotes", Transport = "rabbitmq" });
 ```
+
+To answer a request, use `outbox.Reply(context, response)`, which sends to the request's reply address (see
+[Correlation and replies](correlation-and-reply.md)).
 
 ## Destination prefix
 
-`Twinbox:DestinationPrefix` is prepended to every routed destination, which keeps environments that share a broker
-apart:
+`Twinbox:DestinationPrefix` keeps environments that share a broker apart:
 
 ```json
 { "Twinbox": { "DestinationPrefix": "staging-" } }
 ```
 
-`Route<OrderPlaced>().To("orders")` then sends to `staging-orders`. Listeners are not renamed: configure them with the
-prefixed names. The prefix is applied when the message is saved, so changing it doesn't move messages already in the
-outbox.
+Twinbox tells apart **logical** destinations, the names you write in code and configuration, and **physical** ones, the
+addresses the broker sees. One rule connects them:
 
-The prefix is **not** applied to `SendOptions.Destination` (and therefore not to `outbox.Reply`), since those name an
-address that already exists. The HTTP transport strips the prefix again when it looks up an endpoint, so endpoints
-keep their plain names.
+- **The prefix is applied exactly once, when a logical destination is resolved.** That covers routes
+  (`Route<OrderPlaced>().To("orders")` sends to `staging-orders`), `SendOptions.Destination`, and the destinations of
+  [webhook](../webhooks.md) endpoints.
+- **Reply addresses are physical.** `SendOptions.ReplyTo` is sent as given and `outbox.Reply` sends to it as given, so
+  set it to the address your listener really uses. `options.ToPhysicalDestination("checkout-replies")` (on
+  `TwinboxOptions`) builds it with the prefix when that listener follows the prefix.
+- **Configuration is keyed by the logical name.** `Twinbox:Destinations:orders` applies to `staging-orders`. Those
+  settings apply to that destination on every transport; each transport still gets its own circuit breaker.
+- **HTTP endpoint names are logical.** The HTTP transport looks endpoints up by the unprefixed name, so endpoints keep
+  their plain names.
+- **Listeners are named by you.** Twinbox doesn't rename queues, subscriptions or topics you listen on; configure them
+  with the physical names. Transports that want listener names to follow the prefix use
+  `TwinboxOptions.ToPhysicalDestination`, and `ToLogicalDestination` goes the other way.
+
+The prefix is applied when the message is saved, so changing it doesn't move messages already in the outbox.

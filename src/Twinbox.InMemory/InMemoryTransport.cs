@@ -6,7 +6,7 @@ namespace Twinbox.InMemory;
 /// <summary>Queues messages in memory and delivers them to this app's own handlers, like a loopback broker.</summary>
 public sealed class InMemoryTransport : ITransport, IDisposable
 {
-    public const string DefaultName = "inmemory";
+    public const string TransportName = "inmemory";
 
     private const int MaxDeliveryAttempts = 10;
 
@@ -15,14 +15,15 @@ public sealed class InMemoryTransport : ITransport, IDisposable
     private readonly ConcurrentQueue<TransportMessage> _deadLettered = new();
     private readonly SemaphoreSlim _available = new(0);
 
-    public string Name => DefaultName;
+    public string Name => TransportName;
 
     /// <summary>Runs before each send; throw from it to simulate a broker failure.</summary>
     public Func<TransportMessage, Task>? OnSend { get; set; }
 
     public IReadOnlyList<TransportMessage> Sent => [.. _sent];
 
-    public IReadOnlyList<TransportMessage> DeadLettered => [.. _deadLettered];
+    /// <summary>Messages whose delivery to handlers failed permanently or too often; not outbox rows.</summary>
+    public IReadOnlyList<TransportMessage> DeadLetteredIncoming => [.. _deadLettered];
 
     public async Task SendAsync(TransportMessage message, CancellationToken cancellationToken)
     {

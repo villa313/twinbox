@@ -20,7 +20,7 @@ public static class TransactionalOutboxExtensions
 
         var writer = buffer.Services.GetService<IOutboxTransactionWriter>()
             ?? throw new InvalidOperationException(
-                "Saving outbox messages through a DbTransaction needs a relational store: call UseSqlServer(...) or UsePostgreSql(...).");
+                "Saving outbox messages through a DbTransaction needs an ADO.NET store: call UseSqlServer(...), UsePostgreSql(...), UseMySql(...) or UseOracle(...). With EF Core, save through the DbContext instead.");
         await writer.WriteAsync(transaction, pending, cancellationToken).ConfigureAwait(false);
     }
 

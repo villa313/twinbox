@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Twinbox.Storage;
-using static Twinbox.Storage.OutboxMessageStatus;
+using static Twinbox.OutboxMessageStatus;
 
 namespace Twinbox.Dashboard.Tests;
 
@@ -95,11 +95,14 @@ public sealed partial class DashboardTests
         await using var host = await DashboardHost.StartSecuredAsync();
         await host.SeedAsync((Dead, "orders"), (Pending, "orders"), (Sent, "orders"));
 
+        // The seeded pending row is rescheduled into the future, so only this one, due 9 minutes ago, has an age.
+        await host.Store.AppendAsync([DashboardHost.NewMessage("orders", DashboardHost.Now.AddMinutes(-9))], default);
+
         var stats = await host.GetJsonAsync("/twinbox/api/stats");
 
         var row = Assert.Single(stats["stores"]!.AsArray())!;
         Assert.Equal("InMemory", row["storeName"]!.GetValue<string>());
-        Assert.Equal(1, row["pending"]!.GetValue<long>());
+        Assert.Equal(2, row["pending"]!.GetValue<long>());
         Assert.Equal(1, row["dead"]!.GetValue<long>());
         Assert.Equal(9 * 60, row["oldestPendingAgeSeconds"]!.GetValue<double>());
     }
@@ -351,6 +354,8 @@ public sealed partial class DashboardTests
     /// <summary>One in-memory store per tenant, picked from the tenant entered on the scope.</summary>
     private sealed class TenantStore(Tenancy.TwinboxScopeFactory scopes) : IOutboxStore, IOutboxAdmin
     {
+        public string Name => "Tenant";
+
         private readonly System.Collections.Concurrent.ConcurrentDictionary<string, InMemory.InMemoryOutboxStore> _stores = new(StringComparer.Ordinal);
 
         public InMemory.InMemoryOutboxStore For(string tenant) => _stores.GetOrAdd(tenant, _ => new());

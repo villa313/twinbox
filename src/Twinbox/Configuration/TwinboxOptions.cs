@@ -14,15 +14,31 @@ public sealed class TwinboxOptions
 
     public CircuitBreakerOptions CircuitBreaker { get; set; } = new();
 
-    /// <summary>Per-destination overrides, keyed by destination name.</summary>
+    /// <summary>Per-destination overrides, keyed by logical (unprefixed) destination name and shared by every transport.</summary>
     public Dictionary<string, DestinationOptions> Destinations { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
     public RetentionOptions Retention { get; set; } = new();
 
     public InboxOptions Inbox { get; set; } = new();
 
-    /// <summary>Prepended to every routed destination, e.g. "staging-" to keep environments sharing a broker apart.</summary>
+    /// <summary>Prepended once to every logical destination (routes and SendOptions.Destination), e.g. "staging-" to keep environments sharing a broker apart.</summary>
     public string? DestinationPrefix { get; set; }
+
+    /// <summary>The broker address for a logical destination; transports can use it for listener names that follow the prefix.</summary>
+    public string ToPhysicalDestination(string destination)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(destination);
+        return string.IsNullOrEmpty(DestinationPrefix) ? destination : DestinationPrefix + destination;
+    }
+
+    /// <summary>Strips <see cref="DestinationPrefix"/>; a destination without it (e.g. a reply address) is returned as is.</summary>
+    public string ToLogicalDestination(string destination)
+    {
+        ArgumentNullException.ThrowIfNull(destination);
+        return !string.IsNullOrEmpty(DestinationPrefix) && destination.StartsWith(DestinationPrefix, StringComparison.Ordinal)
+            ? destination[DestinationPrefix.Length..]
+            : destination;
+    }
 }
 
 public sealed class DispatcherOptions

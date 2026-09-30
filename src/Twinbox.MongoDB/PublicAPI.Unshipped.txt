@@ -1,28 +1,28 @@
 #nullable enable
-Twinbox.MongoDB.MongoStorageOptions
-Twinbox.MongoDB.MongoStorageOptions.ClientFactory.get -> System.Func<System.IServiceProvider!, MongoDB.Driver.IMongoClient!>?
-Twinbox.MongoDB.MongoStorageOptions.ClientFactory.set -> void
-Twinbox.MongoDB.MongoStorageOptions.ConnectionString.get -> string?
-Twinbox.MongoDB.MongoStorageOptions.ConnectionString.set -> void
-Twinbox.MongoDB.MongoStorageOptions.CreateIndexes.get -> bool
-Twinbox.MongoDB.MongoStorageOptions.CreateIndexes.set -> void
-Twinbox.MongoDB.MongoStorageOptions.DatabaseName.get -> string?
-Twinbox.MongoDB.MongoStorageOptions.DatabaseName.set -> void
-Twinbox.MongoDB.MongoStorageOptions.DatabaseNameFactory.get -> System.Func<System.IServiceProvider!, string!>?
-Twinbox.MongoDB.MongoStorageOptions.DatabaseNameFactory.set -> void
-Twinbox.MongoDB.MongoStorageOptions.InboxCollection.get -> string!
-Twinbox.MongoDB.MongoStorageOptions.InboxCollection.set -> void
-Twinbox.MongoDB.MongoStorageOptions.MongoStorageOptions() -> void
-Twinbox.MongoDB.MongoStorageOptions.OutboxCollection.get -> string!
-Twinbox.MongoDB.MongoStorageOptions.OutboxCollection.set -> void
-Twinbox.MongoHandlerSession
-Twinbox.MongoHandlerSession.Database.get -> MongoDB.Driver.IMongoDatabase!
-Twinbox.MongoHandlerSession.IsActive.get -> bool
-Twinbox.MongoHandlerSession.MongoHandlerSession() -> void
-Twinbox.MongoHandlerSession.Session.get -> MongoDB.Driver.IClientSessionHandle!
-Twinbox.MongoTransactionalOutboxExtensions
-Twinbox.MongoTwinboxBuilderExtensions
-static Twinbox.MongoTransactionalOutboxExtensions.CommitAsync(this Twinbox.IOutbox! outbox, MongoDB.Driver.IClientSessionHandle! session, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
-static Twinbox.MongoTransactionalOutboxExtensions.SaveAsync(this Twinbox.IOutbox! outbox, MongoDB.Driver.IClientSessionHandle! session, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
-static Twinbox.MongoTwinboxBuilderExtensions.UseMongoDB(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.MongoDB.MongoStorageOptions!>! configure) -> Twinbox.TwinboxBuilder!
-static Twinbox.MongoTwinboxBuilderExtensions.UseMongoDB(this Twinbox.TwinboxBuilder! builder, string! connectionString, string! databaseName) -> Twinbox.TwinboxBuilder!
+Twinbox.MongoDB.MongoDBStorageOptions
+Twinbox.MongoDB.MongoDBStorageOptions.ClientFactory.get -> System.Func<System.IServiceProvider!, MongoDB.Driver.IMongoClient!>?
+Twinbox.MongoDB.MongoDBStorageOptions.ClientFactory.set -> void
+Twinbox.MongoDB.MongoDBStorageOptions.ConnectionString.get -> string?
+Twinbox.MongoDB.MongoDBStorageOptions.ConnectionString.set -> void
+Twinbox.MongoDB.MongoDBStorageOptions.CreateIndexes.get -> bool
+Twinbox.MongoDB.MongoDBStorageOptions.CreateIndexes.set -> void
+Twinbox.MongoDB.MongoDBStorageOptions.DatabaseName.get -> string?
+Twinbox.MongoDB.MongoDBStorageOptions.DatabaseName.set -> void
+Twinbox.MongoDB.MongoDBStorageOptions.DatabaseNameFactory.get -> System.Func<System.IServiceProvider!, string!>?
+Twinbox.MongoDB.MongoDBStorageOptions.DatabaseNameFactory.set -> void
+Twinbox.MongoDB.MongoDBStorageOptions.InboxCollection.get -> string!
+Twinbox.MongoDB.MongoDBStorageOptions.InboxCollection.set -> void
+Twinbox.MongoDB.MongoDBStorageOptions.MongoDBStorageOptions() -> void
+Twinbox.MongoDB.MongoDBStorageOptions.OutboxCollection.get -> string!
+Twinbox.MongoDB.MongoDBStorageOptions.OutboxCollection.set -> void
+Twinbox.MongoDBHandlerSession
+Twinbox.MongoDBHandlerSession.Database.get -> MongoDB.Driver.IMongoDatabase!
+Twinbox.MongoDBHandlerSession.IsActive.get -> bool
+Twinbox.MongoDBHandlerSession.MongoDBHandlerSession() -> void
+Twinbox.MongoDBHandlerSession.Session.get -> MongoDB.Driver.IClientSessionHandle!
+Twinbox.MongoDBTransactionalOutboxExtensions
+Twinbox.MongoDBTwinboxBuilderExtensions
+static Twinbox.MongoDBTransactionalOutboxExtensions.CommitAsync(this Twinbox.IOutbox! outbox, MongoDB.Driver.IClientSessionHandle! session, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static Twinbox.MongoDBTransactionalOutboxExtensions.SaveAsync(this Twinbox.IOutbox! outbox, MongoDB.Driver.IClientSessionHandle! session, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static Twinbox.MongoDBTwinboxBuilderExtensions.UseMongoDB(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.MongoDB.MongoDBStorageOptions!>! configure) -> Twinbox.TwinboxBuilder!
+static Twinbox.MongoDBTwinboxBuilderExtensions.UseMongoDB(this Twinbox.TwinboxBuilder! builder, string! connectionString, string! databaseName) -> Twinbox.TwinboxBuilder!

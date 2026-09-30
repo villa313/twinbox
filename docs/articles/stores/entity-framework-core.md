@@ -53,12 +53,10 @@ and headers use `BLOB` and `NCLOB` columns.
 With default names, the layout matches what the ADO.NET stores create, so a service can switch between EF Core and
 Dapper without a data migration.
 
-To look at or clean up rows directly:
+To look at or clean up rows directly (`TwinboxOutbox()` is in `Microsoft.EntityFrameworkCore`, next to `EnlistOutbox`
+and `AddTwinbox`; `OutboxMessage` and `OutboxMessageStatus` are in `Twinbox`):
 
 ```csharp
-using Twinbox.EntityFrameworkCore;   // TwinboxOutbox()
-using Twinbox.Storage;               // OutboxMessageStatus
-
 var dead = await db.TwinboxOutbox()
     .Where(m => m.Status == OutboxMessageStatus.Dead)
     .OrderByDescending(m => m.CreatedAt)

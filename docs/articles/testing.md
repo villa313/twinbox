@@ -31,7 +31,7 @@ public async Task Placing_an_order_ships_it()
     await harness.DrainAsync();   // dispatches and delivers until nothing is left, including follow-up messages
 
     Assert.Single(harness.Sent<ShipmentRequested>());
-    Assert.Empty(harness.DeadLettered());
+    Assert.Empty(harness.DeadLetteredOutgoing());
 }
 ```
 
@@ -42,9 +42,9 @@ the next round. If handlers keep sending forever, it throws after 1,000 rounds.
 |---|---|
 | `DrainAsync()` | Dispatch and deliver until settled. |
 | `Sent<T>()` | Every message of type `T` that reached the transport, deserialized. |
-| `DeadLettered()` | Outbox rows that ended up `Dead` (sending gave up). |
+| `DeadLetteredOutgoing()` | Outbox rows that ended up `Dead` (sending gave up). |
 | `Store` | The `InMemoryOutboxStore`; `Store.Snapshot()` returns every row. |
-| `Transport` | The `InMemoryTransport`: `Sent` (raw messages with headers), `DeadLettered` (deliveries that failed permanently), `OnSend`. |
+| `Transport` | The `InMemoryTransport`: `Sent` (raw messages with headers), `DeadLetteredIncoming` (deliveries to handlers that failed permanently), `OnSend`. |
 
 ### Simulating failures
 

@@ -5,6 +5,9 @@ namespace Twinbox.Storage;
 /// </summary>
 public interface IOutboxStore
 {
+    /// <summary>Identifies the store where features that write to one store must pick it, e.g. "SqlServer" or an EF Core context's name.</summary>
+    string Name { get; }
+
     /// <summary>Non-transactional append, for stores without an ambient unit of work.</summary>
     Task AppendAsync(IReadOnlyList<OutboxMessage> messages, CancellationToken cancellationToken);
 
@@ -35,4 +38,5 @@ public sealed record DispatchOutcome(
 
 public sealed record OutboxPurge(DateTimeOffset SentBefore, DateTimeOffset? DeadBefore, int BatchSize);
 
-public sealed record OutboxStatistics(long PendingCount, DateTimeOffset? OldestPendingCreatedAt, long DeadCount);
+/// <summary><see cref="OldestPendingAvailableAt"/> is when the longest-waiting unsent message became due, so delayed sends only age once due.</summary>
+public sealed record OutboxStatistics(long PendingCount, DateTimeOffset? OldestPendingAvailableAt, long DeadCount);

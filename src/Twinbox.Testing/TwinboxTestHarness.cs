@@ -1,5 +1,4 @@
 using Twinbox.InMemory;
-using Twinbox.Messaging;
 using Twinbox.Serialization;
 using Twinbox.Storage;
 using Twinbox.Transport;
@@ -13,7 +12,7 @@ public sealed class TwinboxTestHarness
 
     private readonly IOutboxDispatcher _dispatcher;
     private readonly IInboundPipeline _pipeline;
-    private readonly MessageTypeRegistry _registry;
+    private readonly IMessageNames _names;
     private readonly IMessageSerializer _serializer;
 
     internal TwinboxTestHarness(
@@ -21,12 +20,12 @@ public sealed class TwinboxTestHarness
         IInboundPipeline pipeline,
         InMemoryOutboxStore store,
         InMemoryTransport transport,
-        MessageTypeRegistry registry,
+        IMessageNames names,
         IMessageSerializer serializer)
     {
         _dispatcher = dispatcher;
         _pipeline = pipeline;
-        _registry = registry;
+        _names = names;
         _serializer = serializer;
         Store = store;
         Transport = transport;
@@ -55,12 +54,13 @@ public sealed class TwinboxTestHarness
     public IReadOnlyList<TMessage> Sent<TMessage>()
         where TMessage : class
     {
-        var name = _registry.GetOrAdd(typeof(TMessage));
+        var name = _names.GetName(typeof(TMessage));
         return [.. Transport.Sent
             .Where(m => m.MessageName == name)
             .Select(m => (TMessage)_serializer.Deserialize(m.Body.Span, typeof(TMessage)))];
     }
 
-    public IReadOnlyList<OutboxMessage> DeadLettered() =>
+    /// <summary>Outbox rows whose sending gave up; see <see cref="InMemoryTransport.DeadLetteredIncoming"/> for failed deliveries to handlers.</summary>
+    public IReadOnlyList<OutboxMessage> DeadLetteredOutgoing() =>
         [.. Store.Snapshot().Where(m => m.Status == OutboxMessageStatus.Dead)];
 }

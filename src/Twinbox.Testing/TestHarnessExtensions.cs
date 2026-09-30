@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Twinbox.InMemory;
-using Twinbox.Messaging;
 using Twinbox.Serialization;
 using Twinbox.Testing;
 using Twinbox.Transport;
@@ -21,7 +20,7 @@ public static class TestHarnessExtensions
             sp.GetRequiredService<IInboundPipeline>(),
             sp.GetRequiredService<InMemoryOutboxStore>(),
             sp.GetRequiredService<InMemoryTransport>(),
-            sp.GetRequiredService<MessageTypeRegistry>(),
+            sp.GetRequiredService<IMessageNames>(),
             sp.GetRequiredService<IMessageSerializer>()));
         return builder;
     }

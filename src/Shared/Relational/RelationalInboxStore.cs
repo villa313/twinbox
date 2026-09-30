@@ -73,7 +73,7 @@ internal sealed class RelationalInboxStore(RelationalDialect dialect, Relational
 
         fresh.Sort();
 
-        handlerTransaction.Attach(lease.Connection, transaction);
+        using var binding = HandlerTransactionBinding.Bind(handlerTransaction, lease.Connection, transaction);
         try
         {
             await handler(fresh, cancellationToken).ConfigureAwait(false);
@@ -91,10 +91,6 @@ internal sealed class RelationalInboxStore(RelationalDialect dialect, Relational
         {
             session.TakePending();
             throw;
-        }
-        finally
-        {
-            handlerTransaction.Detach();
         }
     }
 }

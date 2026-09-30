@@ -19,7 +19,7 @@ internal sealed class FunctionsHost : IAsyncDisposable
 
     public FakeTimeProvider Time { get; }
 
-    public IOutboxDispatcher Dispatcher => Services.GetRequiredService<IOutboxDispatcher>();
+    public ITwinboxMaintenance Maintenance => Services.GetRequiredService<ITwinboxMaintenance>();
 
     public TwinboxTestHarness Harness => Services.GetTwinboxHarness();
 

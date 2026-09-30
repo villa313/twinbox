@@ -56,11 +56,11 @@ configured database on the session's client, so the session must come from the s
 
 ## Handlers
 
-Inject `MongoHandlerSession` and pass its session to every write, so the writes commit with the inbox entry and any
+Inject `MongoDBHandlerSession` and pass its session to every write, so the writes commit with the inbox entry and any
 messages the handler sends:
 
 ```csharp
-public class ShipOrder(MongoHandlerSession mongo) : IHandle<OrderPlaced>
+public class ShipOrder(MongoDBHandlerSession mongo) : IHandle<OrderPlaced>
 {
     public Task HandleAsync(OrderPlaced message, MessageContext context, CancellationToken ct) =>
         mongo.Database.GetCollection<Order>("orders").UpdateOneAsync(
@@ -71,7 +71,7 @@ public class ShipOrder(MongoHandlerSession mongo) : IHandle<OrderPlaced>
 }
 ```
 
-`mongo.Database` is the Twinbox database reached through the session's client. `MongoHandlerSession` is only active
+`mongo.Database` is the Twinbox database reached through the session's client. `MongoDBHandlerSession` is only active
 inside a handler run by the MongoDB inbox; elsewhere `IsActive` is false and its properties throw.
 
 If the transaction fails with a transient error (`TransientTransactionError`, for example a write conflict with a

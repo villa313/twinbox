@@ -73,6 +73,45 @@ public sealed class BatchHandlerTests
         Assert.Contains("retried:1,2", journal.Entries);
     }
 
+    [Fact]
+    public async Task BatchFilters_WrapBatchesFromABatchInbox()
+    {
+        var journal = new InboxTests.Journal();
+        await using var host = CreateHost(journal, b => b.AddBatchFilter<RecordingBatchFilter>().AddFilter<RecordingFilter>());
+        var pipeline = host.Services.GetRequiredService<IInboundPipeline>();
+
+        await pipeline.ProcessBatchAsync([Incoming("a", 1), Incoming("b", 2)], default);
+
+        Assert.Equal(["batch-filter:before:a,b", "batch:1,2", "batch-filter:after"], journal.Entries);
+    }
+
+    [Fact]
+    public async Task BatchFilters_WrapBatchesOfOneFromSingleMessageTransports()
+    {
+        var journal = new InboxTests.Journal();
+        await using var host = CreateHost(journal, b => b.AddBatchFilter<RecordingBatchFilter>().AddFilter<RecordingFilter>());
+
+        await host.SendAsync(o => o.Send(new OrderPlaced(4)));
+        await host.Harness.DrainAsync();
+
+        var id = Assert.Single(host.Harness.Transport.Sent).MessageId;
+        Assert.Equal([$"batch-filter:before:{id}", "batch:4", "batch-filter:after"], journal.Entries);
+    }
+
+    [Fact]
+    public async Task BatchFilters_WrapBatchesWithTheInboxTurnedOff()
+    {
+        var journal = new InboxTests.Journal();
+        await using var host = CreateHost(journal, b => b
+            .AddBatchFilter<RecordingBatchFilter>()
+            .Configure(o => o.Inbox.Enabled = false));
+        var pipeline = host.Services.GetRequiredService<IInboundPipeline>();
+
+        await pipeline.ProcessBatchAsync([Incoming("a", 1), Incoming("b", 2)], default);
+
+        Assert.Equal(["batch-filter:before:a,b", "batch:1,2", "batch-filter:after"], journal.Entries);
+    }
+
     private static TestHost CreateHost(InboxTests.Journal journal, Action<TwinboxBuilder>? configure = null) =>
         TestHost.Create(
             b =>
@@ -91,6 +130,25 @@ public sealed class BatchHandlerTests
         {
             journal.Add("batch:" + string.Join(",", batch.Select(b => b.Message.OrderId)));
             return Task.CompletedTask;
+        }
+    }
+
+    public sealed class RecordingBatchFilter(InboxTests.Journal journal) : IBatchMessageFilter
+    {
+        public async Task InvokeAsync(IReadOnlyList<BatchItem<object>> batch, Func<Task> continuation, CancellationToken cancellationToken)
+        {
+            journal.Add("batch-filter:before:" + string.Join(",", batch.Select(b => b.Context.MessageId)));
+            await continuation();
+            journal.Add("batch-filter:after");
+        }
+    }
+
+    public sealed class RecordingFilter(InboxTests.Journal journal) : IMessageFilter
+    {
+        public Task InvokeAsync(object message, MessageContext context, Func<Task> continuation, CancellationToken cancellationToken)
+        {
+            journal.Add("filter:" + context.MessageId);
+            return continuation();
         }
     }
 

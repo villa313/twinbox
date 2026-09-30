@@ -4,6 +4,7 @@ using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Twinbox.InMemory;
+using Twinbox.Migration;
 using Twinbox.Storage;
 using Twinbox.Testing.Conformance;
 using Twinbox.Transport;
@@ -170,6 +171,42 @@ public abstract class RelationalTests<TDatabase>(TDatabase database) : IClassFix
         Assert.Throws<InvalidOperationException>(() => transaction.Connection);
     }
 
+    [Fact]
+    public async Task Import_ResumesAfterACrashBetweenAppendAndMark()
+    {
+        var legacy = database.Legacy;
+        await using (var connection = database.Connect())
+        {
+            await connection.ExecuteAsync(legacy.Create);
+            await connection.ExecuteAsync("DELETE FROM legacy_outbox");
+            await connection.ExecuteAsync(legacy.Insert, new
+            {
+                id = legacy.NewId,
+                name = nameof(OrderPlaced),
+                content = """{"reference":"L-1"}""",
+                headers = """{"x-legacy":"yes"}""",
+                partitionKey = "customer-7",
+            });
+        }
+
+        // The first run appends, then fails to mark the old row, as if the process died in between.
+        await using (var crashed = await StartAsync(importMark: legacy.MarkImported.Replace("legacy_outbox", "legacy_missing", StringComparison.Ordinal)))
+        {
+            Assert.Equal(0, await crashed.GetRequiredService<OutboxImportService>().ImportBatchAsync(default));
+        }
+
+        await using var services = await StartAsync(importMark: legacy.MarkImported);
+        var importer = services.GetRequiredService<OutboxImportService>();
+        Assert.Equal(1, await importer.ImportBatchAsync(default));
+        Assert.Equal(0, await importer.ImportBatchAsync(default));
+        Assert.Equal(1, await CountAsync(Table("TwinboxOutbox")));
+
+        await DrainAsync(services);
+        var sent = Assert.Single(services.GetRequiredService<InMemoryTransport>().Sent);
+        Assert.Equal("customer-7", sent.PartitionKey);
+        Assert.Equal("yes", sent.Headers["x-legacy"]);
+    }
+
     private static async Task DrainAsync(IServiceProvider services)
     {
         var dispatcher = services.GetRequiredService<IOutboxDispatcher>();
@@ -178,12 +215,22 @@ public abstract class RelationalTests<TDatabase>(TDatabase database) : IClassFix
         }
     }
 
-    protected async Task<ServiceProvider> StartAsync(string? instanceId = null)
+    protected async Task<ServiceProvider> StartAsync(string? instanceId = null, string? importMark = null)
     {
         var collection = new ServiceCollection().AddLogging().AddSingleton<Database>(database);
         collection.AddTwinbox(b =>
         {
             database.UseStore(b);
+            if (importMark is not null)
+            {
+                b.ImportFromExistingOutbox(o =>
+                {
+                    o.CreateConnection = _ => database.Connect();
+                    o.SelectPending = database.Legacy.SelectPending;
+                    o.MarkImported = importMark;
+                });
+            }
+
             b.UseInMemoryTransport(o => o.AutoDeliver = false)
                 .Route<OrderPlaced>().To("orders")
                 .AddHandler<PlaceOrderHandler, PlaceOrder>()
@@ -200,8 +247,8 @@ public abstract class RelationalTests<TDatabase>(TDatabase database) : IClassFix
         });
         var services = collection.BuildServiceProvider(validateScopes: true);
 
-        // Only the schema startup service matters here; the rest are disabled or idle.
-        foreach (var hosted in services.GetServices<IHostedService>())
+        // Only the schema startup service matters here; the rest are disabled or idle, and the import is driven by hand.
+        foreach (var hosted in services.GetServices<IHostedService>().Where(h => h is not OutboxImportService))
         {
             await hosted.StartAsync(default);
         }

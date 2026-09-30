@@ -32,6 +32,51 @@ public sealed class DispatcherTests
     }
 
     [Fact]
+    public async Task ShutdownMidBatch_RecordsWhatWasSentAndReleasesTheRest()
+    {
+        await using var host = TestHost.Create(b => b
+            .Route<OrderPlaced>().To("orders")
+            .Configure(o => o.Dispatcher.MaxDegreeOfParallelism = 1));
+        using var shutdown = new CancellationTokenSource();
+        var sends = 0;
+        host.Harness.Transport.OnSend = _ =>
+        {
+            if (++sends < 3)
+            {
+                return Task.CompletedTask;
+            }
+
+            // The host stops while the third send is still waiting on the broker.
+            shutdown.Cancel();
+            return Task.Delay(Timeout.Infinite, CancellationToken.None);
+        };
+        await host.SendAsync(o =>
+        {
+            for (var i = 1; i <= 5; i++)
+            {
+                o.Send(new OrderPlaced(i));
+            }
+        });
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => host.Services.GetRequiredService<IOutboxDispatcher>().DispatchBatchAsync(shutdown.Token));
+
+        var rows = host.Harness.Store.Snapshot();
+        Assert.Equal(2, rows.Count(r => r.Status == OutboxMessageStatus.Sent));
+        Assert.All(rows.Where(r => r.Status != OutboxMessageStatus.Sent), r =>
+        {
+            Assert.Equal(OutboxMessageStatus.Pending, r.Status);
+            Assert.Null(r.LeaseOwner);
+            Assert.Equal(0, r.Attempts);
+            Assert.True(r.AvailableAt <= host.Time.GetUtcNow());
+        });
+
+        host.Harness.Transport.OnSend = null;
+        await host.Harness.DrainAsync();
+        Assert.Equal([1, 2, 3, 4, 5], host.Harness.Sent<OrderPlaced>().Select(m => m.OrderId));
+    }
+
+    [Fact]
     public async Task PermanentFailure_DeadLettersImmediatelyAndNotifiesObservers()
     {
         var observer = new RecordingObserver();
@@ -43,7 +88,7 @@ public sealed class DispatcherTests
         await host.SendAsync(o => o.Send(new OrderPlaced(1)));
         await host.Harness.DrainAsync();
 
-        var dead = Assert.Single(host.Harness.DeadLettered());
+        var dead = Assert.Single(host.Harness.DeadLetteredOutgoing());
         Assert.Equal(1, dead.Attempts);
         Assert.Equal(dead.Id, Assert.Single(observer.MessageIds));
     }
@@ -67,7 +112,7 @@ public sealed class DispatcherTests
             host.Time.Advance(TimeSpan.FromMinutes(10));
         }
 
-        Assert.Equal(3, Assert.Single(host.Harness.DeadLettered()).Attempts);
+        Assert.Equal(3, Assert.Single(host.Harness.DeadLetteredOutgoing()).Attempts);
     }
 
     [Fact]
@@ -81,7 +126,7 @@ public sealed class DispatcherTests
         await host.SendAsync(o => o.Send(new OrderPlaced(1)));
         await host.Harness.DrainAsync();
 
-        Assert.Single(host.Harness.DeadLettered());
+        Assert.Single(host.Harness.DeadLetteredOutgoing());
     }
 
     [Fact]
@@ -153,7 +198,7 @@ public sealed class DispatcherTests
         await host.SendAsync(o => o.Send(new OrderPlaced(1)));
         await host.Harness.DrainAsync();
 
-        Assert.Contains("missing", Assert.Single(host.Harness.DeadLettered()).LastError, StringComparison.Ordinal);
+        Assert.Contains("missing", Assert.Single(host.Harness.DeadLetteredOutgoing()).LastError, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -167,7 +212,7 @@ public sealed class DispatcherTests
         await host.SendAsync(o => o.Send(new OrderPlaced(1)));
         await host.Harness.DrainAsync();
 
-        Assert.Single(host.Harness.DeadLettered());
+        Assert.Single(host.Harness.DeadLetteredOutgoing());
     }
 
     private sealed class RecordingObserver : IDeadLetterObserver

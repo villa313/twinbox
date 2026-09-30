@@ -17,6 +17,9 @@ twinbox.AddBatchHandler<StoreReadings, SensorReading>();
 
 Each `BatchItem<T>` carries the message and its `MessageContext`.
 
+Batch handler calls go through [`IBatchMessageFilter`s](filters.md#batches-ibatchmessagefilter), not
+`IMessageFilter`s, whatever the batch size.
+
 ## Where batches come from
 
 Batches are only as large as the transport delivers them:

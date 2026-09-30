@@ -8,12 +8,22 @@ public static class ReplyExtensions
     {
         ArgumentNullException.ThrowIfNull(outbox);
         ArgumentNullException.ThrowIfNull(request);
-        outbox.Send(response, new SendOptions
+        var options = new SendOptions
         {
             Destination = request.ReplyTo
                 ?? throw new InvalidOperationException($"Message {request.MessageId} has no reply address; the sender must set SendOptions.ReplyTo."),
             Transport = transport,
             CorrelationId = request.CorrelationId ?? request.MessageId,
-        });
+        };
+
+        // A reply address is already physical, so the destination prefix must not be applied again.
+        if (outbox is Messaging.OutboxBuffer buffer)
+        {
+            buffer.Send(response, options, physicalDestination: true);
+        }
+        else
+        {
+            outbox.Send(response, options);
+        }
     }
 }

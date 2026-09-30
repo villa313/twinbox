@@ -185,7 +185,7 @@ public sealed class MongoTests(MongoFixture mongo) : IAsyncLifetime
     [Fact]
     public void HandlerSession_OutsideAHandler_Throws()
     {
-        var session = new MongoHandlerSession();
+        var session = new MongoDBHandlerSession();
 
         Assert.False(session.IsActive);
         Assert.Throws<InvalidOperationException>(() => session.Session);
@@ -235,7 +235,7 @@ public sealed class MongoTests(MongoFixture mongo) : IAsyncLifetime
         1,
         null);
 
-    public sealed class PlaceOrderHandler(MongoHandlerSession mongo, IOutbox outbox) : IHandle<PlaceOrder>
+    public sealed class PlaceOrderHandler(MongoDBHandlerSession mongo, IOutbox outbox) : IHandle<PlaceOrder>
     {
         public async Task HandleAsync(PlaceOrder message, MessageContext context, CancellationToken cancellationToken)
         {

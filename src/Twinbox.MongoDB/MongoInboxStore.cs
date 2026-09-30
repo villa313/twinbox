@@ -34,7 +34,7 @@ internal sealed partial class MongoInboxStore(
         ArgumentNullException.ThrowIfNull(handler);
 
         var outboxSession = scopedServices.GetRequiredService<IOutboxSession>();
-        var handlerSession = scopedServices.GetRequiredService<MongoHandlerSession>();
+        var handlerSession = scopedServices.GetRequiredService<MongoDBHandlerSession>();
 
         await using var lease = await store.OpenAsync(cancellationToken).ConfigureAwait(false);
         using var session = await lease.Database.Client.StartSessionAsync(cancellationToken: cancellationToken).ConfigureAwait(false);

@@ -22,19 +22,19 @@ builder.Build().Run();
 ```
 
 `UseAzureFunctions()` sets `Dispatcher:Enabled` and `Retention:Enabled` to `false` and registers
-`TwinboxServiceBusTrigger` and `ITwinboxMaintenance`.
+`TwinboxServiceBusTrigger`. `ITwinboxMaintenance` comes with every Twinbox registration; this package adds a
+`DispatchPendingAsync(ct)` overload with a Functions-friendly time budget.
 
 ## Functions
 
 ```csharp
 public sealed class TwinboxFunctions(
-    IOutboxDispatcher dispatcher,
     TwinboxServiceBusTrigger twinbox,
     ITwinboxMaintenance maintenance)
 {
     [Function("twinbox-dispatch")]
     public Task Dispatch([TimerTrigger("*/10 * * * * *")] TimerInfo timer, CancellationToken ct) =>
-        dispatcher.DispatchPendingAsync(ct);
+        maintenance.DispatchPendingAsync(ct);
 
     [Function("orders")]
     public Task Receive(
@@ -52,11 +52,11 @@ public sealed class TwinboxFunctions(
 ### Dispatching
 
 `DispatchPendingAsync` claims and sends batches until the outbox is empty or its time budget runs out: 50 seconds by
-default (`OutboxDispatcherExtensions.DefaultDispatchBudget`), leaving headroom under the Consumption plan's shortest
+default (`TwinboxMaintenanceExtensions.DefaultDispatchBudget`), leaving headroom under the Consumption plan's shortest
 timeout. Pass a `TimeSpan` to change it; a batch already started is always finished:
 
 ```csharp
-await dispatcher.DispatchPendingAsync(TimeSpan.FromMinutes(4), ct);
+await maintenance.DispatchPendingAsync(TimeSpan.FromMinutes(4), ct);
 ```
 
 It returns how many messages were claimed. A message sent from an HTTP function waits for the next timer tick, so pick

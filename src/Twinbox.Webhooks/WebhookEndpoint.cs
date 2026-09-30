@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Http;
+using Twinbox.Storage;
 
 namespace Twinbox.Webhooks;
 
@@ -11,7 +13,9 @@ internal sealed record WebhookEndpoint(
     long MaxBodySize,
     string MessageName,
     Type MessageType,
-    WebhookReceived Prototype)
+    WebhookReceived Prototype,
+    IOutboxStore Store,
+    Func<HttpContext, string?>? TenantResolver)
 {
     public string Destination => "webhooks/" + Provider;
 

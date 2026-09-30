@@ -138,7 +138,7 @@ See [HTTP transport](https://twinbox-dotnet.github.io/twinbox/articles/transport
 - **Batch handlers:** `IHandleBatch<T>` receives several messages at once, with duplicates already filtered out
 - **Request/reply and correlation:** `SendOptions.ReplyTo` + `outbox.Reply(context, response)`; messages sent while
   handling one inherit its correlation id
-- **Filters:** `IMessageFilter` wraps handler calls, `IOutgoingMessageFilter` stamps headers on outgoing messages
+- **Filters:** `IMessageFilter` wraps handler calls, `IBatchMessageFilter` wraps batch handler calls, `IOutgoingMessageFilter` stamps headers on outgoing messages
 - **Interop:** header profiles for other systems' header names, and CloudEvents binary-mode headers
   (`HeaderProfile.CloudEvents("/my-service")`)
 - **Delayed sends:** `new SendOptions { Delay = TimeSpan.FromMinutes(5) }`
