@@ -1,1 +1,33 @@
 #nullable enable
+Twinbox.GooglePubSub.GooglePubSubOptions
+Twinbox.GooglePubSub.GooglePubSubOptions.AckDeadline.get -> System.TimeSpan
+Twinbox.GooglePubSub.GooglePubSubOptions.AckDeadline.set -> void
+Twinbox.GooglePubSub.GooglePubSubOptions.AutoCreate.get -> bool
+Twinbox.GooglePubSub.GooglePubSubOptions.AutoCreate.set -> void
+Twinbox.GooglePubSub.GooglePubSubOptions.ConfigurePublisher.get -> System.Action<Google.Cloud.PubSub.V1.PublisherClientBuilder!>?
+Twinbox.GooglePubSub.GooglePubSubOptions.ConfigurePublisher.set -> void
+Twinbox.GooglePubSub.GooglePubSubOptions.ConfigureSubscriber.get -> System.Action<Google.Cloud.PubSub.V1.SubscriberClientBuilder!>?
+Twinbox.GooglePubSub.GooglePubSubOptions.ConfigureSubscriber.set -> void
+Twinbox.GooglePubSub.GooglePubSubOptions.Credential.get -> Google.Apis.Auth.OAuth2.GoogleCredential?
+Twinbox.GooglePubSub.GooglePubSubOptions.Credential.set -> void
+Twinbox.GooglePubSub.GooglePubSubOptions.DeadLetterTopic.get -> string?
+Twinbox.GooglePubSub.GooglePubSubOptions.DeadLetterTopic.set -> void
+Twinbox.GooglePubSub.GooglePubSubOptions.EmulatorHost.get -> string?
+Twinbox.GooglePubSub.GooglePubSubOptions.EmulatorHost.set -> void
+Twinbox.GooglePubSub.GooglePubSubOptions.EnableMessageOrdering.get -> bool
+Twinbox.GooglePubSub.GooglePubSubOptions.EnableMessageOrdering.set -> void
+Twinbox.GooglePubSub.GooglePubSubOptions.GooglePubSubOptions() -> void
+Twinbox.GooglePubSub.GooglePubSubOptions.Listen(string! subscription, string! topic) -> Twinbox.GooglePubSub.GooglePubSubOptions!
+Twinbox.GooglePubSub.GooglePubSubOptions.MaxDeliveryAttempts.get -> int
+Twinbox.GooglePubSub.GooglePubSubOptions.MaxDeliveryAttempts.set -> void
+Twinbox.GooglePubSub.GooglePubSubOptions.MaxOutstandingMessages.get -> long
+Twinbox.GooglePubSub.GooglePubSubOptions.MaxOutstandingMessages.set -> void
+Twinbox.GooglePubSub.GooglePubSubOptions.ProjectId.get -> string?
+Twinbox.GooglePubSub.GooglePubSubOptions.ProjectId.set -> void
+Twinbox.GooglePubSub.GooglePubSubTransport
+Twinbox.GooglePubSub.GooglePubSubTransport.Name.get -> string!
+Twinbox.GooglePubSub.GooglePubSubTransport.SendAsync(Twinbox.Transport.TransportMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.GooglePubSubTwinboxBuilderExtensions
+const Twinbox.GooglePubSub.GooglePubSubTransport.TransportName = "googlepubsub" -> string!
+static Twinbox.GooglePubSubTwinboxBuilderExtensions.UseGooglePubSub(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.GooglePubSub.GooglePubSubOptions!>! configure) -> Twinbox.TwinboxBuilder!
+static Twinbox.GooglePubSubTwinboxBuilderExtensions.UseGooglePubSub(this Twinbox.TwinboxBuilder! builder, string! projectId, System.Action<Twinbox.GooglePubSub.GooglePubSubOptions!>? configure = null) -> Twinbox.TwinboxBuilder!

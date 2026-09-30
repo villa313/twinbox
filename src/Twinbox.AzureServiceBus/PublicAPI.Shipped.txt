@@ -1,1 +1,27 @@
 #nullable enable
+Twinbox.AzureServiceBus.AzureServiceBusInbound
+Twinbox.AzureServiceBus.AzureServiceBusOptions
+Twinbox.AzureServiceBus.AzureServiceBusOptions.AzureServiceBusOptions() -> void
+Twinbox.AzureServiceBus.AzureServiceBusOptions.Listen(string! queueName, bool sessions = false) -> Twinbox.AzureServiceBus.AzureServiceBusOptions!
+Twinbox.AzureServiceBus.AzureServiceBusOptions.Listen(string! topicName, string! subscriptionName, bool sessions = false) -> Twinbox.AzureServiceBus.AzureServiceBusOptions!
+Twinbox.AzureServiceBus.AzureServiceBusOptions.MaxConcurrentCalls.get -> int
+Twinbox.AzureServiceBus.AzureServiceBusOptions.MaxConcurrentCalls.set -> void
+Twinbox.AzureServiceBus.AzureServiceBusOptions.MaxRetryDelay.get -> System.TimeSpan
+Twinbox.AzureServiceBus.AzureServiceBusOptions.MaxRetryDelay.set -> void
+Twinbox.AzureServiceBus.AzureServiceBusOptions.PrefetchCount.get -> int
+Twinbox.AzureServiceBus.AzureServiceBusOptions.PrefetchCount.set -> void
+Twinbox.AzureServiceBus.AzureServiceBusOptions.RetryDelay.get -> System.TimeSpan
+Twinbox.AzureServiceBus.AzureServiceBusOptions.RetryDelay.set -> void
+Twinbox.AzureServiceBus.AzureServiceBusOptions.SendSessionIds.get -> bool
+Twinbox.AzureServiceBus.AzureServiceBusOptions.SendSessionIds.set -> void
+Twinbox.AzureServiceBus.AzureServiceBusTransport
+Twinbox.AzureServiceBus.AzureServiceBusTransport.Dispose() -> void
+Twinbox.AzureServiceBus.AzureServiceBusTransport.DisposeAsync() -> System.Threading.Tasks.ValueTask
+Twinbox.AzureServiceBus.AzureServiceBusTransport.Name.get -> string!
+Twinbox.AzureServiceBus.AzureServiceBusTransport.SendAsync(Twinbox.Transport.TransportMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.AzureServiceBusTwinboxBuilderExtensions
+const Twinbox.AzureServiceBus.AzureServiceBusInbound.PermanentFailureReason = "PermanentDeliveryFailure" -> string!
+const Twinbox.AzureServiceBus.AzureServiceBusTransport.TransportName = "azureservicebus" -> string!
+static Twinbox.AzureServiceBus.AzureServiceBusInbound.ToIncomingMessage(Azure.Messaging.ServiceBus.ServiceBusReceivedMessage! message, string! source) -> Twinbox.Transport.IncomingMessage!
+static Twinbox.AzureServiceBusTwinboxBuilderExtensions.UseAzureServiceBus(this Twinbox.TwinboxBuilder! builder, System.Func<System.IServiceProvider!, Azure.Messaging.ServiceBus.ServiceBusClient!>! clientFactory, System.Action<Twinbox.AzureServiceBus.AzureServiceBusOptions!>? configure = null) -> Twinbox.TwinboxBuilder!
+static Twinbox.AzureServiceBusTwinboxBuilderExtensions.UseAzureServiceBus(this Twinbox.TwinboxBuilder! builder, string! connectionString, System.Action<Twinbox.AzureServiceBus.AzureServiceBusOptions!>? configure = null) -> Twinbox.TwinboxBuilder!

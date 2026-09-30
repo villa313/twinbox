@@ -8,6 +8,7 @@
     <!-- Docs only where they add something; self-explanatory members stay undocumented. -->
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <IsAotCompatible>true</IsAotCompatible>
+    <EnablePackageValidation>true</EnablePackageValidation>
   </PropertyGroup>
 
   <ItemGroup>

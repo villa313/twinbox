@@ -1,1 +1,34 @@
 #nullable enable
+Twinbox.EventHubs.EventHubsOptions
+Twinbox.EventHubs.EventHubsOptions.ConfigureProcessor.get -> System.Action<Azure.Messaging.EventHubs.Primitives.EventProcessorOptions!>?
+Twinbox.EventHubs.EventHubsOptions.ConfigureProcessor.set -> void
+Twinbox.EventHubs.EventHubsOptions.ConfigureProducer.get -> System.Action<Azure.Messaging.EventHubs.Producer.EventHubProducerClientOptions!>?
+Twinbox.EventHubs.EventHubsOptions.ConfigureProducer.set -> void
+Twinbox.EventHubs.EventHubsOptions.ConnectionString.get -> string?
+Twinbox.EventHubs.EventHubsOptions.ConnectionString.set -> void
+Twinbox.EventHubs.EventHubsOptions.CreateCheckpointContainers.get -> bool
+Twinbox.EventHubs.EventHubsOptions.CreateCheckpointContainers.set -> void
+Twinbox.EventHubs.EventHubsOptions.Credential.get -> Azure.Core.TokenCredential?
+Twinbox.EventHubs.EventHubsOptions.Credential.set -> void
+Twinbox.EventHubs.EventHubsOptions.DeadLetterEventHub.get -> string?
+Twinbox.EventHubs.EventHubsOptions.DeadLetterEventHub.set -> void
+Twinbox.EventHubs.EventHubsOptions.EventHubsOptions() -> void
+Twinbox.EventHubs.EventHubsOptions.FullyQualifiedNamespace.get -> string?
+Twinbox.EventHubs.EventHubsOptions.FullyQualifiedNamespace.set -> void
+Twinbox.EventHubs.EventHubsOptions.Listen(string! eventHub, string! consumerGroup, Azure.Storage.Blobs.BlobContainerClient! checkpointContainer) -> Twinbox.EventHubs.EventHubsOptions!
+Twinbox.EventHubs.EventHubsOptions.Listen(string! eventHub, string! consumerGroup, System.Uri! checkpointContainerUri) -> Twinbox.EventHubs.EventHubsOptions!
+Twinbox.EventHubs.EventHubsOptions.Listen(string! eventHub, string! consumerGroup, string! storageConnectionString, string! checkpointContainerName) -> Twinbox.EventHubs.EventHubsOptions!
+Twinbox.EventHubs.EventHubsOptions.MaxBatchSize.get -> int
+Twinbox.EventHubs.EventHubsOptions.MaxBatchSize.set -> void
+Twinbox.EventHubs.EventHubsOptions.MaxRetryDelay.get -> System.TimeSpan
+Twinbox.EventHubs.EventHubsOptions.MaxRetryDelay.set -> void
+Twinbox.EventHubs.EventHubsOptions.RetryDelay.get -> System.TimeSpan
+Twinbox.EventHubs.EventHubsOptions.RetryDelay.set -> void
+Twinbox.EventHubs.EventHubsTransport
+Twinbox.EventHubs.EventHubsTransport.Name.get -> string!
+Twinbox.EventHubs.EventHubsTransport.SendAsync(Twinbox.Transport.TransportMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.EventHubsTwinboxBuilderExtensions
+const Twinbox.EventHubs.EventHubsTransport.TransportName = "eventhubs" -> string!
+static Twinbox.EventHubsTwinboxBuilderExtensions.UseEventHubs(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.EventHubs.EventHubsOptions!>! configure) -> Twinbox.TwinboxBuilder!
+static Twinbox.EventHubsTwinboxBuilderExtensions.UseEventHubs(this Twinbox.TwinboxBuilder! builder, string! connectionString, System.Action<Twinbox.EventHubs.EventHubsOptions!>? configure = null) -> Twinbox.TwinboxBuilder!
+static Twinbox.EventHubsTwinboxBuilderExtensions.UseEventHubs(this Twinbox.TwinboxBuilder! builder, string! fullyQualifiedNamespace, Azure.Core.TokenCredential! credential, System.Action<Twinbox.EventHubs.EventHubsOptions!>? configure = null) -> Twinbox.TwinboxBuilder!

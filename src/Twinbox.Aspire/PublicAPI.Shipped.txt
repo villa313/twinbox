@@ -1,1 +1,13 @@
 #nullable enable
+Microsoft.Extensions.Hosting.TwinboxServiceDefaultsExtensions
+Twinbox.Aspire.TwinboxServiceDefaultsOptions
+Twinbox.Aspire.TwinboxServiceDefaultsOptions.HealthCheckName.get -> string!
+Twinbox.Aspire.TwinboxServiceDefaultsOptions.HealthCheckName.set -> void
+Twinbox.Aspire.TwinboxServiceDefaultsOptions.IncludeInLiveness.get -> bool
+Twinbox.Aspire.TwinboxServiceDefaultsOptions.IncludeInLiveness.set -> void
+Twinbox.Aspire.TwinboxServiceDefaultsOptions.MaxDeadMessages.get -> long
+Twinbox.Aspire.TwinboxServiceDefaultsOptions.MaxDeadMessages.set -> void
+Twinbox.Aspire.TwinboxServiceDefaultsOptions.MaxPendingAge.get -> System.TimeSpan?
+Twinbox.Aspire.TwinboxServiceDefaultsOptions.MaxPendingAge.set -> void
+Twinbox.Aspire.TwinboxServiceDefaultsOptions.TwinboxServiceDefaultsOptions() -> void
+static Microsoft.Extensions.Hosting.TwinboxServiceDefaultsExtensions.AddTwinboxServiceDefaults<TBuilder>(this TBuilder builder, System.Action<Twinbox.Aspire.TwinboxServiceDefaultsOptions!>? configure = null) -> TBuilder

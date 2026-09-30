@@ -1,1 +1,11 @@
 #nullable enable
+Microsoft.AspNetCore.Builder.TwinboxDashboardEndpointRouteBuilderExtensions
+Twinbox.Dashboard.TwinboxDashboardOptions
+Twinbox.Dashboard.TwinboxDashboardOptions.AllowAnonymous.get -> bool
+Twinbox.Dashboard.TwinboxDashboardOptions.AllowAnonymous.set -> void
+Twinbox.Dashboard.TwinboxDashboardOptions.ReadOnly.get -> bool
+Twinbox.Dashboard.TwinboxDashboardOptions.ReadOnly.set -> void
+Twinbox.Dashboard.TwinboxDashboardOptions.ShowPayloads.get -> bool
+Twinbox.Dashboard.TwinboxDashboardOptions.ShowPayloads.set -> void
+Twinbox.Dashboard.TwinboxDashboardOptions.TwinboxDashboardOptions() -> void
+static Microsoft.AspNetCore.Builder.TwinboxDashboardEndpointRouteBuilderExtensions.MapTwinboxDashboard(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! prefix = "/twinbox", System.Action<Twinbox.Dashboard.TwinboxDashboardOptions!>? configure = null) -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!

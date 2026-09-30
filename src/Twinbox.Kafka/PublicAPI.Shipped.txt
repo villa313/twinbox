@@ -1,1 +1,41 @@
 #nullable enable
+Twinbox.Kafka.KafkaOptions
+Twinbox.Kafka.KafkaOptions.AutoCreateTopics.get -> bool
+Twinbox.Kafka.KafkaOptions.AutoCreateTopics.set -> void
+Twinbox.Kafka.KafkaOptions.AutoOffsetReset.get -> Confluent.Kafka.AutoOffsetReset
+Twinbox.Kafka.KafkaOptions.AutoOffsetReset.set -> void
+Twinbox.Kafka.KafkaOptions.BootstrapServers.get -> string!
+Twinbox.Kafka.KafkaOptions.BootstrapServers.set -> void
+Twinbox.Kafka.KafkaOptions.ClientId.get -> string!
+Twinbox.Kafka.KafkaOptions.ClientId.set -> void
+Twinbox.Kafka.KafkaOptions.ConfigureClient.get -> System.Action<Confluent.Kafka.ClientConfig!>?
+Twinbox.Kafka.KafkaOptions.ConfigureClient.set -> void
+Twinbox.Kafka.KafkaOptions.ConfigureConsumer.get -> System.Action<Confluent.Kafka.ConsumerConfig!>?
+Twinbox.Kafka.KafkaOptions.ConfigureConsumer.set -> void
+Twinbox.Kafka.KafkaOptions.ConfigureProducer.get -> System.Action<Confluent.Kafka.ProducerConfig!>?
+Twinbox.Kafka.KafkaOptions.ConfigureProducer.set -> void
+Twinbox.Kafka.KafkaOptions.DeadLetterTopic.get -> string?
+Twinbox.Kafka.KafkaOptions.DeadLetterTopic.set -> void
+Twinbox.Kafka.KafkaOptions.KafkaOptions() -> void
+Twinbox.Kafka.KafkaOptions.Listen(string! topic, string! groupId) -> Twinbox.Kafka.KafkaOptions!
+Twinbox.Kafka.KafkaOptions.MaxBatchSize.get -> int
+Twinbox.Kafka.KafkaOptions.MaxBatchSize.set -> void
+Twinbox.Kafka.KafkaOptions.MaxBatchWait.get -> System.TimeSpan
+Twinbox.Kafka.KafkaOptions.MaxBatchWait.set -> void
+Twinbox.Kafka.KafkaOptions.MaxRetryDelay.get -> System.TimeSpan
+Twinbox.Kafka.KafkaOptions.MaxRetryDelay.set -> void
+Twinbox.Kafka.KafkaOptions.RetryDelay.get -> System.TimeSpan
+Twinbox.Kafka.KafkaOptions.RetryDelay.set -> void
+Twinbox.Kafka.KafkaOptions.SendTimeout.get -> System.TimeSpan
+Twinbox.Kafka.KafkaOptions.SendTimeout.set -> void
+Twinbox.Kafka.KafkaOptions.TopicPartitions.get -> int
+Twinbox.Kafka.KafkaOptions.TopicPartitions.set -> void
+Twinbox.Kafka.KafkaOptions.TopicReplicationFactor.get -> short
+Twinbox.Kafka.KafkaOptions.TopicReplicationFactor.set -> void
+Twinbox.Kafka.KafkaTransport
+Twinbox.Kafka.KafkaTransport.Name.get -> string!
+Twinbox.Kafka.KafkaTransport.SendAsync(Twinbox.Transport.TransportMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.KafkaTwinboxBuilderExtensions
+const Twinbox.Kafka.KafkaTransport.TransportName = "kafka" -> string!
+static Twinbox.KafkaTwinboxBuilderExtensions.UseKafka(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.Kafka.KafkaOptions!>! configure) -> Twinbox.TwinboxBuilder!
+static Twinbox.KafkaTwinboxBuilderExtensions.UseKafka(this Twinbox.TwinboxBuilder! builder, string! bootstrapServers, System.Action<Twinbox.Kafka.KafkaOptions!>? configure = null) -> Twinbox.TwinboxBuilder!

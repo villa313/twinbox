@@ -1,1 +1,30 @@
 #nullable enable
+Twinbox.TestHarnessExtensions
+Twinbox.Testing.Conformance.ConformanceCase<TStore>
+Twinbox.Testing.Conformance.ConformanceCase<TStore>.<Clone>$() -> Twinbox.Testing.Conformance.ConformanceCase<TStore>!
+Twinbox.Testing.Conformance.ConformanceCase<TStore>.ConformanceCase(string! Name, System.Func<TStore, System.Threading.Tasks.Task!>! RunAsync) -> void
+Twinbox.Testing.Conformance.ConformanceCase<TStore>.Deconstruct(out string! Name, out System.Func<TStore, System.Threading.Tasks.Task!>! RunAsync) -> void
+Twinbox.Testing.Conformance.ConformanceCase<TStore>.Equals(Twinbox.Testing.Conformance.ConformanceCase<TStore>? other) -> bool
+Twinbox.Testing.Conformance.ConformanceCase<TStore>.Name.get -> string!
+Twinbox.Testing.Conformance.ConformanceCase<TStore>.Name.init -> void
+Twinbox.Testing.Conformance.ConformanceCase<TStore>.RunAsync.get -> System.Func<TStore, System.Threading.Tasks.Task!>!
+Twinbox.Testing.Conformance.ConformanceCase<TStore>.RunAsync.init -> void
+Twinbox.Testing.Conformance.ConformanceException
+Twinbox.Testing.Conformance.ConformanceException.ConformanceException(string! message) -> void
+Twinbox.Testing.Conformance.OutboxAdminConformance
+Twinbox.Testing.Conformance.OutboxStoreConformance
+Twinbox.Testing.TwinboxTestHarness
+Twinbox.Testing.TwinboxTestHarness.DeadLetteredOutgoing() -> System.Collections.Generic.IReadOnlyList<Twinbox.OutboxMessage!>!
+Twinbox.Testing.TwinboxTestHarness.DrainAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Twinbox.Testing.TwinboxTestHarness.Sent<TMessage>() -> System.Collections.Generic.IReadOnlyList<TMessage!>!
+Twinbox.Testing.TwinboxTestHarness.Store.get -> Twinbox.InMemory.InMemoryOutboxStore!
+Twinbox.Testing.TwinboxTestHarness.Transport.get -> Twinbox.InMemory.InMemoryTransport!
+override Twinbox.Testing.Conformance.ConformanceCase<TStore>.Equals(object? obj) -> bool
+override Twinbox.Testing.Conformance.ConformanceCase<TStore>.GetHashCode() -> int
+override Twinbox.Testing.Conformance.ConformanceCase<TStore>.ToString() -> string!
+static Twinbox.TestHarnessExtensions.GetTwinboxHarness(this System.IServiceProvider! services) -> Twinbox.Testing.TwinboxTestHarness!
+static Twinbox.TestHarnessExtensions.UseTestHarness(this Twinbox.TwinboxBuilder! builder) -> Twinbox.TwinboxBuilder!
+static Twinbox.Testing.Conformance.ConformanceCase<TStore>.operator !=(Twinbox.Testing.Conformance.ConformanceCase<TStore>? left, Twinbox.Testing.Conformance.ConformanceCase<TStore>? right) -> bool
+static Twinbox.Testing.Conformance.ConformanceCase<TStore>.operator ==(Twinbox.Testing.Conformance.ConformanceCase<TStore>? left, Twinbox.Testing.Conformance.ConformanceCase<TStore>? right) -> bool
+static Twinbox.Testing.Conformance.OutboxAdminConformance.Cases.get -> System.Collections.Generic.IReadOnlyList<Twinbox.Testing.Conformance.ConformanceCase<Twinbox.Storage.IOutboxStore!>!>!
+static Twinbox.Testing.Conformance.OutboxStoreConformance.Cases.get -> System.Collections.Generic.IReadOnlyList<Twinbox.Testing.Conformance.ConformanceCase<Twinbox.Storage.IOutboxStore!>!>!

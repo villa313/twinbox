@@ -1,1 +1,11 @@
 #nullable enable
+Twinbox.AzureFunctions.TwinboxServiceBusTrigger
+Twinbox.AzureFunctions.TwinboxServiceBusTrigger.ProcessServiceBusMessageAsync(Azure.Messaging.ServiceBus.ServiceBusReceivedMessage! message, Microsoft.Azure.Functions.Worker.ServiceBusMessageActions! messageActions, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.AzureFunctions.TwinboxServiceBusTrigger.ProcessServiceBusMessageAsync(Azure.Messaging.ServiceBus.ServiceBusReceivedMessage! message, Microsoft.Azure.Functions.Worker.ServiceBusMessageActions! messageActions, string! source, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.AzureFunctions.TwinboxServiceBusTrigger.TwinboxServiceBusTrigger(Twinbox.Transport.IInboundPipeline! pipeline, Microsoft.Extensions.Logging.ILogger<Twinbox.AzureFunctions.TwinboxServiceBusTrigger!>! logger) -> void
+Twinbox.AzureFunctionsTwinboxBuilderExtensions
+Twinbox.TwinboxMaintenanceExtensions
+const Twinbox.AzureFunctions.TwinboxServiceBusTrigger.DefaultSource = "azureservicebus" -> string!
+static Twinbox.AzureFunctionsTwinboxBuilderExtensions.UseAzureFunctions(this Twinbox.TwinboxBuilder! builder) -> Twinbox.TwinboxBuilder!
+static Twinbox.TwinboxMaintenanceExtensions.DispatchPendingAsync(this Twinbox.ITwinboxMaintenance! maintenance, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
+static readonly Twinbox.TwinboxMaintenanceExtensions.DefaultDispatchBudget -> System.TimeSpan

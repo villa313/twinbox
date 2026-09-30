@@ -1,1 +1,5 @@
 #nullable enable
+Aspire.Hosting.TwinboxResourceBuilderExtensions
+const Aspire.Hosting.TwinboxResourceBuilderExtensions.OpenDashboardCommandName = "twinbox-open-dashboard" -> string!
+const Aspire.Hosting.TwinboxResourceBuilderExtensions.ReplayDeadLettersCommandName = "twinbox-replay-dead-letters" -> string!
+static Aspire.Hosting.TwinboxResourceBuilderExtensions.WithTwinboxDashboard<T>(this Aspire.Hosting.ApplicationModel.IResourceBuilder<T>! builder, string! path = "/twinbox", string? endpointName = null) -> Aspire.Hosting.ApplicationModel.IResourceBuilder<T>!

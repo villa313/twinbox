@@ -1,1 +1,488 @@
 #nullable enable
+Microsoft.Extensions.DependencyInjection.TwinboxHealthChecksBuilderExtensions
+Microsoft.Extensions.DependencyInjection.TwinboxServiceCollectionExtensions
+Twinbox.CircuitBreakerOptions
+Twinbox.CircuitBreakerOptions.BreakDuration.get -> System.TimeSpan
+Twinbox.CircuitBreakerOptions.BreakDuration.set -> void
+Twinbox.CircuitBreakerOptions.CircuitBreakerOptions() -> void
+Twinbox.CircuitBreakerOptions.FailureThreshold.get -> int
+Twinbox.CircuitBreakerOptions.FailureThreshold.set -> void
+Twinbox.DestinationOptions
+Twinbox.DestinationOptions.CircuitBreaker.get -> Twinbox.CircuitBreakerOptions?
+Twinbox.DestinationOptions.CircuitBreaker.set -> void
+Twinbox.DestinationOptions.DestinationOptions() -> void
+Twinbox.DestinationOptions.Retry.get -> Twinbox.RetryOptions?
+Twinbox.DestinationOptions.Retry.set -> void
+Twinbox.Diagnostics.TwinboxDiagnostics
+Twinbox.DispatcherOptions
+Twinbox.DispatcherOptions.BatchSize.get -> int
+Twinbox.DispatcherOptions.BatchSize.set -> void
+Twinbox.DispatcherOptions.DispatcherOptions() -> void
+Twinbox.DispatcherOptions.Enabled.get -> bool
+Twinbox.DispatcherOptions.Enabled.set -> void
+Twinbox.DispatcherOptions.LeaseDuration.get -> System.TimeSpan
+Twinbox.DispatcherOptions.LeaseDuration.set -> void
+Twinbox.DispatcherOptions.MaxDegreeOfParallelism.get -> int
+Twinbox.DispatcherOptions.MaxDegreeOfParallelism.set -> void
+Twinbox.DispatcherOptions.MaxPollInterval.get -> System.TimeSpan
+Twinbox.DispatcherOptions.MaxPollInterval.set -> void
+Twinbox.DispatcherOptions.MinPollInterval.get -> System.TimeSpan
+Twinbox.DispatcherOptions.MinPollInterval.set -> void
+Twinbox.DispatcherOptions.SendTimeout.get -> System.TimeSpan
+Twinbox.DispatcherOptions.SendTimeout.set -> void
+Twinbox.HandlerTransaction
+Twinbox.HandlerTransaction.Connection.get -> System.Data.Common.DbConnection!
+Twinbox.HandlerTransaction.HandlerTransaction() -> void
+Twinbox.HandlerTransaction.IsActive.get -> bool
+Twinbox.HandlerTransaction.Transaction.get -> System.Data.Common.DbTransaction!
+Twinbox.IDeadLetterObserver
+Twinbox.IDeadLetterObserver.OnDeadLetteredAsync(Twinbox.OutboxMessage! message, System.Exception! exception, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.IMessageNames
+Twinbox.IMessageNames.GetName(System.Type! messageType) -> string!
+Twinbox.IOutboxDispatcher
+Twinbox.IOutboxDispatcher.DispatchBatchAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
+Twinbox.ITwinboxMaintenance
+Twinbox.ITwinboxMaintenance.DispatchPendingAsync(System.TimeSpan budget, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
+Twinbox.ITwinboxMaintenance.RunCleanupAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
+Twinbox.InboxOptions
+Twinbox.InboxOptions.Enabled.get -> bool
+Twinbox.InboxOptions.Enabled.set -> void
+Twinbox.InboxOptions.InboxOptions() -> void
+Twinbox.InboxOptions.UnknownMessages.get -> Twinbox.UnknownMessagePolicy
+Twinbox.InboxOptions.UnknownMessages.set -> void
+Twinbox.Migration.InboxSeedOptions
+Twinbox.Migration.InboxSeedOptions.CreateConnection.get -> System.Func<System.IServiceProvider!, System.Data.Common.DbConnection!>?
+Twinbox.Migration.InboxSeedOptions.CreateConnection.set -> void
+Twinbox.Migration.InboxSeedOptions.InboxSeedOptions() -> void
+Twinbox.Migration.InboxSeedOptions.SelectProcessed.get -> string?
+Twinbox.Migration.InboxSeedOptions.SelectProcessed.set -> void
+Twinbox.Migration.OutboxImportOptions
+Twinbox.Migration.OutboxImportOptions.BatchSize.get -> int
+Twinbox.Migration.OutboxImportOptions.BatchSize.set -> void
+Twinbox.Migration.OutboxImportOptions.CreateConnection.get -> System.Func<System.IServiceProvider!, System.Data.Common.DbConnection!>?
+Twinbox.Migration.OutboxImportOptions.CreateConnection.set -> void
+Twinbox.Migration.OutboxImportOptions.MarkImported.get -> string?
+Twinbox.Migration.OutboxImportOptions.MarkImported.set -> void
+Twinbox.Migration.OutboxImportOptions.OutboxImportOptions() -> void
+Twinbox.Migration.OutboxImportOptions.PollInterval.get -> System.TimeSpan
+Twinbox.Migration.OutboxImportOptions.PollInterval.set -> void
+Twinbox.Migration.OutboxImportOptions.SelectPending.get -> string?
+Twinbox.Migration.OutboxImportOptions.SelectPending.set -> void
+Twinbox.Migration.OutboxImportOptions.Store.get -> string?
+Twinbox.Migration.OutboxImportOptions.Store.set -> void
+Twinbox.MigrationTwinboxBuilderExtensions
+Twinbox.OutboxMessage
+Twinbox.OutboxMessage.<Clone>$() -> Twinbox.OutboxMessage!
+Twinbox.OutboxMessage.Attempts.get -> int
+Twinbox.OutboxMessage.Attempts.init -> void
+Twinbox.OutboxMessage.AvailableAt.get -> System.DateTimeOffset
+Twinbox.OutboxMessage.AvailableAt.init -> void
+Twinbox.OutboxMessage.ContentType.get -> string!
+Twinbox.OutboxMessage.ContentType.init -> void
+Twinbox.OutboxMessage.CreatedAt.get -> System.DateTimeOffset
+Twinbox.OutboxMessage.CreatedAt.init -> void
+Twinbox.OutboxMessage.Destination.get -> string!
+Twinbox.OutboxMessage.Destination.init -> void
+Twinbox.OutboxMessage.Equals(Twinbox.OutboxMessage? other) -> bool
+Twinbox.OutboxMessage.Headers.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Twinbox.OutboxMessage.Headers.init -> void
+Twinbox.OutboxMessage.Id.get -> System.Guid
+Twinbox.OutboxMessage.Id.init -> void
+Twinbox.OutboxMessage.LastError.get -> string?
+Twinbox.OutboxMessage.LastError.init -> void
+Twinbox.OutboxMessage.LeaseOwner.get -> string?
+Twinbox.OutboxMessage.LeaseOwner.init -> void
+Twinbox.OutboxMessage.LeaseUntil.get -> System.DateTimeOffset?
+Twinbox.OutboxMessage.LeaseUntil.init -> void
+Twinbox.OutboxMessage.MessageName.get -> string!
+Twinbox.OutboxMessage.MessageName.init -> void
+Twinbox.OutboxMessage.OutboxMessage() -> void
+Twinbox.OutboxMessage.PartitionKey.get -> string?
+Twinbox.OutboxMessage.PartitionKey.init -> void
+Twinbox.OutboxMessage.Payload.get -> byte[]!
+Twinbox.OutboxMessage.Payload.init -> void
+Twinbox.OutboxMessage.SentAt.get -> System.DateTimeOffset?
+Twinbox.OutboxMessage.SentAt.init -> void
+Twinbox.OutboxMessage.Status.get -> Twinbox.OutboxMessageStatus
+Twinbox.OutboxMessage.Status.init -> void
+Twinbox.OutboxMessage.TenantId.get -> string?
+Twinbox.OutboxMessage.TenantId.init -> void
+Twinbox.OutboxMessage.TraceParent.get -> string?
+Twinbox.OutboxMessage.TraceParent.init -> void
+Twinbox.OutboxMessage.Transport.get -> string!
+Twinbox.OutboxMessage.Transport.init -> void
+Twinbox.OutboxMessageStatus
+Twinbox.OutboxMessageStatus.Dead = 3 -> Twinbox.OutboxMessageStatus
+Twinbox.OutboxMessageStatus.Pending = 0 -> Twinbox.OutboxMessageStatus
+Twinbox.OutboxMessageStatus.Processing = 1 -> Twinbox.OutboxMessageStatus
+Twinbox.OutboxMessageStatus.Sent = 2 -> Twinbox.OutboxMessageStatus
+Twinbox.ReplyExtensions
+Twinbox.RetentionOptions
+Twinbox.RetentionOptions.BatchSize.get -> int
+Twinbox.RetentionOptions.BatchSize.set -> void
+Twinbox.RetentionOptions.CleanupInterval.get -> System.TimeSpan
+Twinbox.RetentionOptions.CleanupInterval.set -> void
+Twinbox.RetentionOptions.DeadMessages.get -> System.TimeSpan?
+Twinbox.RetentionOptions.DeadMessages.set -> void
+Twinbox.RetentionOptions.Enabled.get -> bool
+Twinbox.RetentionOptions.Enabled.set -> void
+Twinbox.RetentionOptions.InboxEntries.get -> System.TimeSpan
+Twinbox.RetentionOptions.InboxEntries.set -> void
+Twinbox.RetentionOptions.RetentionOptions() -> void
+Twinbox.RetentionOptions.SentMessages.get -> System.TimeSpan
+Twinbox.RetentionOptions.SentMessages.set -> void
+Twinbox.RetryOptions
+Twinbox.RetryOptions.InitialDelay.get -> System.TimeSpan
+Twinbox.RetryOptions.InitialDelay.set -> void
+Twinbox.RetryOptions.MaxAttempts.get -> int
+Twinbox.RetryOptions.MaxAttempts.set -> void
+Twinbox.RetryOptions.MaxDelay.get -> System.TimeSpan
+Twinbox.RetryOptions.MaxDelay.set -> void
+Twinbox.RetryOptions.MaxRetryAfter.get -> System.TimeSpan
+Twinbox.RetryOptions.MaxRetryAfter.set -> void
+Twinbox.RetryOptions.RetryOptions() -> void
+Twinbox.RouteBuilder<TMessage>
+Twinbox.RouteBuilder<TMessage>.To(string! destination, string? transport = null) -> Twinbox.TwinboxBuilder!
+Twinbox.Serialization.HeaderCodec
+Twinbox.Serialization.IMessageSerializer
+Twinbox.Serialization.IMessageSerializer.ContentType.get -> string!
+Twinbox.Serialization.IMessageSerializer.Deserialize(System.ReadOnlySpan<byte> body, System.Type! messageType) -> object!
+Twinbox.Serialization.IMessageSerializer.Serialize(object! message, System.Type! messageType) -> byte[]!
+Twinbox.Serialization.SystemTextJsonMessageSerializer
+Twinbox.Serialization.SystemTextJsonMessageSerializer.ContentType.get -> string!
+Twinbox.Serialization.SystemTextJsonMessageSerializer.Deserialize(System.ReadOnlySpan<byte> body, System.Type! messageType) -> object!
+Twinbox.Serialization.SystemTextJsonMessageSerializer.Serialize(object! message, System.Type! messageType) -> byte[]!
+Twinbox.Serialization.SystemTextJsonMessageSerializer.SystemTextJsonMessageSerializer(System.Text.Json.JsonSerializerOptions? options = null) -> void
+Twinbox.Storage.DispatchOutcome
+Twinbox.Storage.DispatchOutcome.<Clone>$() -> Twinbox.Storage.DispatchOutcome!
+Twinbox.Storage.DispatchOutcome.Attempts.get -> int
+Twinbox.Storage.DispatchOutcome.Attempts.init -> void
+Twinbox.Storage.DispatchOutcome.AvailableAt.get -> System.DateTimeOffset?
+Twinbox.Storage.DispatchOutcome.AvailableAt.init -> void
+Twinbox.Storage.DispatchOutcome.Deconstruct(out System.Guid MessageId, out Twinbox.OutboxMessageStatus Status, out int Attempts, out System.DateTimeOffset? AvailableAt, out System.DateTimeOffset? SentAt, out string? Error) -> void
+Twinbox.Storage.DispatchOutcome.DispatchOutcome(System.Guid MessageId, Twinbox.OutboxMessageStatus Status, int Attempts, System.DateTimeOffset? AvailableAt = null, System.DateTimeOffset? SentAt = null, string? Error = null) -> void
+Twinbox.Storage.DispatchOutcome.Equals(Twinbox.Storage.DispatchOutcome? other) -> bool
+Twinbox.Storage.DispatchOutcome.Error.get -> string?
+Twinbox.Storage.DispatchOutcome.Error.init -> void
+Twinbox.Storage.DispatchOutcome.MessageId.get -> System.Guid
+Twinbox.Storage.DispatchOutcome.MessageId.init -> void
+Twinbox.Storage.DispatchOutcome.SentAt.get -> System.DateTimeOffset?
+Twinbox.Storage.DispatchOutcome.SentAt.init -> void
+Twinbox.Storage.DispatchOutcome.Status.get -> Twinbox.OutboxMessageStatus
+Twinbox.Storage.DispatchOutcome.Status.init -> void
+Twinbox.Storage.HandlerTransactionBinding
+Twinbox.Storage.IBatchInboxStore
+Twinbox.Storage.IBatchInboxStore.TryProcessBatchAsync(System.Collections.Generic.IReadOnlyList<Twinbox.Storage.InboxEntry!>! entries, System.IServiceProvider! scopedServices, System.Func<System.Collections.Generic.IReadOnlyList<int>!, System.Threading.CancellationToken, System.Threading.Tasks.Task!>! handler, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
+Twinbox.Storage.IDispatchSignal
+Twinbox.Storage.IDispatchSignal.Notify() -> void
+Twinbox.Storage.IInboxStore
+Twinbox.Storage.IInboxStore.PurgeAsync(System.DateTimeOffset processedBefore, int batchSize, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
+Twinbox.Storage.IInboxStore.TryProcessAsync(Twinbox.Storage.InboxEntry! entry, System.IServiceProvider! scopedServices, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! handler, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<bool>!
+Twinbox.Storage.IMessageIdGenerator
+Twinbox.Storage.IMessageIdGenerator.NewId(System.DateTimeOffset now) -> System.Guid
+Twinbox.Storage.IOutboxAdmin
+Twinbox.Storage.IOutboxAdmin.DeleteAsync(System.Collections.Generic.IReadOnlyCollection<System.Guid>! ids, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
+Twinbox.Storage.IOutboxAdmin.GetAsync(System.Guid id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Twinbox.OutboxMessage?>!
+Twinbox.Storage.IOutboxAdmin.QueryAsync(Twinbox.Storage.OutboxQuery! query, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Twinbox.Storage.OutboxPage!>!
+Twinbox.Storage.IOutboxAdmin.ReplayAsync(System.Collections.Generic.IReadOnlyCollection<System.Guid>! ids, System.DateTimeOffset now, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
+Twinbox.Storage.IOutboxSession
+Twinbox.Storage.IOutboxSession.HasPending.get -> bool
+Twinbox.Storage.IOutboxSession.Services.get -> System.IServiceProvider!
+Twinbox.Storage.IOutboxSession.TakePending() -> System.Collections.Generic.IReadOnlyList<Twinbox.OutboxMessage!>!
+Twinbox.Storage.IOutboxStore
+Twinbox.Storage.IOutboxStore.AppendAsync(System.Collections.Generic.IReadOnlyList<Twinbox.OutboxMessage!>! messages, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.Storage.IOutboxStore.ClaimAsync(Twinbox.Storage.OutboxClaim! claim, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Twinbox.OutboxMessage!>!>!
+Twinbox.Storage.IOutboxStore.CompleteAsync(string! owner, System.Collections.Generic.IReadOnlyList<Twinbox.Storage.DispatchOutcome!>! outcomes, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.Storage.IOutboxStore.GetStatisticsAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Twinbox.Storage.OutboxStatistics!>!
+Twinbox.Storage.IOutboxStore.Name.get -> string!
+Twinbox.Storage.IOutboxStore.PurgeAsync(Twinbox.Storage.OutboxPurge! purge, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
+Twinbox.Storage.IOutboxTransactionWriter
+Twinbox.Storage.IOutboxTransactionWriter.WriteAsync(System.Data.Common.DbTransaction! transaction, System.Collections.Generic.IReadOnlyList<Twinbox.OutboxMessage!>! messages, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.Storage.InboxEntry
+Twinbox.Storage.InboxEntry.<Clone>$() -> Twinbox.Storage.InboxEntry!
+Twinbox.Storage.InboxEntry.Consumer.get -> string!
+Twinbox.Storage.InboxEntry.Consumer.init -> void
+Twinbox.Storage.InboxEntry.Deconstruct(out string! MessageId, out string! Consumer, out string! Source, out System.DateTimeOffset ReceivedAt) -> void
+Twinbox.Storage.InboxEntry.Equals(Twinbox.Storage.InboxEntry? other) -> bool
+Twinbox.Storage.InboxEntry.InboxEntry(string! MessageId, string! Consumer, string! Source, System.DateTimeOffset ReceivedAt) -> void
+Twinbox.Storage.InboxEntry.MessageId.get -> string!
+Twinbox.Storage.InboxEntry.MessageId.init -> void
+Twinbox.Storage.InboxEntry.ReceivedAt.get -> System.DateTimeOffset
+Twinbox.Storage.InboxEntry.ReceivedAt.init -> void
+Twinbox.Storage.InboxEntry.Source.get -> string!
+Twinbox.Storage.InboxEntry.Source.init -> void
+Twinbox.Storage.OutboxClaim
+Twinbox.Storage.OutboxClaim.<Clone>$() -> Twinbox.Storage.OutboxClaim!
+Twinbox.Storage.OutboxClaim.BatchSize.get -> int
+Twinbox.Storage.OutboxClaim.BatchSize.init -> void
+Twinbox.Storage.OutboxClaim.Deconstruct(out string! Owner, out int BatchSize, out System.DateTimeOffset Now, out System.TimeSpan LeaseDuration) -> void
+Twinbox.Storage.OutboxClaim.Equals(Twinbox.Storage.OutboxClaim? other) -> bool
+Twinbox.Storage.OutboxClaim.LeaseDuration.get -> System.TimeSpan
+Twinbox.Storage.OutboxClaim.LeaseDuration.init -> void
+Twinbox.Storage.OutboxClaim.Now.get -> System.DateTimeOffset
+Twinbox.Storage.OutboxClaim.Now.init -> void
+Twinbox.Storage.OutboxClaim.OutboxClaim(string! Owner, int BatchSize, System.DateTimeOffset Now, System.TimeSpan LeaseDuration) -> void
+Twinbox.Storage.OutboxClaim.Owner.get -> string!
+Twinbox.Storage.OutboxClaim.Owner.init -> void
+Twinbox.Storage.OutboxPage
+Twinbox.Storage.OutboxPage.<Clone>$() -> Twinbox.Storage.OutboxPage!
+Twinbox.Storage.OutboxPage.Deconstruct(out System.Collections.Generic.IReadOnlyList<Twinbox.OutboxMessage!>! Messages, out string? NextCursor) -> void
+Twinbox.Storage.OutboxPage.Equals(Twinbox.Storage.OutboxPage? other) -> bool
+Twinbox.Storage.OutboxPage.Messages.get -> System.Collections.Generic.IReadOnlyList<Twinbox.OutboxMessage!>!
+Twinbox.Storage.OutboxPage.Messages.init -> void
+Twinbox.Storage.OutboxPage.NextCursor.get -> string?
+Twinbox.Storage.OutboxPage.NextCursor.init -> void
+Twinbox.Storage.OutboxPage.OutboxPage(System.Collections.Generic.IReadOnlyList<Twinbox.OutboxMessage!>! Messages, string? NextCursor) -> void
+Twinbox.Storage.OutboxPurge
+Twinbox.Storage.OutboxPurge.<Clone>$() -> Twinbox.Storage.OutboxPurge!
+Twinbox.Storage.OutboxPurge.BatchSize.get -> int
+Twinbox.Storage.OutboxPurge.BatchSize.init -> void
+Twinbox.Storage.OutboxPurge.DeadBefore.get -> System.DateTimeOffset?
+Twinbox.Storage.OutboxPurge.DeadBefore.init -> void
+Twinbox.Storage.OutboxPurge.Deconstruct(out System.DateTimeOffset SentBefore, out System.DateTimeOffset? DeadBefore, out int BatchSize) -> void
+Twinbox.Storage.OutboxPurge.Equals(Twinbox.Storage.OutboxPurge? other) -> bool
+Twinbox.Storage.OutboxPurge.OutboxPurge(System.DateTimeOffset SentBefore, System.DateTimeOffset? DeadBefore, int BatchSize) -> void
+Twinbox.Storage.OutboxPurge.SentBefore.get -> System.DateTimeOffset
+Twinbox.Storage.OutboxPurge.SentBefore.init -> void
+Twinbox.Storage.OutboxQuery
+Twinbox.Storage.OutboxQuery.<Clone>$() -> Twinbox.Storage.OutboxQuery!
+Twinbox.Storage.OutboxQuery.Cursor.get -> string?
+Twinbox.Storage.OutboxQuery.Cursor.init -> void
+Twinbox.Storage.OutboxQuery.Destination.get -> string?
+Twinbox.Storage.OutboxQuery.Destination.init -> void
+Twinbox.Storage.OutboxQuery.Equals(Twinbox.Storage.OutboxQuery? other) -> bool
+Twinbox.Storage.OutboxQuery.MessageName.get -> string?
+Twinbox.Storage.OutboxQuery.MessageName.init -> void
+Twinbox.Storage.OutboxQuery.OutboxQuery() -> void
+Twinbox.Storage.OutboxQuery.Search.get -> string?
+Twinbox.Storage.OutboxQuery.Search.init -> void
+Twinbox.Storage.OutboxQuery.Status.get -> Twinbox.OutboxMessageStatus?
+Twinbox.Storage.OutboxQuery.Status.init -> void
+Twinbox.Storage.OutboxQuery.Take.get -> int
+Twinbox.Storage.OutboxQuery.Take.init -> void
+Twinbox.Storage.OutboxStatistics
+Twinbox.Storage.OutboxStatistics.<Clone>$() -> Twinbox.Storage.OutboxStatistics!
+Twinbox.Storage.OutboxStatistics.DeadCount.get -> long
+Twinbox.Storage.OutboxStatistics.DeadCount.init -> void
+Twinbox.Storage.OutboxStatistics.Deconstruct(out long PendingCount, out System.DateTimeOffset? OldestPendingAvailableAt, out long DeadCount) -> void
+Twinbox.Storage.OutboxStatistics.Equals(Twinbox.Storage.OutboxStatistics? other) -> bool
+Twinbox.Storage.OutboxStatistics.OldestPendingAvailableAt.get -> System.DateTimeOffset?
+Twinbox.Storage.OutboxStatistics.OldestPendingAvailableAt.init -> void
+Twinbox.Storage.OutboxStatistics.OutboxStatistics(long PendingCount, System.DateTimeOffset? OldestPendingAvailableAt, long DeadCount) -> void
+Twinbox.Storage.OutboxStatistics.PendingCount.get -> long
+Twinbox.Storage.OutboxStatistics.PendingCount.init -> void
+Twinbox.Storage.Uuid7MessageIdGenerator
+Twinbox.Storage.Uuid7MessageIdGenerator.NewId(System.DateTimeOffset now) -> System.Guid
+Twinbox.Storage.Uuid7MessageIdGenerator.Uuid7MessageIdGenerator() -> void
+Twinbox.Tenancy.TenantDirectory
+Twinbox.Tenancy.TenantDirectory.Dispose() -> void
+Twinbox.Tenancy.TenantDirectory.ForEachTenantAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! action, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.Tenancy.TenantDirectory.GetTenantsAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyCollection<string?>!>!
+Twinbox.Tenancy.TenantDirectory.TenantDirectory(Twinbox.Tenancy.TwinboxScopeFactory! scopes, System.TimeProvider! time, Twinbox.TenancyOptions? tenancy = null) -> void
+Twinbox.Tenancy.TwinboxScopeFactory
+Twinbox.Tenancy.TwinboxScopeFactory.CreateAsyncScope() -> Microsoft.Extensions.DependencyInjection.AsyncServiceScope
+Twinbox.Tenancy.TwinboxScopeFactory.TwinboxScopeFactory(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory! scopes, Twinbox.TenancyOptions? tenancy = null) -> void
+Twinbox.TenancyOptions
+Twinbox.TenancyOptions.CurrentTenant.get -> System.Func<System.IServiceProvider!, string?>?
+Twinbox.TenancyOptions.CurrentTenant.set -> void
+Twinbox.TenancyOptions.EnterTenant.get -> System.Action<System.IServiceProvider!, string!>?
+Twinbox.TenancyOptions.EnterTenant.set -> void
+Twinbox.TenancyOptions.ListTenants.get -> System.Func<System.IServiceProvider!, System.Threading.CancellationToken, System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyCollection<string!>!>!>?
+Twinbox.TenancyOptions.ListTenants.set -> void
+Twinbox.TenancyOptions.TenancyOptions() -> void
+Twinbox.TenancyOptions.TenantListCacheDuration.get -> System.TimeSpan
+Twinbox.TenancyOptions.TenantListCacheDuration.set -> void
+Twinbox.TransactionalOutboxExtensions
+Twinbox.Transport.HeaderProfile
+Twinbox.Transport.HeaderProfile.<Clone>$() -> Twinbox.Transport.HeaderProfile!
+Twinbox.Transport.HeaderProfile.Constants.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>?
+Twinbox.Transport.HeaderProfile.Constants.init -> void
+Twinbox.Transport.HeaderProfile.Deconstruct(out string! MessageId, out string! MessageName, out string? PartitionKey) -> void
+Twinbox.Transport.HeaderProfile.Equals(Twinbox.Transport.HeaderProfile? other) -> bool
+Twinbox.Transport.HeaderProfile.HeaderProfile(string! MessageId, string! MessageName, string? PartitionKey = null) -> void
+Twinbox.Transport.HeaderProfile.MessageId.get -> string!
+Twinbox.Transport.HeaderProfile.MessageId.init -> void
+Twinbox.Transport.HeaderProfile.MessageName.get -> string!
+Twinbox.Transport.HeaderProfile.MessageName.init -> void
+Twinbox.Transport.HeaderProfile.PartitionKey.get -> string?
+Twinbox.Transport.HeaderProfile.PartitionKey.init -> void
+Twinbox.Transport.HeaderProfile.SentTime.get -> string?
+Twinbox.Transport.HeaderProfile.SentTime.init -> void
+Twinbox.Transport.IInboundPipeline
+Twinbox.Transport.IInboundPipeline.ProcessAsync(Twinbox.Transport.IncomingMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.Transport.IInboundPipeline.ProcessBatchAsync(System.Collections.Generic.IReadOnlyList<Twinbox.Transport.IncomingMessage!>! messages, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.Transport.ITransport
+Twinbox.Transport.ITransport.Name.get -> string!
+Twinbox.Transport.ITransport.SendAsync(Twinbox.Transport.TransportMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.Transport.IncomingMessage
+Twinbox.Transport.IncomingMessage.<Clone>$() -> Twinbox.Transport.IncomingMessage!
+Twinbox.Transport.IncomingMessage.Body.get -> System.ReadOnlyMemory<byte>
+Twinbox.Transport.IncomingMessage.Body.init -> void
+Twinbox.Transport.IncomingMessage.ContentType.get -> string!
+Twinbox.Transport.IncomingMessage.ContentType.init -> void
+Twinbox.Transport.IncomingMessage.Deconstruct(out string! MessageId, out string! MessageName, out string! Source, out System.ReadOnlyMemory<byte> Body, out string! ContentType, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Headers, out int DeliveryAttempt, out string? PartitionKey) -> void
+Twinbox.Transport.IncomingMessage.DeliveryAttempt.get -> int
+Twinbox.Transport.IncomingMessage.DeliveryAttempt.init -> void
+Twinbox.Transport.IncomingMessage.Equals(Twinbox.Transport.IncomingMessage? other) -> bool
+Twinbox.Transport.IncomingMessage.Headers.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Twinbox.Transport.IncomingMessage.Headers.init -> void
+Twinbox.Transport.IncomingMessage.IncomingMessage(string! MessageId, string! MessageName, string! Source, System.ReadOnlyMemory<byte> Body, string! ContentType, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Headers, int DeliveryAttempt, string? PartitionKey) -> void
+Twinbox.Transport.IncomingMessage.MessageId.get -> string!
+Twinbox.Transport.IncomingMessage.MessageId.init -> void
+Twinbox.Transport.IncomingMessage.MessageName.get -> string!
+Twinbox.Transport.IncomingMessage.MessageName.init -> void
+Twinbox.Transport.IncomingMessage.PartitionKey.get -> string?
+Twinbox.Transport.IncomingMessage.PartitionKey.init -> void
+Twinbox.Transport.IncomingMessage.Source.get -> string!
+Twinbox.Transport.IncomingMessage.Source.init -> void
+Twinbox.Transport.LocalTransport
+Twinbox.Transport.LocalTransport.Name.get -> string!
+Twinbox.Transport.LocalTransport.SendAsync(Twinbox.Transport.TransportMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.Transport.PermanentDeliveryException
+Twinbox.Transport.PermanentDeliveryException.PermanentDeliveryException() -> void
+Twinbox.Transport.PermanentDeliveryException.PermanentDeliveryException(string! message) -> void
+Twinbox.Transport.PermanentDeliveryException.PermanentDeliveryException(string! message, System.Exception! innerException) -> void
+Twinbox.Transport.RetryAfterException
+Twinbox.Transport.RetryAfterException.RetryAfter.get -> System.TimeSpan
+Twinbox.Transport.RetryAfterException.RetryAfterException() -> void
+Twinbox.Transport.RetryAfterException.RetryAfterException(string! message) -> void
+Twinbox.Transport.RetryAfterException.RetryAfterException(string! message, System.Exception! innerException) -> void
+Twinbox.Transport.RetryAfterException.RetryAfterException(string! message, System.TimeSpan retryAfter) -> void
+Twinbox.Transport.RetryAfterException.RetryAfterException(string! message, System.TimeSpan retryAfter, System.Exception! innerException) -> void
+Twinbox.Transport.TransportHeaders
+Twinbox.Transport.TransportMessage
+Twinbox.Transport.TransportMessage.<Clone>$() -> Twinbox.Transport.TransportMessage!
+Twinbox.Transport.TransportMessage.Body.get -> System.ReadOnlyMemory<byte>
+Twinbox.Transport.TransportMessage.Body.init -> void
+Twinbox.Transport.TransportMessage.ContentType.get -> string!
+Twinbox.Transport.TransportMessage.ContentType.init -> void
+Twinbox.Transport.TransportMessage.Deconstruct(out string! MessageId, out string! MessageName, out string! Destination, out System.ReadOnlyMemory<byte> Body, out string! ContentType, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Headers, out string? PartitionKey) -> void
+Twinbox.Transport.TransportMessage.Destination.get -> string!
+Twinbox.Transport.TransportMessage.Destination.init -> void
+Twinbox.Transport.TransportMessage.Equals(Twinbox.Transport.TransportMessage? other) -> bool
+Twinbox.Transport.TransportMessage.Headers.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Twinbox.Transport.TransportMessage.Headers.init -> void
+Twinbox.Transport.TransportMessage.MessageId.get -> string!
+Twinbox.Transport.TransportMessage.MessageId.init -> void
+Twinbox.Transport.TransportMessage.MessageName.get -> string!
+Twinbox.Transport.TransportMessage.MessageName.init -> void
+Twinbox.Transport.TransportMessage.PartitionKey.get -> string?
+Twinbox.Transport.TransportMessage.PartitionKey.init -> void
+Twinbox.Transport.TransportMessage.TransportMessage(string! MessageId, string! MessageName, string! Destination, System.ReadOnlyMemory<byte> Body, string! ContentType, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Headers, string? PartitionKey) -> void
+Twinbox.TwinboxBuilder
+Twinbox.TwinboxBuilder.AddBatchFilter<TFilter>() -> Twinbox.TwinboxBuilder!
+Twinbox.TwinboxBuilder.AddBatchHandler<THandler, TMessage>(string? consumerName = null) -> Twinbox.TwinboxBuilder!
+Twinbox.TwinboxBuilder.AddFilter<TFilter>() -> Twinbox.TwinboxBuilder!
+Twinbox.TwinboxBuilder.AddHandler<THandler, TMessage>(string? consumerName = null) -> Twinbox.TwinboxBuilder!
+Twinbox.TwinboxBuilder.AddHandler<THandler>(string? consumerName = null) -> Twinbox.TwinboxBuilder!
+Twinbox.TwinboxBuilder.AddOutgoingFilter<TFilter>() -> Twinbox.TwinboxBuilder!
+Twinbox.TwinboxBuilder.Configure(System.Action<Twinbox.TwinboxOptions!>! configure) -> Twinbox.TwinboxBuilder!
+Twinbox.TwinboxBuilder.Route<TMessage>() -> Twinbox.RouteBuilder<TMessage!>!
+Twinbox.TwinboxBuilder.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Twinbox.TwinboxBuilder.UseHeaderProfile(Twinbox.Transport.HeaderProfile! profile) -> Twinbox.TwinboxBuilder!
+Twinbox.TwinboxBuilder.UseJsonTypeInfoResolver(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver! typeInfoResolver) -> Twinbox.TwinboxBuilder!
+Twinbox.TwinboxBuilder.UseLocalDelivery() -> Twinbox.TwinboxBuilder!
+Twinbox.TwinboxBuilder.UseSerializer(Twinbox.Serialization.IMessageSerializer! serializer) -> Twinbox.TwinboxBuilder!
+Twinbox.TwinboxBuilder.UseTenants(System.Action<Twinbox.TenancyOptions!>! configure) -> Twinbox.TwinboxBuilder!
+Twinbox.TwinboxOptions
+Twinbox.TwinboxOptions.CircuitBreaker.get -> Twinbox.CircuitBreakerOptions!
+Twinbox.TwinboxOptions.CircuitBreaker.set -> void
+Twinbox.TwinboxOptions.DestinationPrefix.get -> string?
+Twinbox.TwinboxOptions.DestinationPrefix.set -> void
+Twinbox.TwinboxOptions.Destinations.get -> System.Collections.Generic.Dictionary<string!, Twinbox.DestinationOptions!>!
+Twinbox.TwinboxOptions.Destinations.set -> void
+Twinbox.TwinboxOptions.Dispatcher.get -> Twinbox.DispatcherOptions!
+Twinbox.TwinboxOptions.Dispatcher.set -> void
+Twinbox.TwinboxOptions.Inbox.get -> Twinbox.InboxOptions!
+Twinbox.TwinboxOptions.Inbox.set -> void
+Twinbox.TwinboxOptions.InstanceId.get -> string!
+Twinbox.TwinboxOptions.InstanceId.set -> void
+Twinbox.TwinboxOptions.Retention.get -> Twinbox.RetentionOptions!
+Twinbox.TwinboxOptions.Retention.set -> void
+Twinbox.TwinboxOptions.Retry.get -> Twinbox.RetryOptions!
+Twinbox.TwinboxOptions.Retry.set -> void
+Twinbox.TwinboxOptions.ToLogicalDestination(string! destination) -> string!
+Twinbox.TwinboxOptions.ToPhysicalDestination(string! destination) -> string!
+Twinbox.TwinboxOptions.TwinboxOptions() -> void
+Twinbox.UnknownMessagePolicy
+Twinbox.UnknownMessagePolicy.DeadLetter = 0 -> Twinbox.UnknownMessagePolicy
+Twinbox.UnknownMessagePolicy.Ignore = 1 -> Twinbox.UnknownMessagePolicy
+const Twinbox.Diagnostics.TwinboxDiagnostics.SourceName = "Twinbox" -> string!
+const Twinbox.Transport.LocalTransport.TransportName = "local" -> string!
+const Twinbox.Transport.TransportHeaders.CorrelationId = "twinbox-correlation-id" -> string!
+const Twinbox.Transport.TransportHeaders.DeliveryAttempt = "twinbox-delivery-attempt" -> string!
+const Twinbox.Transport.TransportHeaders.MessageId = "twinbox-message-id" -> string!
+const Twinbox.Transport.TransportHeaders.MessageName = "twinbox-message-name" -> string!
+const Twinbox.Transport.TransportHeaders.PartitionKey = "twinbox-partition-key" -> string!
+const Twinbox.Transport.TransportHeaders.ReplyTo = "twinbox-reply-to" -> string!
+const Twinbox.Transport.TransportHeaders.TenantId = "twinbox-tenant" -> string!
+const Twinbox.Transport.TransportHeaders.TraceParent = "traceparent" -> string!
+const Twinbox.TwinboxOptions.SectionName = "Twinbox" -> string!
+override Twinbox.OutboxMessage.Equals(object? obj) -> bool
+override Twinbox.OutboxMessage.GetHashCode() -> int
+override Twinbox.OutboxMessage.ToString() -> string!
+override Twinbox.Storage.DispatchOutcome.Equals(object? obj) -> bool
+override Twinbox.Storage.DispatchOutcome.GetHashCode() -> int
+override Twinbox.Storage.DispatchOutcome.ToString() -> string!
+override Twinbox.Storage.InboxEntry.Equals(object? obj) -> bool
+override Twinbox.Storage.InboxEntry.GetHashCode() -> int
+override Twinbox.Storage.InboxEntry.ToString() -> string!
+override Twinbox.Storage.OutboxClaim.Equals(object? obj) -> bool
+override Twinbox.Storage.OutboxClaim.GetHashCode() -> int
+override Twinbox.Storage.OutboxClaim.ToString() -> string!
+override Twinbox.Storage.OutboxPage.Equals(object? obj) -> bool
+override Twinbox.Storage.OutboxPage.GetHashCode() -> int
+override Twinbox.Storage.OutboxPage.ToString() -> string!
+override Twinbox.Storage.OutboxPurge.Equals(object? obj) -> bool
+override Twinbox.Storage.OutboxPurge.GetHashCode() -> int
+override Twinbox.Storage.OutboxPurge.ToString() -> string!
+override Twinbox.Storage.OutboxQuery.Equals(object? obj) -> bool
+override Twinbox.Storage.OutboxQuery.GetHashCode() -> int
+override Twinbox.Storage.OutboxQuery.ToString() -> string!
+override Twinbox.Storage.OutboxStatistics.Equals(object? obj) -> bool
+override Twinbox.Storage.OutboxStatistics.GetHashCode() -> int
+override Twinbox.Storage.OutboxStatistics.ToString() -> string!
+override Twinbox.Transport.HeaderProfile.Equals(object? obj) -> bool
+override Twinbox.Transport.HeaderProfile.GetHashCode() -> int
+override Twinbox.Transport.HeaderProfile.ToString() -> string!
+override Twinbox.Transport.IncomingMessage.Equals(object? obj) -> bool
+override Twinbox.Transport.IncomingMessage.GetHashCode() -> int
+override Twinbox.Transport.IncomingMessage.ToString() -> string!
+override Twinbox.Transport.TransportMessage.Equals(object? obj) -> bool
+override Twinbox.Transport.TransportMessage.GetHashCode() -> int
+override Twinbox.Transport.TransportMessage.ToString() -> string!
+static Microsoft.Extensions.DependencyInjection.TwinboxHealthChecksBuilderExtensions.AddTwinbox(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder! builder, string! name = "twinbox", System.TimeSpan? maxPendingAge = null, long maxDeadMessages = 0, Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus failureStatus = Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Degraded, System.Collections.Generic.IEnumerable<string!>? tags = null, Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus? deadLetterStatus = null) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
+static Microsoft.Extensions.DependencyInjection.TwinboxServiceCollectionExtensions.AddTwinbox(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Twinbox.TwinboxBuilder!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Twinbox.MigrationTwinboxBuilderExtensions.ImportFromExistingOutbox(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.Migration.OutboxImportOptions!>! configure) -> Twinbox.TwinboxBuilder!
+static Twinbox.MigrationTwinboxBuilderExtensions.SeedInboxFromExisting(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.Migration.InboxSeedOptions!>! configure) -> Twinbox.TwinboxBuilder!
+static Twinbox.OutboxMessage.operator !=(Twinbox.OutboxMessage? left, Twinbox.OutboxMessage? right) -> bool
+static Twinbox.OutboxMessage.operator ==(Twinbox.OutboxMessage? left, Twinbox.OutboxMessage? right) -> bool
+static Twinbox.ReplyExtensions.Reply<TResponse>(this Twinbox.IOutbox! outbox, Twinbox.MessageContext! request, TResponse! response, string? transport = null) -> void
+static Twinbox.Serialization.HeaderCodec.Decode(string? json) -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+static Twinbox.Serialization.HeaderCodec.Encode(System.Collections.Generic.IReadOnlyDictionary<string!, string!>! headers) -> string?
+static Twinbox.Storage.DispatchOutcome.operator !=(Twinbox.Storage.DispatchOutcome? left, Twinbox.Storage.DispatchOutcome? right) -> bool
+static Twinbox.Storage.DispatchOutcome.operator ==(Twinbox.Storage.DispatchOutcome? left, Twinbox.Storage.DispatchOutcome? right) -> bool
+static Twinbox.Storage.HandlerTransactionBinding.Bind(Twinbox.HandlerTransaction! handlerTransaction, System.Data.Common.DbConnection! connection, System.Data.Common.DbTransaction! transaction) -> System.IDisposable!
+static Twinbox.Storage.InboxEntry.operator !=(Twinbox.Storage.InboxEntry? left, Twinbox.Storage.InboxEntry? right) -> bool
+static Twinbox.Storage.InboxEntry.operator ==(Twinbox.Storage.InboxEntry? left, Twinbox.Storage.InboxEntry? right) -> bool
+static Twinbox.Storage.OutboxClaim.operator !=(Twinbox.Storage.OutboxClaim? left, Twinbox.Storage.OutboxClaim? right) -> bool
+static Twinbox.Storage.OutboxClaim.operator ==(Twinbox.Storage.OutboxClaim? left, Twinbox.Storage.OutboxClaim? right) -> bool
+static Twinbox.Storage.OutboxPage.operator !=(Twinbox.Storage.OutboxPage? left, Twinbox.Storage.OutboxPage? right) -> bool
+static Twinbox.Storage.OutboxPage.operator ==(Twinbox.Storage.OutboxPage? left, Twinbox.Storage.OutboxPage? right) -> bool
+static Twinbox.Storage.OutboxPurge.operator !=(Twinbox.Storage.OutboxPurge? left, Twinbox.Storage.OutboxPurge? right) -> bool
+static Twinbox.Storage.OutboxPurge.operator ==(Twinbox.Storage.OutboxPurge? left, Twinbox.Storage.OutboxPurge? right) -> bool
+static Twinbox.Storage.OutboxQuery.operator !=(Twinbox.Storage.OutboxQuery? left, Twinbox.Storage.OutboxQuery? right) -> bool
+static Twinbox.Storage.OutboxQuery.operator ==(Twinbox.Storage.OutboxQuery? left, Twinbox.Storage.OutboxQuery? right) -> bool
+static Twinbox.Storage.OutboxStatistics.operator !=(Twinbox.Storage.OutboxStatistics? left, Twinbox.Storage.OutboxStatistics? right) -> bool
+static Twinbox.Storage.OutboxStatistics.operator ==(Twinbox.Storage.OutboxStatistics? left, Twinbox.Storage.OutboxStatistics? right) -> bool
+static Twinbox.Tenancy.TenantDirectory.Enter(string? tenant) -> System.IDisposable!
+static Twinbox.TransactionalOutboxExtensions.CommitAsync(this Twinbox.IOutbox! outbox, System.Data.Common.DbTransaction! transaction, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static Twinbox.TransactionalOutboxExtensions.SaveAsync(this Twinbox.IOutbox! outbox, System.Data.Common.DbTransaction! transaction, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static Twinbox.Transport.HeaderProfile.CloudEvents(string! source, string! prefix = "ce-") -> Twinbox.Transport.HeaderProfile!
+static Twinbox.Transport.HeaderProfile.Prefixed(string! prefix) -> Twinbox.Transport.HeaderProfile!
+static Twinbox.Transport.HeaderProfile.operator !=(Twinbox.Transport.HeaderProfile? left, Twinbox.Transport.HeaderProfile? right) -> bool
+static Twinbox.Transport.HeaderProfile.operator ==(Twinbox.Transport.HeaderProfile? left, Twinbox.Transport.HeaderProfile? right) -> bool
+static Twinbox.Transport.IncomingMessage.operator !=(Twinbox.Transport.IncomingMessage? left, Twinbox.Transport.IncomingMessage? right) -> bool
+static Twinbox.Transport.IncomingMessage.operator ==(Twinbox.Transport.IncomingMessage? left, Twinbox.Transport.IncomingMessage? right) -> bool
+static Twinbox.Transport.TransportMessage.operator !=(Twinbox.Transport.TransportMessage? left, Twinbox.Transport.TransportMessage? right) -> bool
+static Twinbox.Transport.TransportMessage.operator ==(Twinbox.Transport.TransportMessage? left, Twinbox.Transport.TransportMessage? right) -> bool

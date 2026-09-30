@@ -1,18 +1,1 @@
 #nullable enable
-Twinbox.MySql.MySqlStorageOptions
-Twinbox.MySql.MySqlStorageOptions.ConnectionString.get -> string?
-Twinbox.MySql.MySqlStorageOptions.ConnectionString.set -> void
-Twinbox.MySql.MySqlStorageOptions.ConnectionStringFactory.get -> System.Func<System.IServiceProvider!, string!>?
-Twinbox.MySql.MySqlStorageOptions.ConnectionStringFactory.set -> void
-Twinbox.MySql.MySqlStorageOptions.CreateSchemaIfMissing.get -> bool
-Twinbox.MySql.MySqlStorageOptions.CreateSchemaIfMissing.set -> void
-Twinbox.MySql.MySqlStorageOptions.InboxTable.get -> string!
-Twinbox.MySql.MySqlStorageOptions.InboxTable.set -> void
-Twinbox.MySql.MySqlStorageOptions.MySqlStorageOptions() -> void
-Twinbox.MySql.MySqlStorageOptions.OutboxTable.get -> string!
-Twinbox.MySql.MySqlStorageOptions.OutboxTable.set -> void
-Twinbox.MySql.MySqlStorageOptions.Schema.get -> string?
-Twinbox.MySql.MySqlStorageOptions.Schema.set -> void
-Twinbox.MySqlTwinboxBuilderExtensions
-static Twinbox.MySqlTwinboxBuilderExtensions.UseMySql(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.MySql.MySqlStorageOptions!>! configure) -> Twinbox.TwinboxBuilder!
-static Twinbox.MySqlTwinboxBuilderExtensions.UseMySql(this Twinbox.TwinboxBuilder! builder, string! connectionString) -> Twinbox.TwinboxBuilder!

@@ -1,1 +1,18 @@
 #nullable enable
+Twinbox.PostgreSql.PostgreSqlStorageOptions
+Twinbox.PostgreSql.PostgreSqlStorageOptions.ConnectionString.get -> string?
+Twinbox.PostgreSql.PostgreSqlStorageOptions.ConnectionString.set -> void
+Twinbox.PostgreSql.PostgreSqlStorageOptions.ConnectionStringFactory.get -> System.Func<System.IServiceProvider!, string!>?
+Twinbox.PostgreSql.PostgreSqlStorageOptions.ConnectionStringFactory.set -> void
+Twinbox.PostgreSql.PostgreSqlStorageOptions.CreateSchemaIfMissing.get -> bool
+Twinbox.PostgreSql.PostgreSqlStorageOptions.CreateSchemaIfMissing.set -> void
+Twinbox.PostgreSql.PostgreSqlStorageOptions.InboxTable.get -> string!
+Twinbox.PostgreSql.PostgreSqlStorageOptions.InboxTable.set -> void
+Twinbox.PostgreSql.PostgreSqlStorageOptions.OutboxTable.get -> string!
+Twinbox.PostgreSql.PostgreSqlStorageOptions.OutboxTable.set -> void
+Twinbox.PostgreSql.PostgreSqlStorageOptions.PostgreSqlStorageOptions() -> void
+Twinbox.PostgreSql.PostgreSqlStorageOptions.Schema.get -> string?
+Twinbox.PostgreSql.PostgreSqlStorageOptions.Schema.set -> void
+Twinbox.PostgreSqlTwinboxBuilderExtensions
+static Twinbox.PostgreSqlTwinboxBuilderExtensions.UsePostgreSql(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.PostgreSql.PostgreSqlStorageOptions!>! configure) -> Twinbox.TwinboxBuilder!
+static Twinbox.PostgreSqlTwinboxBuilderExtensions.UsePostgreSql(this Twinbox.TwinboxBuilder! builder, string! connectionString) -> Twinbox.TwinboxBuilder!

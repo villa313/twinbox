@@ -1,18 +1,1 @@
 #nullable enable
-Twinbox.SqlServer.SqlServerStorageOptions
-Twinbox.SqlServer.SqlServerStorageOptions.ConnectionString.get -> string?
-Twinbox.SqlServer.SqlServerStorageOptions.ConnectionString.set -> void
-Twinbox.SqlServer.SqlServerStorageOptions.ConnectionStringFactory.get -> System.Func<System.IServiceProvider!, string!>?
-Twinbox.SqlServer.SqlServerStorageOptions.ConnectionStringFactory.set -> void
-Twinbox.SqlServer.SqlServerStorageOptions.CreateSchemaIfMissing.get -> bool
-Twinbox.SqlServer.SqlServerStorageOptions.CreateSchemaIfMissing.set -> void
-Twinbox.SqlServer.SqlServerStorageOptions.InboxTable.get -> string!
-Twinbox.SqlServer.SqlServerStorageOptions.InboxTable.set -> void
-Twinbox.SqlServer.SqlServerStorageOptions.OutboxTable.get -> string!
-Twinbox.SqlServer.SqlServerStorageOptions.OutboxTable.set -> void
-Twinbox.SqlServer.SqlServerStorageOptions.Schema.get -> string?
-Twinbox.SqlServer.SqlServerStorageOptions.Schema.set -> void
-Twinbox.SqlServer.SqlServerStorageOptions.SqlServerStorageOptions() -> void
-Twinbox.SqlServerTwinboxBuilderExtensions
-static Twinbox.SqlServerTwinboxBuilderExtensions.UseSqlServer(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.SqlServer.SqlServerStorageOptions!>! configure) -> Twinbox.TwinboxBuilder!
-static Twinbox.SqlServerTwinboxBuilderExtensions.UseSqlServer(this Twinbox.TwinboxBuilder! builder, string! connectionString) -> Twinbox.TwinboxBuilder!

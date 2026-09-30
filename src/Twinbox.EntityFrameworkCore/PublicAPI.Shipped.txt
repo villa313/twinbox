@@ -1,1 +1,19 @@
 #nullable enable
+Microsoft.EntityFrameworkCore.TwinboxDbContextExtensions
+Microsoft.EntityFrameworkCore.TwinboxModelBuilderExtensions
+Twinbox.EntityFrameworkCore.TwinboxEntities
+Twinbox.EntityFrameworkCore.TwinboxModelOptions
+Twinbox.EntityFrameworkCore.TwinboxModelOptions.InboxTable.get -> string?
+Twinbox.EntityFrameworkCore.TwinboxModelOptions.InboxTable.set -> void
+Twinbox.EntityFrameworkCore.TwinboxModelOptions.OutboxTable.get -> string?
+Twinbox.EntityFrameworkCore.TwinboxModelOptions.OutboxTable.set -> void
+Twinbox.EntityFrameworkCore.TwinboxModelOptions.Schema.get -> string?
+Twinbox.EntityFrameworkCore.TwinboxModelOptions.Schema.set -> void
+Twinbox.EntityFrameworkCore.TwinboxModelOptions.TwinboxModelOptions() -> void
+Twinbox.EntityFrameworkCoreTwinboxBuilderExtensions
+const Twinbox.EntityFrameworkCore.TwinboxEntities.Inbox = "TwinboxInbox" -> string!
+const Twinbox.EntityFrameworkCore.TwinboxEntities.Outbox = "TwinboxOutbox" -> string!
+static Microsoft.EntityFrameworkCore.TwinboxDbContextExtensions.EnlistOutbox<TContext>(this TContext! context, Twinbox.IOutbox! outbox) -> TContext!
+static Microsoft.EntityFrameworkCore.TwinboxDbContextExtensions.TwinboxOutbox(this Microsoft.EntityFrameworkCore.DbContext! context) -> Microsoft.EntityFrameworkCore.DbSet<Twinbox.OutboxMessage!>!
+static Microsoft.EntityFrameworkCore.TwinboxModelBuilderExtensions.AddTwinbox(this Microsoft.EntityFrameworkCore.ModelBuilder! modelBuilder, System.Action<Twinbox.EntityFrameworkCore.TwinboxModelOptions!>? configure = null) -> Microsoft.EntityFrameworkCore.ModelBuilder!
+static Twinbox.EntityFrameworkCoreTwinboxBuilderExtensions.UseEntityFrameworkCore<TContext>(this Twinbox.TwinboxBuilder! builder) -> Twinbox.TwinboxBuilder!
