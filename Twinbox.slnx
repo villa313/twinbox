@@ -33,6 +33,9 @@
     <Project Path="src/Twinbox/Twinbox.csproj" />
     <Project Path="src/Twinbox.Webhooks/Twinbox.Webhooks.csproj" />
   </Folder>
+  <Folder Name="/templates/">
+    <Project Path="templates/Twinbox.Templates/Twinbox.Templates.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Twinbox.EntityFrameworkCore.IntegrationTests/Twinbox.EntityFrameworkCore.IntegrationTests.csproj" />
     <Project Path="tests/Twinbox.AmazonSqs.Tests/Twinbox.AmazonSqs.Tests.csproj" />

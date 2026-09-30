@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json.schemastore.org/dotnetcli.host",
+  "symbolInfo": {
+    "Framework": {
+      "longName": "framework",
+      "shortName": "f"
+    },
+    "store": {
+      "longName": "store",
+      "shortName": "s"
+    },
+    "transport": {
+      "longName": "transport",
+      "shortName": "t"
+    },
+    "dashboard": {
+      "longName": "dashboard",
+      "shortName": ""
+    },
+    "webhooks": {
+      "longName": "webhooks",
+      "shortName": ""
+    },
+    "tests": {
+      "longName": "tests",
+      "shortName": ""
+    }
+  }
+}

@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Twinbox" Version="TWINBOX_VERSION" />
+<!--#if (EfCore) -->
+    <PackageReference Include="Twinbox.EntityFrameworkCore" Version="TWINBOX_VERSION" />
+<!--#elif (AdoSqlServer) -->
+    <PackageReference Include="Twinbox.SqlServer" Version="TWINBOX_VERSION" />
+<!--#elif (AdoPostgres) -->
+    <PackageReference Include="Twinbox.PostgreSql" Version="TWINBOX_VERSION" />
+<!--#elif (AdoMySql) -->
+    <PackageReference Include="Twinbox.MySql" Version="TWINBOX_VERSION" />
+<!--#elif (MongoDB) -->
+    <PackageReference Include="Twinbox.MongoDB" Version="TWINBOX_VERSION" />
+<!--#else -->
+    <PackageReference Include="Twinbox.InMemory" Version="TWINBOX_VERSION" />
+<!--#endif -->
+<!--#if (AzureServiceBus) -->
+    <PackageReference Include="Twinbox.AzureServiceBus" Version="TWINBOX_VERSION" />
+<!--#elif (RabbitMQ) -->
+    <PackageReference Include="Twinbox.RabbitMQ" Version="TWINBOX_VERSION" />
+<!--#elif (Kafka) -->
+    <PackageReference Include="Twinbox.Kafka" Version="TWINBOX_VERSION" />
+<!--#elif (AmazonSqs) -->
+    <PackageReference Include="Twinbox.AmazonSqs" Version="TWINBOX_VERSION" />
+<!--#elif (Nats) -->
+    <PackageReference Include="Twinbox.Nats" Version="TWINBOX_VERSION" />
+<!--#elif (Redis) -->
+    <PackageReference Include="Twinbox.RedisStreams" Version="TWINBOX_VERSION" />
+<!--#endif -->
+<!--#if (dashboard) -->
+    <PackageReference Include="Twinbox.Dashboard" Version="TWINBOX_VERSION" />
+<!--#endif -->
+<!--#if (webhooks) -->
+    <PackageReference Include="Twinbox.Webhooks" Version="TWINBOX_VERSION" />
+<!--#endif -->
+<!--#if (EfSqlServer && Net8) -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.31" />
+<!--#elif (EfSqlServer) -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
+<!--#elif (EfPostgres && Net8) -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
+<!--#elif (EfPostgres) -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+<!--#elif (EfMySql && Net8) -->
+    <PackageReference Include="MySql.EntityFrameworkCore" Version="8.0.28" />
+<!--#elif (EfMySql) -->
+    <PackageReference Include="MySql.EntityFrameworkCore" Version="10.0.9" />
+<!--#elif (EfSqlite && Net8) -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.31" />
+<!--#elif (EfSqlite) -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
+<!--#endif -->
+  </ItemGroup>
+
+</Project>
