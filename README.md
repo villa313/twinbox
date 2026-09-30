@@ -105,6 +105,12 @@ A route or handler registered for a base class or interface covers all of its su
   `appsettings.json` (`Twinbox:Destinations:{name}:Retry`)
 - **Ordering:** messages with the same partition key are delivered in order; everything else goes in parallel
 - **Scaling out:** safe across instances through row leasing (`SKIP LOCKED` / `READPAST`), with no external lock
+- **Batch handlers:** `IHandleBatch<T>` receives several messages at once, with duplicates already filtered out
+- **Request/reply and correlation:** `SendOptions.ReplyTo` + `outbox.Reply(context, response)`; messages sent while
+  handling one inherit its correlation id
+- **Filters:** `IMessageFilter` wraps handler calls, `IOutgoingMessageFilter` stamps headers on outgoing messages
+- **Interop:** header profiles for other systems' header names, and CloudEvents binary-mode headers
+  (`HeaderProfile.CloudEvents("/my-service")`)
 - **Delayed sends:** `new SendOptions { Delay = TimeSpan.FromMinutes(5) }`
 - **Multi-tenancy:** a database per tenant through `UseTenants(...)`, plus several DbContexts per app
 - **Observability:** OpenTelemetry tracing and metrics (`TwinboxDiagnostics.SourceName`), and health checks
