@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Description>Kafka transport for Twinbox: idempotent, keyed sends and consumer groups that commit only after the inbox has handled a record.</Description>
+    <!-- Confluent.Kafka binds librdkafka through reflection over its native method classes, so this package makes no AOT promise. -->
+    <IsAotCompatible>false</IsAotCompatible>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Twinbox/Twinbox.csproj" />

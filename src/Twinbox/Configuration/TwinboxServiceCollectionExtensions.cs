@@ -32,7 +32,8 @@ public static class TwinboxServiceCollectionExtensions
         }
 
         services.TryAddSingleton(TimeProvider.System);
-        services.TryAddSingleton<IMessageSerializer>(new SystemTextJsonMessageSerializer());
+        // Lazy, so Native AOT apps that replace it never construct the reflection-based default, which throws there.
+        services.TryAddSingleton<IMessageSerializer>(_ => new SystemTextJsonMessageSerializer());
         services.TryAddSingleton<IMessageIdGenerator, Uuid7MessageIdGenerator>();
         services.TryAddSingleton<TransportRegistry>();
         services.TryAddSingleton<HeaderProfiles>();

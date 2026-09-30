@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+using Microsoft.Extensions.DependencyInjection;
 using Twinbox.Serialization;
 using Twinbox.Storage;
 
@@ -34,6 +36,21 @@ public sealed class SerializationTests
     }
 
     [Fact]
+    public void UseJsonTypeInfoResolver_UsesOnlyTheResolverWithCamelCase()
+    {
+        using var services = new ServiceCollection()
+            .AddTwinbox(b => b.UseJsonTypeInfoResolver(SerializationTestsJsonContext.Default))
+            .BuildServiceProvider();
+        var serializer = services.GetRequiredService<IMessageSerializer>();
+
+        var bytes = serializer.Serialize(new OrderPlaced(12), typeof(OrderPlaced));
+
+        Assert.Equal("""{"orderId":12}""", System.Text.Encoding.UTF8.GetString(bytes));
+        Assert.Equal(new OrderPlaced(12), serializer.Deserialize(bytes, typeof(OrderPlaced)));
+        Assert.Throws<NotSupportedException>(() => serializer.Serialize(new OrderShipped(1), typeof(OrderShipped)));
+    }
+
+    [Fact]
     public void Uuid7_IsVersion7AndTimeOrdered()
     {
         var generator = new Uuid7MessageIdGenerator();
@@ -46,3 +63,6 @@ public sealed class SerializationTests
         Assert.True(string.CompareOrdinal(first.ToString(), second.ToString()) < 0);
     }
 }
+
+[JsonSerializable(typeof(OrderPlaced))]
+internal sealed partial class SerializationTestsJsonContext : JsonSerializerContext;

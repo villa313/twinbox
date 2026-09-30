@@ -26,3 +26,15 @@ jobs:
         with:
           name: packages
           path: artifacts/*.nupkg
+
+  native-aot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends clang zlib1g-dev
+      # Trim and AOT warnings fail the publish; the binary exits nonzero unless every message was handled exactly once.
+      - run: dotnet publish samples/Twinbox.AotSmoke/Twinbox.AotSmoke.csproj -c Release -r linux-x64 -o artifacts/aot-smoke
+      - run: ./artifacts/aot-smoke/Twinbox.AotSmoke
