@@ -1,0 +1,106 @@
+- name: Overview
+  href: overview.md
+- name: Getting started
+  items:
+    - name: EF Core
+      href: getting-started-efcore.md
+    - name: Dapper and ADO.NET
+      href: getting-started-ado.md
+- name: Concepts
+  items:
+    - name: The outbox
+      href: concepts/outbox.md
+    - name: The inbox
+      href: concepts/inbox.md
+    - name: Handlers
+      href: concepts/handlers.md
+    - name: Delivery guarantees
+      href: concepts/delivery-guarantees.md
+    - name: Ordering and partition keys
+      href: concepts/ordering.md
+    - name: Retries, circuit breaker and dead letters
+      href: concepts/retries-and-dead-letters.md
+    - name: Delayed send
+      href: concepts/delayed-send.md
+    - name: Routing
+      href: concepts/routing.md
+    - name: Headers and header profiles
+      href: concepts/headers.md
+    - name: Correlation and request/reply
+      href: concepts/correlation-and-reply.md
+    - name: Filters
+      href: concepts/filters.md
+    - name: Batch handlers
+      href: concepts/batch-handlers.md
+    - name: Multi-tenancy
+      href: concepts/multi-tenancy.md
+    - name: Serialization
+      href: concepts/serialization.md
+    - name: Retention
+      href: concepts/retention.md
+- name: Configuration reference
+  href: configuration.md
+- name: Stores
+  items:
+    - name: Overview
+      href: stores/index.md
+    - name: EF Core
+      href: stores/entity-framework-core.md
+    - name: SQL Server
+      href: stores/sql-server.md
+    - name: PostgreSQL
+      href: stores/postgresql.md
+    - name: MySQL
+      href: stores/mysql.md
+    - name: Oracle
+      href: stores/oracle.md
+    - name: MongoDB
+      href: stores/mongodb.md
+    - name: In-memory
+      href: stores/in-memory.md
+- name: Transports
+  items:
+    - name: Overview
+      href: transports/index.md
+    - name: Azure Service Bus
+      href: transports/azure-service-bus.md
+    - name: Azure Event Hubs
+      href: transports/event-hubs.md
+    - name: Amazon SQS and SNS
+      href: transports/amazon-sqs.md
+    - name: Google Cloud Pub/Sub
+      href: transports/google-pubsub.md
+    - name: RabbitMQ
+      href: transports/rabbitmq.md
+    - name: Kafka
+      href: transports/kafka.md
+    - name: NATS JetStream
+      href: transports/nats.md
+    - name: Redis Streams
+      href: transports/redis-streams.md
+    - name: Apache Pulsar
+      href: transports/pulsar.md
+    - name: HTTP
+      href: transports/http.md
+    - name: Local delivery
+      href: transports/local.md
+- name: Webhooks
+  href: webhooks.md
+- name: Hosting and operations
+  items:
+    - name: Azure Functions
+      href: azure-functions.md
+    - name: Dashboard
+      href: dashboard.md
+    - name: .NET Aspire
+      href: aspire.md
+    - name: Observability
+      href: observability.md
+    - name: Operations
+      href: operations.md
+- name: Testing
+  href: testing.md
+- name: Migrating from another outbox
+  href: migration.md
+- name: Benchmarks
+  href: benchmarks.md

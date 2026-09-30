@@ -1,0 +1,40 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "metadata": [
+    {
+      "src": [
+        {
+          "src": "../src",
+          "files": [ "**/*.csproj" ],
+          "exclude": [ "Twinbox.SourceGenerators/**" ]
+        }
+      ],
+      "dest": "api",
+      "properties": { "TargetFramework": "net10.0" },
+      "namespaceLayout": "flattened",
+      "memberLayout": "samePage",
+      "enumSortOrder": "declaringOrder"
+    }
+  ],
+  "build": {
+    "content": [
+      { "files": [ "**/*.{md,yml}" ], "exclude": [ "_site/**", "obj/**" ] }
+    ],
+    "output": "_site",
+    "template": [ "default", "modern" ],
+    "globalMetadata": {
+      "_appName": "Twinbox",
+      "_appTitle": "Twinbox",
+      "_appFooter": "Twinbox is MIT licensed. <a href=\"https://github.com/twinbox-dotnet/twinbox\">Source on GitHub</a>.",
+      "_enableSearch": true,
+      "_gitContribute": {
+        "repo": "https://github.com/twinbox-dotnet/twinbox",
+        "branch": "main"
+      }
+    },
+    "sitemap": {
+      "baseUrl": "https://twinbox-dotnet.github.io/twinbox/"
+    },
+    "xref": [ "https://learn.microsoft.com/en-us/dotnet/.xrefmap.json" ]
+  }
+}

@@ -487,3 +487,9 @@ $RECYCLE.BIN/
 .claude/plans/
 artifacts/
 .claude/worktrees/
+
+# docfx output
+docs/_site/
+docs/api/*.yml
+docs/api/.manifest
+docs/obj/
