@@ -152,7 +152,7 @@ twinbox.ImportFromExistingOutbox(o =>
         ORDER BY id
         LIMIT @batch
         """;
-    o.MarkImported = "UPDATE legacy.outbox SET processed_at = now() WHERE id = @id::uuid";
+    o.MarkImported = "UPDATE legacy.outbox SET processed_at = now() WHERE id = @id";
     o.BatchSize = 100;                               // default
     o.PollInterval = TimeSpan.FromSeconds(10);       // default
 });
@@ -161,8 +161,9 @@ twinbox.ImportFromExistingOutbox(o =>
 | Option | Description |
 |---|---|
 | `CreateConnection` | Opens a connection to the database holding the old table. Required. |
-| `SelectPending` | Returns up to `@batch` unsent rows with columns `Id`, `Name` and `Content`. Required. |
+| `SelectPending` | Returns up to `@batch` unsent rows with columns `Id`, `Name` and `Content`, and optionally `Headers` and `PartitionKey`. Required. |
 | `MarkImported` | Marks one row so it isn't selected again; receives `@id`. Required. |
+| `Store` | The outbox store to import into, by name. Only needed when several stores are registered (several EF Core contexts use their class names). |
 | `BatchSize` | Rows per select; a full batch is followed right away by the next. Default 100. |
 | `PollInterval` | Time between polls. Default 10 seconds. |
 
@@ -176,15 +177,20 @@ How it behaves:
   in the format your serializer reads.
 - **Routing uses Twinbox's routes** for the type, not whatever destination the old row recorded. A type with two routes
   produces two outbox rows.
-- **Ids are deterministic**, derived from the old `Id` and the destination. Importing the same row twice produces the
-  same id, which the outbox's unique index rejects (a warning is logged; mark that row by hand if it keeps coming
-  back), and which receivers deduplicate.
-- **Imported rows carry no headers**: no partition key, no tenant, no correlation id. Ordering isn't preserved across
-  the switch for them.
-- **Parameters:** `@batch` is bound as an integer and `@id` as a string, so cast in SQL when the old key is a number or
-  a UUID (`@id::uuid` on PostgreSQL). On Oracle, write the placeholders as `:batch` and `:id`.
-- The import writes to the app's outbox store (with several EF Core contexts, the last registered), runs without a
-  tenant, and needs a registered transport for each route.
+- **Ids are deterministic**, derived from the old `Id` and the destination, and receivers deduplicate on them. If the
+  process stops after a row was copied but before it was marked, the next poll finds the copy by its id, skips it and
+  marks the old row, so nothing is imported twice and the row doesn't get stuck.
+- **Headers and partition key are optional.** Return a `Headers` column holding a JSON object of strings (build it
+  with your database's JSON functions if the old system stores them differently) and a `PartitionKey` column to keep
+  per-key ordering. Without them, imported rows carry no headers and are sent unordered.
+- **Parameters:** `@batch` is bound as an integer, and `@id` with the type `Id` was read as (a `uuid` stays a UUID, a
+  `bigint` a number), so `MarkImported` can compare it directly. On Oracle, write the placeholders as `:batch` and
+  `:id`.
+- **Stores and tenants.** The import writes to the one registered outbox store, or the one named by `Store` (it fails
+  at startup when several are registered and none is named). With [multi-tenancy](concepts/multi-tenancy.md) it runs
+  once per tenant with that tenant entered, so `CreateConnection` can pick the tenant's old database, and imported
+  rows belong to that tenant.
+- It needs a registered transport for each route.
 
 > [!WARNING]
 > A row the old system's dispatcher is sending at the same moment can go out twice: once from the old dispatcher with
@@ -224,7 +230,8 @@ twinbox.SeedInboxFromExisting(o =>
 - It runs **once, at startup, before the app starts serving**, and inserts one entry at a time. Existing entries are
   left alone, so restarts are harmless. Select only the redelivery window you care about to keep startup quick.
 - Seeded entries count as processed now, so they're kept for `Retention:InboxEntries` from the time of seeding.
-- It uses the app's inbox store and runs without a tenant.
+- It uses the inbox store the app receives with. With [multi-tenancy](concepts/multi-tenancy.md) it runs once per
+  tenant with that tenant entered, so `CreateConnection` can pick the tenant's old database.
 
 ## Cutover checklist
 

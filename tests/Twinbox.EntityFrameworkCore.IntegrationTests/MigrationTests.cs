@@ -21,10 +21,10 @@ public sealed class MigrationTests : IAsyncLifetime
         await connection.OpenAsync();
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE legacy_published (Id INTEGER PRIMARY KEY, Name TEXT, Content TEXT, Status TEXT);
-            INSERT INTO legacy_published VALUES (7195478239, 'shop.order.placed', '{"Reference":"L-1"}', 'Scheduled');
-            INSERT INTO legacy_published VALUES (7195478240, 'shop.order.placed', '{"Reference":"L-2"}', 'Succeeded');
-            INSERT INTO legacy_published VALUES (7195478241, 'something.unknown', '{}', 'Scheduled');
+            CREATE TABLE legacy_published (Id INTEGER PRIMARY KEY, Name TEXT, Content TEXT, Status TEXT, Properties TEXT, OrderingKey TEXT);
+            INSERT INTO legacy_published VALUES (7195478239, 'shop.order.placed', '{"Reference":"L-1"}', 'Scheduled', '{"legacy-corr-id":"c-1"}', 'order-1');
+            INSERT INTO legacy_published VALUES (7195478240, 'shop.order.placed', '{"Reference":"L-2"}', 'Succeeded', NULL, NULL);
+            INSERT INTO legacy_published VALUES (7195478241, 'something.unknown', '{}', 'Scheduled', NULL, NULL);
             CREATE TABLE legacy_received (Id INTEGER PRIMARY KEY, GroupName TEXT, Status TEXT);
             INSERT INTO legacy_received VALUES (900, 'shipping', 'Succeeded');
             """;
@@ -51,6 +51,48 @@ public sealed class MigrationTests : IAsyncLifetime
         var sent = Assert.Single(services.GetRequiredService<InMemoryTransport>().Sent);
         Assert.Equal("shop.order.placed", sent.MessageName);
         Assert.Equal("""{"Reference":"L-1"}""", System.Text.Encoding.UTF8.GetString(sent.Body.Span));
+        Assert.Equal("order-1", sent.PartitionKey);
+        Assert.Equal("c-1", sent.Headers["legacy-corr-id"]);
+    }
+
+    [Fact]
+    public async Task Import_WithSeveralStores_NeedsAnExplicitStore()
+    {
+        await using var services = await BuildAsync(b => b.UseInMemoryStore());
+
+        var error = Assert.Throws<InvalidOperationException>(() => services.GetRequiredService<OutboxImportService>());
+
+        Assert.Contains("ShopContext, InMemory", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Import_WritesToTheChosenStore()
+    {
+        await using var services = await BuildAsync(b => b.UseInMemoryStore(), store: "InMemory");
+
+        Assert.Equal(1, await services.GetRequiredService<OutboxImportService>().ImportBatchAsync(default));
+
+        Assert.Single(services.GetRequiredService<InMemoryOutboxStore>().Snapshot());
+    }
+
+    [Fact]
+    public async Task ImportAndSeed_RunOncePerTenant()
+    {
+        var entered = new System.Collections.Concurrent.ConcurrentBag<string>();
+        await using var services = await BuildAsync(
+            b => b.UseInMemoryStore().UseTenants(o =>
+            {
+                o.ListTenants = (_, _) => Task.FromResult<IReadOnlyCollection<string>>(["acme", "globex"]);
+                o.EnterTenant = (_, tenant) => entered.Add(tenant);
+                o.CurrentTenant = _ => null;
+            }),
+            store: "InMemory");
+
+        // Both tenants read the same legacy table here, so the second finds its row already marked.
+        Assert.Equal(1, await services.GetRequiredService<OutboxImportService>().ImportBatchAsync(default));
+        Assert.Equal("acme", Assert.Single(services.GetRequiredService<InMemoryOutboxStore>().Snapshot()).TenantId);
+        Assert.Contains("acme", entered);
+        Assert.Contains("globex", entered);
     }
 
     [Fact]
@@ -79,7 +121,7 @@ public sealed class MigrationTests : IAsyncLifetime
         Assert.NotEqual(ImportedMessageIds.For("1", "orders"), ImportedMessageIds.For("1", "billing"));
     }
 
-    private async Task<ServiceProvider> BuildAsync()
+    private async Task<ServiceProvider> BuildAsync(Action<TwinboxBuilder>? configure = null, string? store = null)
     {
         var collection = new ServiceCollection().AddLogging();
         collection.AddDbContext<ShopContext>(o => o.UseSqlite(ConnectionString));
@@ -90,15 +132,20 @@ public sealed class MigrationTests : IAsyncLifetime
             .ImportFromExistingOutbox(o =>
             {
                 o.CreateConnection = _ => new SqliteConnection(ConnectionString);
-                o.SelectPending = "SELECT Id, Name, Content FROM legacy_published WHERE Status = 'Scheduled' ORDER BY Id LIMIT @batch";
-                o.MarkImported = "UPDATE legacy_published SET Status = 'Migrated' WHERE Id = CAST(@id AS INTEGER)";
+                o.SelectPending = """
+                    SELECT Id, Name, Content, Properties AS Headers, OrderingKey AS PartitionKey
+                    FROM legacy_published WHERE Status = 'Scheduled' ORDER BY Id LIMIT @batch
+                    """;
+                o.MarkImported = "UPDATE legacy_published SET Status = 'Migrated' WHERE Id = @id";
+                o.Store = store;
             })
             .SeedInboxFromExisting(o =>
             {
                 o.CreateConnection = _ => new SqliteConnection(ConnectionString);
                 o.SelectProcessed = "SELECT Id AS MessageId, GroupName AS Consumer FROM legacy_received WHERE Status = 'Succeeded'";
             })
-            .Configure(o => o.Dispatcher.Enabled = false));
+            .Configure(o => o.Dispatcher.Enabled = false)
+            .Apply(configure));
         var services = collection.BuildServiceProvider(validateScopes: true);
 
         await using var scope = services.CreateAsyncScope();
@@ -111,4 +158,13 @@ public sealed class MigrationTests : IAsyncLifetime
 
     [MessageName("shop.order.placed")]
     public sealed record LegacyOrderPlaced(string Reference);
+}
+
+internal static class TwinboxBuilderTestExtensions
+{
+    public static TwinboxBuilder Apply(this TwinboxBuilder builder, Action<TwinboxBuilder>? configure)
+    {
+        configure?.Invoke(builder);
+        return builder;
+    }
 }

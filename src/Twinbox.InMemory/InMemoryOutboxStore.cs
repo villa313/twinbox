@@ -16,6 +16,8 @@ public sealed class InMemoryOutboxStore : IOutboxStore, IOutboxAdmin
         }
     }
 
+    public string Name => "InMemory";
+
     public Task AppendAsync(IReadOnlyList<OutboxMessage> messages, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(messages);

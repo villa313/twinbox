@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Twinbox.Webhooks.Verification;
 
 namespace Twinbox.Webhooks;
@@ -20,6 +21,10 @@ public sealed class WebhookInboxBuilder
     internal long MaxBodySize { get; private set; } = 1024 * 1024;
 
     internal IReadOnlyList<string> ForwardedHeaders => _forwardedHeaders;
+
+    internal string? Store { get; private set; }
+
+    internal Func<HttpContext, string?>? TenantResolver { get; private set; }
 
     /// <summary>Timestamps further than <paramref name="tolerance"/> (default 5 minutes) from now are refused as replays.</summary>
     public WebhookInboxBuilder VerifyStripe(WebhookSecrets secrets, TimeSpan? tolerance = null) =>
@@ -84,6 +89,22 @@ public sealed class WebhookInboxBuilder
             }
         }
 
+        return this;
+    }
+
+    /// <summary>The <see cref="Storage.IOutboxStore.Name"/> to store webhooks in; required only when several stores are registered.</summary>
+    public WebhookInboxBuilder WithStore(string store)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(store);
+        Store = store;
+        return this;
+    }
+
+    /// <summary>Required with UseTenants: picks the tenant a request belongs to, e.g. from a route value. Null or empty answers 404.</summary>
+    public WebhookInboxBuilder WithTenant(Func<HttpContext, string?> resolveTenant)
+    {
+        ArgumentNullException.ThrowIfNull(resolveTenant);
+        TenantResolver = resolveTenant;
         return this;
     }
 

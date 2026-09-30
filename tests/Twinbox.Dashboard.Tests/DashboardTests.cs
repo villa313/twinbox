@@ -351,6 +351,8 @@ public sealed partial class DashboardTests
     /// <summary>One in-memory store per tenant, picked from the tenant entered on the scope.</summary>
     private sealed class TenantStore(Tenancy.TwinboxScopeFactory scopes) : IOutboxStore, IOutboxAdmin
     {
+        public string Name => "Tenant";
+
         private readonly System.Collections.Concurrent.ConcurrentDictionary<string, InMemory.InMemoryOutboxStore> _stores = new(StringComparer.Ordinal);
 
         public InMemory.InMemoryOutboxStore For(string tenant) => _stores.GetOrAdd(tenant, _ => new());

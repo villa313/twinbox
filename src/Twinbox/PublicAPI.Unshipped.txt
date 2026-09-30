@@ -68,6 +68,8 @@ Twinbox.Migration.OutboxImportOptions.PollInterval.get -> System.TimeSpan
 Twinbox.Migration.OutboxImportOptions.PollInterval.set -> void
 Twinbox.Migration.OutboxImportOptions.SelectPending.get -> string?
 Twinbox.Migration.OutboxImportOptions.SelectPending.set -> void
+Twinbox.Migration.OutboxImportOptions.Store.get -> string?
+Twinbox.Migration.OutboxImportOptions.Store.set -> void
 Twinbox.MigrationTwinboxBuilderExtensions
 Twinbox.OutboxMessage
 Twinbox.OutboxMessage.<Clone>$() -> Twinbox.OutboxMessage!
@@ -192,6 +194,7 @@ Twinbox.Storage.IOutboxStore.AppendAsync(System.Collections.Generic.IReadOnlyLis
 Twinbox.Storage.IOutboxStore.ClaimAsync(Twinbox.Storage.OutboxClaim! claim, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Twinbox.OutboxMessage!>!>!
 Twinbox.Storage.IOutboxStore.CompleteAsync(string! owner, System.Collections.Generic.IReadOnlyList<Twinbox.Storage.DispatchOutcome!>! outcomes, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.Storage.IOutboxStore.GetStatisticsAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Twinbox.Storage.OutboxStatistics!>!
+Twinbox.Storage.IOutboxStore.Name.get -> string!
 Twinbox.Storage.IOutboxStore.PurgeAsync(Twinbox.Storage.OutboxPurge! purge, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
 Twinbox.Storage.IOutboxTransactionWriter
 Twinbox.Storage.IOutboxTransactionWriter.WriteAsync(System.Data.Common.DbTransaction! transaction, System.Collections.Generic.IReadOnlyList<Twinbox.OutboxMessage!>! messages, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!

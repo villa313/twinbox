@@ -18,6 +18,8 @@ internal sealed class RelationalOutboxStore(
     private const int OutcomesPerCommand = 250;
     private const int IdsPerCommand = 100;
 
+    public string Name => settings.Provider.ToString();
+
     public async Task AppendAsync(IReadOnlyList<OutboxMessage> messages, CancellationToken cancellationToken)
     {
         await using var lease = await OpenAsync(cancellationToken).ConfigureAwait(false);

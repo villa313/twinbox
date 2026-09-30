@@ -5,15 +5,17 @@ using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Twinbox.Serialization;
 using Twinbox.Storage;
+using Twinbox.Tenancy;
 using Twinbox.Transport;
 
 namespace Twinbox.Webhooks;
 
 /// <summary>Verifies, stores and acknowledges; handlers run later through the dispatcher. Bodies and secrets are never logged.</summary>
 internal sealed partial class WebhookIngress(
-    IOutboxStore store,
+    IOptions<TwinboxOptions> options,
     IDispatchSignal signal,
     IMessageSerializer serializer,
     TimeProvider time,
@@ -26,6 +28,16 @@ internal sealed partial class WebhookIngress(
 
     public async Task ReceiveAsync(HttpContext context, WebhookEndpoint endpoint)
     {
+        var tenant = endpoint.TenantResolver?.Invoke(context);
+        if (endpoint.TenantResolver is not null && string.IsNullOrEmpty(tenant))
+        {
+            LogRejected(endpoint.Provider, StatusCodes.Status404NotFound, "no tenant matches the request");
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            return;
+        }
+
+        // Stores open tenant-aware scopes, so the webhook lands in this tenant's database.
+        using var _ = TenantDirectory.Enter(tenant);
         var cancellationToken = context.RequestAborted;
         var body = await ReadBodyAsync(context, endpoint.MaxBodySize, cancellationToken).ConfigureAwait(false);
         if (body is null)
@@ -63,14 +75,14 @@ internal sealed partial class WebhookIngress(
             return;
         }
 
-        var message = CreateMessage(context, endpoint, body, eventId, verification.EventType, receivedAt);
+        var message = CreateMessage(context, endpoint, body, eventId, verification.EventType, receivedAt, tenant);
         try
         {
-            await store.AppendAsync([message], cancellationToken).ConfigureAwait(false);
+            await endpoint.Store.AppendAsync([message], cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
         {
-            if (!await IsAlreadyStoredAsync(message.Id, ex, cancellationToken).ConfigureAwait(false))
+            if (!await IsAlreadyStoredAsync(endpoint.Store, message.Id, ex, cancellationToken).ConfigureAwait(false))
             {
                 // A 5xx makes the provider retry, so nothing is lost while the store is down.
                 LogStoreFailed(ex, endpoint.Provider, eventId);
@@ -161,7 +173,8 @@ internal sealed partial class WebhookIngress(
         byte[] body,
         string eventId,
         string? eventType,
-        DateTimeOffset receivedAt)
+        DateTimeOffset receivedAt,
+        string? tenant)
     {
         var webhook = endpoint.Prototype with
         {
@@ -179,7 +192,8 @@ internal sealed partial class WebhookIngress(
             Id = endpoint.MessageIdFor(eventId),
             MessageName = endpoint.MessageName,
             Transport = LocalTransport.TransportName,
-            Destination = endpoint.Destination,
+            Destination = options.Value.ToPhysicalDestination(endpoint.Destination),
+            TenantId = tenant,
             Payload = serializer.Serialize(webhook, endpoint.MessageType),
             ContentType = serializer.ContentType,
             TraceParent = Activity.Current is { IdFormat: ActivityIdFormat.W3C } activity ? activity.Id : null,
@@ -189,7 +203,7 @@ internal sealed partial class WebhookIngress(
         };
     }
 
-    private async Task<bool> IsAlreadyStoredAsync(Guid id, Exception error, CancellationToken cancellationToken)
+    private async Task<bool> IsAlreadyStoredAsync(IOutboxStore store, Guid id, Exception error, CancellationToken cancellationToken)
     {
         // Stores surface duplicate keys differently, so ask the store when it can say; otherwise trust only an
         // integrity-violation SQLSTATE (class 23), since the id is the only constraint an append can break.

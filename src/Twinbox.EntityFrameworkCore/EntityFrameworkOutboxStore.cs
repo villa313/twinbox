@@ -21,6 +21,8 @@ internal sealed class EntityFrameworkOutboxStore<TContext>(TwinboxScopeFactory s
     // Ids go in as individual parameters: collection parameters aren't translated the same way by every provider.
     private const int IdsPerCommand = 100;
 
+    public string Name => typeof(TContext).Name;
+
     public async Task AppendAsync(IReadOnlyList<OutboxMessage> messages, CancellationToken cancellationToken)
     {
         var scope = scopeFactory.CreateAsyncScope();

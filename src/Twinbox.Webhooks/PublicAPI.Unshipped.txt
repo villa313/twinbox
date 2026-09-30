@@ -33,6 +33,8 @@ Twinbox.Webhooks.WebhookInboxBuilder.VerifyStandardWebhooks(Twinbox.Webhooks.Web
 Twinbox.Webhooks.WebhookInboxBuilder.VerifyStripe(Twinbox.Webhooks.WebhookSecrets! secrets, System.TimeSpan? tolerance = null) -> Twinbox.Webhooks.WebhookInboxBuilder!
 Twinbox.Webhooks.WebhookInboxBuilder.WithMaxBodySize(long bytes) -> Twinbox.Webhooks.WebhookInboxBuilder!
 Twinbox.Webhooks.WebhookInboxBuilder.WithProvider(string! provider) -> Twinbox.Webhooks.WebhookInboxBuilder!
+Twinbox.Webhooks.WebhookInboxBuilder.WithStore(string! store) -> Twinbox.Webhooks.WebhookInboxBuilder!
+Twinbox.Webhooks.WebhookInboxBuilder.WithTenant(System.Func<Microsoft.AspNetCore.Http.HttpContext!, string?>! resolveTenant) -> Twinbox.Webhooks.WebhookInboxBuilder!
 Twinbox.Webhooks.WebhookReceived
 Twinbox.Webhooks.WebhookReceived.Body.get -> string!
 Twinbox.Webhooks.WebhookReceived.Body.init -> void

@@ -76,6 +76,7 @@ public class NightlyReport(TenantDirectory tenants, TwinboxScopeFactory scopes)
   queries per pass; tune `Dispatcher:MinPollInterval` and `MaxPollInterval` accordingly.
 - A message arriving with a tenant that isn't listed is still processed in that tenant; Twinbox doesn't validate
   inbound tenant ids against the list. Only trust tenant headers from your own services.
-- [Webhook ingress](../webhooks.md) has no tenancy: webhooks are stored and handled with no tenant entered, so they
-  land wherever your registrations resolve when the tenant is null.
-- The outbox import and inbox seeding used for [migration](../migration.md) run without a tenant.
+- [Webhook endpoints](../webhooks.md#endpoint-options) must say which tenant a request belongs to with
+  `WithTenant(...)`; mapping one without it throws while tenancy is configured.
+- The outbox import and inbox seeding used for [migration](../migration.md) run once per listed tenant, with that
+  tenant entered, so `CreateConnection` can pick the tenant's old database.

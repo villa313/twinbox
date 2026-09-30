@@ -19,5 +19,6 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Twinbox.UnitTests" />
     <InternalsVisibleTo Include="Twinbox.EntityFrameworkCore.IntegrationTests" />
+    <InternalsVisibleTo Include="Twinbox.Relational.IntegrationTests" />
   </ItemGroup>
 </Project>

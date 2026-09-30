@@ -5,6 +5,9 @@ namespace Twinbox.Storage;
 /// </summary>
 public interface IOutboxStore
 {
+    /// <summary>Identifies the store where features that write to one store must pick it, e.g. "SqlServer" or an EF Core context's name.</summary>
+    string Name { get; }
+
     /// <summary>Non-transactional append, for stores without an ambient unit of work.</summary>
     Task AppendAsync(IReadOnlyList<OutboxMessage> messages, CancellationToken cancellationToken);
 

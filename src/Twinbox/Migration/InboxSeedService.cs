@@ -1,8 +1,8 @@
 using System.Globalization;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Twinbox.Storage;
+using Twinbox.Tenancy;
 
 namespace Twinbox.Migration;
 
@@ -10,13 +10,25 @@ namespace Twinbox.Migration;
 internal sealed partial class InboxSeedService(
     InboxSeedOptions options,
     IInboxStore inbox,
-    IServiceScopeFactory scopes,
+    TenantDirectory tenants,
+    TwinboxScopeFactory scopes,
     TimeProvider time,
     ILogger<InboxSeedService> logger) : IHostedService
 {
     private readonly ILogger _logger = logger;
 
     public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        foreach (var tenant in await tenants.GetTenantsAsync(cancellationToken).ConfigureAwait(false))
+        {
+            using var _ = TenantScope.Enter(tenant);
+            LogSeeded(await SeedTenantAsync(cancellationToken).ConfigureAwait(false), tenant);
+        }
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    private async Task<int> SeedTenantAsync(CancellationToken cancellationToken)
     {
         var scope = scopes.CreateAsyncScope();
         await using (scope.ConfigureAwait(false))
@@ -55,12 +67,10 @@ internal sealed partial class InboxSeedService(
                 }
             }
 
-            LogSeeded(seeded);
+            return seeded;
         }
     }
 
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "Seeded {Count} processed message(s) into the inbox.")]
-    private partial void LogSeeded(int count);
+    [LoggerMessage(Level = LogLevel.Information, Message = "Seeded {Count} processed message(s) into the inbox (tenant {Tenant}).")]
+    private partial void LogSeeded(int count, string? tenant);
 }

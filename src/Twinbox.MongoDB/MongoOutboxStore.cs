@@ -19,6 +19,8 @@ internal sealed class MongoOutboxStore(MongoSettings settings, MongoIndexInitial
     private static readonly BsonDocument NewestFirst = new(OutboxDocument.Sequence, -1);
     private static readonly BsonDocument Unsent = new(OutboxDocument.Status, new BsonDocument("$in", new BsonArray { Pending, Processing }));
 
+    public string Name => "MongoDB";
+
     public async Task AppendAsync(IReadOnlyList<OutboxMessage> messages, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(messages);

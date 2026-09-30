@@ -133,17 +133,27 @@ up a rotation without a restart. A key with no secret refuses webhooks (500) rat
 | `WithProvider(name)` | Names the sender. It scopes event-id deduplication and becomes the destination `webhooks/{provider}`. Defaults to the verifier's provider (`stripe`, `github`, ...). |
 | `ForwardHeaders(names...)` | Copies these request headers into `WebhookReceived.Headers`. Shopify and GitHub verifiers forward their event headers already. |
 | `WithMaxBodySize(bytes)` | Body limit; default 1 MB. |
+| `WithStore(name)` | The outbox store to write to, by its name (`"SqlServer"`, `"MongoDB"`, an EF Core context's class name, ...). Only needed when several stores are registered; without it, mapping the endpoint throws. |
+| `WithTenant(context => ...)` | Picks the request's tenant, e.g. from a route value. Required when `UseTenants` is configured; a request it returns null or empty for is answered **404**. |
+
+With [multi-tenancy](concepts/multi-tenancy.md), route the tenant into the URL and resolve it there:
+
+```csharp
+app.MapWebhookInbox("/webhooks/{tenant}/stripe", w => w
+    .VerifyStripe(WebhookSecrets.FromConfiguration("Stripe:WebhookSecret"))
+    .WithTenant(context => context.Request.RouteValues["tenant"] as string));
+```
+
+The webhook is stored in that tenant's database and handled with the tenant entered, like any other tenant's message.
+Validate the tenant against your own list if unknown values must not reach your registrations.
 
 `MapWebhookInbox` returns an `IEndpointConventionBuilder`, so rate limiting, host filtering and other endpoint
 conventions apply as usual. It only maps `POST`.
 
 ## Limitations
 
-- **No tenancy.** Webhooks are stored and handled with no tenant entered, even when `UseTenants` is configured.
-  Resolve the tenant in your handler from the payload and write accordingly.
-- **One store.** With several outbox stores registered (several EF Core contexts), webhooks go to the last registered
-  store.
 - **Local delivery only.** Stored webhooks are dispatched to handlers in the same app; to forward them elsewhere,
   send a message from the handler.
-- The destination prefix is not applied to `webhooks/{provider}`.
+- The [destination prefix](concepts/routing.md#destination-prefix) applies to `webhooks/{provider}` like to any
+  logical destination, so handlers see `MessageContext.Source` with the prefix.
 - The body is decoded as UTF-8 text into `WebhookReceived.Body`; binary payloads aren't supported.

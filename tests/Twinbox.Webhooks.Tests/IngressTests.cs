@@ -216,7 +216,7 @@ public sealed class IngressTests
     public async Task StoreFailure_Answers500SoTheProviderRetries()
     {
         await using var host = await WebhookHost.StartAsync(
-            app => app.MapWebhookInbox("/stripe", w => w.VerifyStripe(WebhookSecrets.Of(Secret))),
+            app => app.MapWebhookInbox("/stripe", w => w.VerifyStripe(WebhookSecrets.Of(Secret)).WithStore("Throwing")),
             twinbox => twinbox.Services.AddSingleton<IOutboxStore>(new ThrowingStore(new TimeoutException("database unavailable"))));
 
         var response = await PostStripeAsync(host, Body);
@@ -229,12 +229,84 @@ public sealed class IngressTests
     {
         var store = new ThrowingStore(new FakeDbException("23505"));
         await using var host = await WebhookHost.StartAsync(
-            app => app.MapWebhookInbox("/stripe", w => w.VerifyStripe(WebhookSecrets.Of(Secret))),
+            app => app.MapWebhookInbox("/stripe", w => w.VerifyStripe(WebhookSecrets.Of(Secret)).WithStore("Throwing")),
             twinbox => twinbox.Services.AddSingleton<IOutboxStore>(store));
 
         var response = await PostStripeAsync(host, Body);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SeveralStoresWithoutAChoice_IsRefusedAtStartup()
+    {
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => WebhookHost.StartAsync(
+            app => app.MapWebhookInbox("/stripe", w => w.VerifyStripe(WebhookSecrets.Of(Secret))),
+            twinbox => twinbox.Services.AddSingleton<IOutboxStore>(new ThrowingStore(new TimeoutException()))));
+
+        Assert.Contains("InMemory, Throwing", error.Message, StringComparison.Ordinal);
+        Assert.Contains("WithStore", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task UnknownStoreName_IsRefusedAtStartup()
+    {
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => WebhookHost.StartAsync(
+            app => app.MapWebhookInbox("/stripe", w => w.VerifyStripe(WebhookSecrets.Of(Secret)).WithStore("Orders"))));
+
+        Assert.Contains("'Orders'", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task TenancyWithoutATenantResolver_IsRefusedAtStartup()
+    {
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => WebhookHost.StartAsync(
+            app => app.MapWebhookInbox("/stripe", w => w.VerifyStripe(WebhookSecrets.Of(Secret))),
+            UseTenants));
+
+        Assert.Contains("WithTenant", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task TenantResolver_StoresTheWebhookForThatTenant()
+    {
+        await using var host = await WebhookHost.StartAsync(
+            app => app.MapWebhookInbox("/{tenant}/stripe", w => w
+                .VerifyStripe(WebhookSecrets.Of(Secret))
+                .WithTenant(context => context.Request.RouteValues["tenant"] as string)),
+            UseTenants);
+
+        var response = await PostStripeAsync(host, Body, path: "/acme/stripe");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("acme", Assert.Single(host.Store.Snapshot()).TenantId);
+    }
+
+    [Fact]
+    public async Task RequestWithoutATenant_IsNotFound()
+    {
+        await using var host = await WebhookHost.StartAsync(
+            app => app.MapWebhookInbox("/stripe", w => w.VerifyStripe(WebhookSecrets.Of(Secret)).WithTenant(_ => null)),
+            UseTenants);
+
+        var response = await PostStripeAsync(host, Body);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Empty(host.Store.Snapshot());
+    }
+
+    [Fact]
+    public async Task DestinationPrefix_AppliesToWebhookDestinations()
+    {
+        await using var host = await WebhookHost.StartAsync(
+            app => app.MapWebhookInbox("/stripe", w => w.VerifyStripe(WebhookSecrets.Of(Secret))),
+            twinbox => twinbox.Configure(o => o.DestinationPrefix = "staging-"));
+
+        await PostStripeAsync(host, Body);
+        await host.DispatchAsync();
+
+        Assert.Equal("staging-webhooks/stripe", Assert.Single(host.Store.Snapshot()).Destination);
+        Assert.Single(host.Journal.Received);
     }
 
     [Fact]
@@ -270,6 +342,13 @@ public sealed class IngressTests
     private static Task<WebhookHost> StartStripeAsync() =>
         WebhookHost.StartAsync(app => app.MapWebhookInbox("/stripe", w => w.VerifyStripe(WebhookSecrets.Of(Secret))));
 
+    private static void UseTenants(TwinboxBuilder twinbox) => twinbox.UseTenants(o =>
+    {
+        o.ListTenants = (_, _) => Task.FromResult<IReadOnlyCollection<string>>(["acme"]);
+        o.EnterTenant = (_, _) => { };
+        o.CurrentTenant = _ => null;
+    });
+
     public sealed record StripeEvent : WebhookReceived;
 
     private sealed class StripeEventHandler(Journal journal) : IHandle<StripeEvent>
@@ -283,6 +362,8 @@ public sealed class IngressTests
 
     private sealed class ThrowingStore(Exception error) : IOutboxStore
     {
+        public string Name => "Throwing";
+
         public Task AppendAsync(IReadOnlyList<OutboxMessage> messages, CancellationToken cancellationToken) => Task.FromException(error);
 
         public Task<IReadOnlyList<OutboxMessage>> ClaimAsync(OutboxClaim claim, CancellationToken cancellationToken) =>
