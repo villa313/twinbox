@@ -31,9 +31,7 @@ Twinbox.DispatcherOptions.MinPollInterval.set -> void
 Twinbox.DispatcherOptions.SendTimeout.get -> System.TimeSpan
 Twinbox.DispatcherOptions.SendTimeout.set -> void
 Twinbox.HandlerTransaction
-Twinbox.HandlerTransaction.Attach(System.Data.Common.DbConnection! connection, System.Data.Common.DbTransaction! transaction) -> void
 Twinbox.HandlerTransaction.Connection.get -> System.Data.Common.DbConnection!
-Twinbox.HandlerTransaction.Detach() -> void
 Twinbox.HandlerTransaction.HandlerTransaction() -> void
 Twinbox.HandlerTransaction.IsActive.get -> bool
 Twinbox.HandlerTransaction.Transaction.get -> System.Data.Common.DbTransaction!
@@ -170,6 +168,7 @@ Twinbox.Storage.DispatchOutcome.SentAt.get -> System.DateTimeOffset?
 Twinbox.Storage.DispatchOutcome.SentAt.init -> void
 Twinbox.Storage.DispatchOutcome.Status.get -> Twinbox.OutboxMessageStatus
 Twinbox.Storage.DispatchOutcome.Status.init -> void
+Twinbox.Storage.HandlerTransactionBinding
 Twinbox.Storage.IBatchInboxStore
 Twinbox.Storage.IBatchInboxStore.TryProcessBatchAsync(System.Collections.Generic.IReadOnlyList<Twinbox.Storage.InboxEntry!>! entries, System.IServiceProvider! scopedServices, System.Func<System.Collections.Generic.IReadOnlyList<int>!, System.Threading.CancellationToken, System.Threading.Tasks.Task!>! handler, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
 Twinbox.Storage.IDispatchSignal
@@ -457,6 +456,7 @@ static Twinbox.Serialization.HeaderCodec.Decode(string? json) -> System.Collecti
 static Twinbox.Serialization.HeaderCodec.Encode(System.Collections.Generic.IReadOnlyDictionary<string!, string!>! headers) -> string?
 static Twinbox.Storage.DispatchOutcome.operator !=(Twinbox.Storage.DispatchOutcome? left, Twinbox.Storage.DispatchOutcome? right) -> bool
 static Twinbox.Storage.DispatchOutcome.operator ==(Twinbox.Storage.DispatchOutcome? left, Twinbox.Storage.DispatchOutcome? right) -> bool
+static Twinbox.Storage.HandlerTransactionBinding.Bind(Twinbox.HandlerTransaction! handlerTransaction, System.Data.Common.DbConnection! connection, System.Data.Common.DbTransaction! transaction) -> System.IDisposable!
 static Twinbox.Storage.InboxEntry.operator !=(Twinbox.Storage.InboxEntry? left, Twinbox.Storage.InboxEntry? right) -> bool
 static Twinbox.Storage.InboxEntry.operator ==(Twinbox.Storage.InboxEntry? left, Twinbox.Storage.InboxEntry? right) -> bool
 static Twinbox.Storage.OutboxClaim.operator !=(Twinbox.Storage.OutboxClaim? left, Twinbox.Storage.OutboxClaim? right) -> bool

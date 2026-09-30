@@ -35,3 +35,8 @@ Register one store. EF Core is the exception: `UseEntityFrameworkCore<T>()` can 
 Implement `Twinbox.Storage.IOutboxStore` (and `IInboxStore` for receiving; `IBatchInboxStore` and `IOutboxAdmin` are
 optional), register it as a singleton, and run the conformance suites against it. Create DI scopes through
 `TwinboxScopeFactory` so multi-tenancy keeps working.
+
+Everything a store author needs is public in `Twinbox.Storage`; nothing relies on internals shared between packages.
+Hooks that application code should never call are hidden from IntelliSense, for example
+`HandlerTransactionBinding.Bind`, which an ADO.NET inbox uses to expose its connection and transaction to handlers
+through `HandlerTransaction` while they run.
