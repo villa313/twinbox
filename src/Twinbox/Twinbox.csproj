@@ -20,6 +20,7 @@
     <InternalsVisibleTo Include="Twinbox.UnitTests" />
     <InternalsVisibleTo Include="Twinbox.Testing" />
     <InternalsVisibleTo Include="Twinbox.Webhooks" />
+    <InternalsVisibleTo Include="Twinbox.Dashboard" />
     <InternalsVisibleTo Include="Twinbox.EntityFrameworkCore.IntegrationTests" />
   </ItemGroup>
 </Project>

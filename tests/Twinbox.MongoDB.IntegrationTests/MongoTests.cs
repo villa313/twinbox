@@ -265,5 +265,5 @@ public sealed record OrderPlaced(string Reference);
 
 public static class StoreCases
 {
-    public static TheoryData<ConformanceCase<IOutboxStore>> All => [.. OutboxStoreConformance.Cases];
+    public static TheoryData<ConformanceCase<IOutboxStore>> All => [.. OutboxStoreConformance.Cases, .. OutboxAdminConformance.Cases];
 }

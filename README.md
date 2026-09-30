@@ -234,6 +234,31 @@ that). Received messages are completed on success, dead-lettered on `PermanentDe
 any other failure so Service Bus redelivers them until the entity's max delivery count. Call
 `ITwinboxMaintenance.RunCleanupAsync` from an hourly timer to apply retention. On plans with always-ready instances,
 `Twinbox:Dispatcher:Enabled = true` turns the background dispatcher back on.
+## Dashboard
+
+`Twinbox.Dashboard` serves a small operations page from your app: pending and dead counts per store and tenant,
+the age of the oldest pending message, a filterable message list, and replay or removal of dead messages.
+
+```csharp
+builder.Services.AddAuthorizationBuilder().AddPolicy("ops", p => p.RequireRole("ops"));
+
+app.MapTwinboxDashboard("/twinbox", o =>
+    {
+        o.ReadOnly = false;      // true hides replay and delete
+        o.ShowPayloads = false;  // payloads can hold personal data, so they're hidden unless you opt in
+    })
+    .RequireAuthorization("ops");
+```
+
+It refuses every request (403) until an authorization policy is attached. `o.AllowAnonymous = true` lifts that for
+local development and logs a warning. The page makes no external requests and runs under a strict Content Security
+Policy. Its POSTs need an `X-Twinbox-Csrf` header whose token is bound to the signed-in user; it's shared across
+instances when data protection keys are.
+
+The JSON API lives under the same prefix: `GET api/stats`, `GET api/messages?status=Dead&destination=&name=&search=&cursor=`,
+`GET api/messages/{id}`, `POST api/messages/replay` and `POST api/messages/delete` (`{ "ids": [...] }`), and
+`POST api/dead/replay-all` (by filter). Stores opt in to browsing by implementing `IOutboxAdmin`; every built-in
+store does.
 
 ## Moving over from another outbox
 
@@ -272,7 +297,7 @@ Assert.Single(harness.Sent<OrderPlaced>());
 ```
 
 Store authors can run `OutboxStoreConformance.Cases` from any test framework to check their store against the
-storage contract.
+storage contract, and `OutboxAdminConformance.Cases` if it also implements `IOutboxAdmin`.
 
 ## License
 

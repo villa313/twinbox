@@ -8,14 +8,24 @@ internal static class OutboxRowReader
 {
     public static async Task<IReadOnlyList<OutboxMessage>> ReadAsync(DbDataReader reader, CancellationToken cancellationToken)
     {
+        var rows = await ReadWithSequenceAsync(reader, cancellationToken).ConfigureAwait(false);
+
+        // RETURNING/OUTPUT order is unspecified, so restore insertion order from the key.
+        return [.. rows.OrderBy(r => r.Sequence).Select(r => r.Message)];
+    }
+
+    /// <summary>Rows in the order the statement returned them.</summary>
+    public static async Task<List<(long Sequence, OutboxMessage Message)>> ReadWithSequenceAsync(
+        DbDataReader reader,
+        CancellationToken cancellationToken)
+    {
         var rows = new List<(long Sequence, OutboxMessage Message)>();
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
         {
             rows.Add((reader.GetInt64(reader.GetOrdinal("Sequence")), Read(reader)));
         }
 
-        // RETURNING/OUTPUT order is unspecified, so restore insertion order from the key.
-        return [.. rows.OrderBy(r => r.Sequence).Select(r => r.Message)];
+        return rows;
     }
 
     private static OutboxMessage Read(DbDataReader reader) => new()

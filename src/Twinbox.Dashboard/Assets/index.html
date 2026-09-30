@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="twinbox-base" content="{{BASE}}">
+<title>Twinbox dashboard</title>
+<style nonce="{{NONCE}}">
+:root {
+  --bg: #f6f7f9; --surface: #ffffff; --surface-2: #eef0f4; --border: #d5d9e0;
+  --text: #16181d; --muted: #555d6b; --accent: #2456c9; --accent-text: #ffffff;
+  --danger: #b3261e; --danger-text: #ffffff; --focus: #1d4ed8;
+  --pending-bg: #e6eefc; --pending-fg: #1e40af; --processing-bg: #fdf1dc; --processing-fg: #8a4b00;
+  --sent-bg: #e3f4e8; --sent-fg: #1b6b35; --dead-bg: #fde7e6; --dead-fg: #a1231b;
+  --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .1);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 15px; line-height: 1.45;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111318; --surface: #1a1d24; --surface-2: #242833; --border: #363b47;
+    --text: #e8eaef; --muted: #a4abb8; --accent: #7aa2ff; --accent-text: #0b1020;
+    --danger: #ff8a80; --danger-text: #1f0605; --focus: #9bb8ff;
+    --pending-bg: #1d2b4d; --pending-fg: #b9ccff; --processing-bg: #3b2a10; --processing-fg: #ffd18a;
+    --sent-bg: #173322; --sent-fg: #9fe0b2; --dead-bg: #45191a; --dead-fg: #ffb4ab;
+    --shadow: none;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); }
+a { color: var(--accent); }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.skip { position: absolute; left: -999px; top: 0; background: var(--surface); padding: 8px 12px; z-index: 30; }
+.skip:focus { left: 8px; top: 8px; }
+header.top { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: flex-end; justify-content: space-between;
+  padding: 14px 24px; background: var(--surface); border-bottom: 1px solid var(--border); }
+header.top h1 { margin: 0; font-size: 1.25rem; letter-spacing: .01em; }
+header.top h1 span { color: var(--muted); font-weight: 400; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+main { padding: 20px 24px 48px; max-width: 1400px; margin: 0 auto; }
+label { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; color: var(--muted); font-weight: 600; }
+label.inline { flex-direction: row; align-items: center; gap: 8px; font-size: .9rem; color: var(--text); font-weight: 500; }
+input, select, button { font: inherit; color: inherit; }
+input[type=text], input[type=search], select { min-height: 36px; padding: 6px 10px; border: 1px solid var(--border);
+  border-radius: 8px; background: var(--surface); color: var(--text); min-width: 150px; }
+input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); }
+button { min-height: 36px; padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface-2); color: var(--text); cursor: pointer; font-weight: 600; }
+button:hover:not(:disabled) { filter: brightness(.96); }
+button:disabled { opacity: .55; cursor: not-allowed; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+button.danger { background: var(--danger); border-color: var(--danger); color: var(--danger-text); }
+button.link { background: none; border: none; padding: 4px 6px; color: var(--accent); min-height: 0; text-decoration: underline; }
+h2 { font-size: 1rem; margin: 28px 0 12px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; box-shadow: var(--shadow); }
+.card .label { color: var(--muted); font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.card .value { font-size: 1.8rem; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.card .value.alert { color: var(--dead-fg); }
+.card .sub { color: var(--muted); font-size: .85rem; }
+.breakdown { margin-top: 14px; }
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); }
+form.filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+.actions .spacer { flex: 1; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); background: var(--surface-2); position: sticky; top: 0; }
+tbody tr:hover { background: var(--surface-2); }
+td.num { font-variant-numeric: tabular-nums; }
+td.error { color: var(--muted); max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+td.mono, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .85rem; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .78rem; font-weight: 700; }
+.badge.Pending { background: var(--pending-bg); color: var(--pending-fg); }
+.badge.Processing { background: var(--processing-bg); color: var(--processing-fg); }
+.badge.Sent { background: var(--sent-bg); color: var(--sent-fg); }
+.badge.Dead { background: var(--dead-bg); color: var(--dead-fg); }
+.pager { display: flex; gap: 8px; justify-content: flex-end; align-items: center; padding: 10px 16px; }
+.pager .info { color: var(--muted); margin-right: auto; font-size: .85rem; }
+.empty { padding: 32px 16px; text-align: center; color: var(--muted); }
+.notice { padding: 10px 14px; border-radius: 8px; margin: 0 0 16px; background: var(--processing-bg); color: var(--processing-fg); }
+.notice.error { background: var(--dead-bg); color: var(--dead-fg); }
+.hidden { display: none !important; }
+.scrim { position: fixed; inset: 0; background: rgba(0, 0, 0, .35); z-index: 10; }
+aside.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(640px, 100%); background: var(--surface);
+  border-left: 1px solid var(--border); z-index: 20; display: flex; flex-direction: column; box-shadow: -8px 0 24px rgba(0, 0, 0, .2); }
+aside.drawer header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+aside.drawer header h2 { margin: 0; font-size: 1.05rem; overflow-wrap: anywhere; }
+aside.drawer .body { padding: 14px 18px 24px; overflow-y: auto; flex: 1; }
+aside.drawer .footer { display: flex; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--border); }
+dl.meta { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; }
+dl.meta dt { color: var(--muted); font-weight: 600; font-size: .85rem; }
+dl.meta dd { margin: 0; overflow-wrap: anywhere; }
+pre { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; overflow: auto;
+  white-space: pre-wrap; overflow-wrap: anywhere; max-height: 50vh; margin: 0; }
+dialog { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); max-width: 460px; padding: 20px; }
+dialog::backdrop { background: rgba(0, 0, 0, .45); }
+dialog h2 { margin-top: 0; }
+dialog .buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
+@media (max-width: 720px) { header.top, main { padding-left: 14px; padding-right: 14px; } }
+@media (prefers-reduced-motion: no-preference) { aside.drawer { transition: transform .15s ease-out; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#messages-heading">Skip to messages</a>
+<header class="top">
+  <h1>Twinbox <span>outbox</span></h1>
+  <div class="controls">
+    <label>Store<select id="store"></select></label>
+    <label id="tenant-label">Tenant<select id="tenant"></select></label>
+    <label class="inline"><input type="checkbox" id="auto-refresh"> Auto-refresh (10 s)</label>
+    <button type="button" id="refresh">Refresh</button>
+  </div>
+</header>
+<main>
+  <div id="notice" class="notice hidden" role="alert"></div>
+  <section aria-labelledby="stats-heading">
+    <h2 id="stats-heading">Overview</h2>
+    <div class="cards" id="cards"></div>
+    <div class="panel breakdown hidden" id="breakdown">
+      <div class="table-wrap">
+        <table>
+          <caption class="sr-only">Statistics per store and tenant</caption>
+          <thead><tr><th scope="col">Store</th><th scope="col">Tenant</th><th scope="col">Pending</th><th scope="col">Dead</th><th scope="col">Oldest pending</th></tr></thead>
+          <tbody id="breakdown-rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+  <section aria-labelledby="messages-heading">
+    <h2 id="messages-heading">Messages</h2>
+    <div class="panel">
+      <form class="filters" id="filters">
+        <label>Status
+          <select id="f-status">
+            <option value="">Any</option><option>Pending</option><option>Processing</option><option>Sent</option><option selected>Dead</option>
+          </select>
+        </label>
+        <label>Destination<input type="text" id="f-destination" autocomplete="off" maxlength="256"></label>
+        <label>Message name<input type="text" id="f-name" autocomplete="off" maxlength="256"></label>
+        <label>Message id or partition key<input type="search" id="f-search" autocomplete="off" maxlength="256"></label>
+        <button type="submit" class="primary">Apply</button>
+        <button type="button" id="f-reset">Reset</button>
+      </form>
+      <div class="actions" id="actions">
+        <button type="button" id="replay-selected" disabled>Replay selected</button>
+        <button type="button" id="delete-selected" class="danger" disabled>Delete selected</button>
+        <span class="spacer"></span>
+        <button type="button" id="replay-all">Replay all dead matching filters</button>
+      </div>
+      <div class="table-wrap">
+        <table aria-describedby="page-info">
+          <caption class="sr-only">Outbox messages, newest first</caption>
+          <thead>
+            <tr>
+              <th scope="col" class="select-col"><input type="checkbox" id="select-all" aria-label="Select all messages on this page"></th>
+              <th scope="col">Status</th><th scope="col">Message</th><th scope="col">Destination</th><th scope="col">Partition key</th>
+              <th scope="col">Attempts</th><th scope="col">Created</th><th scope="col">Last error</th><th scope="col"><span class="sr-only">Details</span></th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="empty hidden" id="empty">No messages match these filters.</div>
+      <nav class="pager" aria-label="Pages">
+        <span class="info" id="page-info" aria-live="polite"></span>
+        <button type="button" id="newer" disabled>Newer</button>
+        <button type="button" id="older" disabled>Older</button>
+      </nav>
+    </div>
+  </section>
+</main>
+<div class="scrim hidden" id="scrim"></div>
+<aside class="drawer hidden" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+  <header>
+    <h2 id="drawer-title">Message</h2>
+    <button type="button" id="drawer-close">Close</button>
+  </header>
+  <div class="body" id="drawer-body"></div>
+  <div class="footer" id="drawer-actions">
+    <button type="button" id="drawer-replay">Replay</button>
+    <button type="button" id="drawer-delete" class="danger">Delete</button>
+  </div>
+</aside>
+<dialog id="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-text">
+  <h2 id="confirm-title">Confirm</h2>
+  <p id="confirm-text"></p>
+  <div class="buttons">
+    <button type="button" id="confirm-cancel">Cancel</button>
+    <button type="button" id="confirm-ok" class="primary">Confirm</button>
+  </div>
+</dialog>
+<div class="sr-only" id="live" aria-live="polite"></div>
+<script nonce="{{NONCE}}">
+(() => {
+  'use strict';
+  const base = document.querySelector('meta[name="twinbox-base"]').content.replace(/\/+$/, '');
+  const $ = id => document.getElementById(id);
+  const state = { config: null, cursors: [null], page: 0, next: null, messages: [], selected: new Set(), timer: null, detail: null, lastFocus: null };
+
+  function el(tag, props, ...children) {
+    const node = document.createElement(tag);
+    for (const [key, value] of Object.entries(props || {})) {
+      if (key === 'class') node.className = value;
+      else if (key === 'text') node.textContent = value;
+      else if (key.startsWith('on')) node.addEventListener(key.slice(2), value);
+      else node.setAttribute(key, value);
+    }
+    for (const child of children) if (child != null) node.append(child);
+    return node;
+  }
+
+  async function api(path, options) {
+    const response = await fetch(base + path, Object.assign({ credentials: 'same-origin', headers: { Accept: 'application/json' } }, options));
+    const body = response.headers.get('content-type')?.includes('json') ? await response.json() : null;
+    if (!response.ok) throw Object.assign(new Error(body?.error || `Request failed (${response.status})`), { status: response.status });
+    return body;
+  }
+
+  async function post(path, payload, retried) {
+    try {
+      return await api(path, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-Twinbox-Csrf': state.config.csrfToken }
+      });
+    } catch (error) {
+      // The token is per process unless data protection keys are shared, so refresh it once after a restart.
+      if (error.status === 403 && !retried && !state.config.readOnly) {
+        state.config = await api('/api/config');
+        return post(path, payload, true);
+      }
+      throw error;
+    }
+  }
+
+  function notice(message, isError) {
+    const box = $('notice');
+    box.textContent = message || '';
+    box.classList.toggle('hidden', !message);
+    box.classList.toggle('error', !!isError);
+  }
+
+  function announce(message) { $('live').textContent = message; }
+
+  function ago(iso) {
+    const seconds = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+    return duration(seconds) + ' ago';
+  }
+
+  function duration(seconds) {
+    if (seconds < 60) return Math.round(seconds) + 's';
+    if (seconds < 3600) return Math.round(seconds / 60) + 'm';
+    if (seconds < 86400) return (seconds / 3600).toFixed(1) + 'h';
+    return (seconds / 86400).toFixed(1) + 'd';
+  }
+
+  function time(iso) {
+    return iso ? el('time', { datetime: iso, title: new Date(iso).toLocaleString(), text: ago(iso) }) : '—';
+  }
+
+  function selection() {
+    return { store: Number($('store').value), tenant: $('tenant').value || null };
+  }
+
+  function filters() {
+    return { status: $('f-status').value, destination: $('f-destination').value.trim(), name: $('f-name').value.trim(), search: $('f-search').value.trim() };
+  }
+
+  async function loadConfig() {
+    state.config = await api('/api/config');
+    const stores = $('store');
+    stores.replaceChildren(...state.config.stores.filter(s => s.browsable).map(s => el('option', { value: String(s.id), text: s.name })));
+    const tenants = $('tenant');
+    tenants.replaceChildren(...state.config.tenants.map(t => el('option', { value: t, text: t })));
+    $('tenant-label').classList.toggle('hidden', state.config.tenants.length === 0);
+    const readOnly = state.config.readOnly;
+    $('actions').classList.toggle('hidden', readOnly);
+    $('drawer-actions').classList.toggle('hidden', readOnly);
+    document.querySelectorAll('.select-col').forEach(n => n.classList.toggle('hidden', readOnly));
+    if (!stores.options.length) notice('No registered outbox store supports browsing messages. Statistics are still shown.', false);
+  }
+
+  async function loadStats() {
+    const stats = await api('/api/stats');
+    const rows = stats.stores;
+    const sum = key => rows.reduce((total, r) => total + (r[key] || 0), 0);
+    const oldest = Math.max(0, ...rows.map(r => r.oldestPendingAgeSeconds || 0));
+    const failing = rows.filter(r => r.error).length;
+    const card = (label, value, sub, alert) =>
+      el('div', { class: 'card' }, el('div', { class: 'label', text: label }), el('div', { class: 'value' + (alert ? ' alert' : ''), text: value }), sub ? el('div', { class: 'sub', text: sub }) : null);
+    $('cards').replaceChildren(
+      card('Pending', sum('pending').toLocaleString(), 'waiting to be sent'),
+      card('Dead', sum('dead').toLocaleString(), 'gave up; replay or delete', sum('dead') > 0),
+      card('Oldest pending', rows.some(r => r.oldestPendingAgeSeconds != null) ? duration(oldest) : '—', 'age of the oldest unsent message'),
+      card('Stores', String(new Set(rows.map(r => r.store)).size), failing ? `${failing} unavailable` : 'all reachable', failing > 0));
+    const multiple = rows.length > 1 || failing > 0;
+    $('breakdown').classList.toggle('hidden', !multiple);
+    $('breakdown-rows').replaceChildren(...rows.map(r => el('tr', {},
+      el('td', { text: r.storeName }),
+      el('td', { text: r.tenant ?? '—' }),
+      el('td', { class: 'num', text: r.error ? '—' : String(r.pending) }),
+      el('td', { class: 'num', text: r.error ? '—' : String(r.dead) }),
+      el('td', { text: r.error || (r.oldestPendingAgeSeconds == null ? '—' : duration(r.oldestPendingAgeSeconds)) }))));
+  }
+
+  async function loadMessages() {
+    if (!$('store').options.length) { $('rows').replaceChildren(); return; }
+    const params = new URLSearchParams({ store: String(selection().store), take: '50' });
+    if (selection().tenant) params.set('tenant', selection().tenant);
+    for (const [key, value] of Object.entries(filters())) if (value) params.set(key, value);
+    const cursor = state.cursors[state.page];
+    if (cursor) params.set('cursor', cursor);
+    const page = await api('/api/messages?' + params);
+    state.messages = page.messages;
+    state.next = page.nextCursor;
+    state.selected = new Set([...state.selected].filter(id => page.messages.some(m => m.id === id)));
+    renderMessages();
+  }
+
+  function renderMessages() {
+    const readOnly = state.config.readOnly;
+    $('rows').replaceChildren(...state.messages.map(m => {
+      const box = el('input', { type: 'checkbox', 'aria-label': `Select message ${m.messageName} ${m.id}` });
+      box.checked = state.selected.has(m.id);
+      box.addEventListener('change', () => { box.checked ? state.selected.add(m.id) : state.selected.delete(m.id); updateSelection(); });
+      return el('tr', {},
+        el('td', { class: 'select-col' + (readOnly ? ' hidden' : '') }, box),
+        el('td', {}, el('span', { class: 'badge ' + m.status, text: m.status })),
+        el('td', { text: m.messageName }),
+        el('td', { text: m.destination }),
+        el('td', { class: 'mono', text: m.partitionKey ?? '—' }),
+        el('td', { class: 'num', text: String(m.attempts) }),
+        el('td', {}, time(m.createdAt)),
+        el('td', { class: 'error', title: m.lastError ?? '', text: m.lastError ?? '' }),
+        el('td', {}, el('button', { type: 'button', class: 'link', text: 'Details', 'aria-label': `Details of ${m.messageName} ${m.id}`, onclick: () => openDrawer(m.id) })));
+    }));
+    $('empty').classList.toggle('hidden', state.messages.length > 0);
+    $('newer').disabled = state.page === 0;
+    $('older').disabled = !state.next;
+    $('page-info').textContent = state.messages.length ? `Page ${state.page + 1}, ${state.messages.length} messages, newest first` : '';
+    updateSelection();
+  }
+
+  function updateSelection() {
+    const count = state.selected.size;
+    $('replay-selected').disabled = count === 0;
+    $('delete-selected').disabled = count === 0;
+    $('replay-selected').textContent = count ? `Replay selected (${count})` : 'Replay selected';
+    $('delete-selected').textContent = count ? `Delete selected (${count})` : 'Delete selected';
+    const all = $('select-all');
+    all.checked = count > 0 && count === state.messages.length;
+    all.indeterminate = count > 0 && count < state.messages.length;
+  }
+
+  function confirmAction(title, text, okLabel, danger) {
+    const dialog = $('confirm');
+    $('confirm-title').textContent = title;
+    $('confirm-text').textContent = text;
+    const ok = $('confirm-ok');
+    ok.textContent = okLabel;
+    ok.className = danger ? 'danger' : 'primary';
+    return new Promise(resolve => {
+      const finish = result => { dialog.close(); cleanup(); resolve(result); };
+      const onOk = () => finish(true);
+      const onCancel = () => finish(false);
+      const onClose = () => { cleanup(); resolve(false); };
+      const cleanup = () => { ok.removeEventListener('click', onOk); $('confirm-cancel').removeEventListener('click', onCancel); dialog.removeEventListener('cancel', onClose); };
+      ok.addEventListener('click', onOk);
+      $('confirm-cancel').addEventListener('click', onCancel);
+      dialog.addEventListener('cancel', onClose);
+      dialog.showModal();
+      $('confirm-cancel').focus();
+    });
+  }
+
+  async function mutate(kind, ids) {
+    const replay = kind === 'replay';
+    const noun = ids.length === 1 ? 'message' : `${ids.length} messages`;
+    const text = replay
+      ? `Replay ${noun}? Dead and sent messages go back to pending with a fresh attempt count and are delivered again.`
+      : `Delete ${noun}? This cannot be undone.`;
+    if (!await confirmAction(replay ? 'Replay messages' : 'Delete messages', text, replay ? 'Replay' : 'Delete', !replay)) return false;
+    const result = await post(`/api/messages/${replay ? 'replay' : 'delete'}`, Object.assign(selection(), { ids }));
+    const verb = replay ? 'Replayed' : 'Deleted';
+    notice(`${verb} ${result.changed} of ${ids.length} ${ids.length === 1 ? 'message' : 'messages'}.` + (replay && result.changed < ids.length ? ' Only dead or sent messages can be replayed.' : ''), false);
+    announce(`${verb} ${result.changed} messages.`);
+    state.selected.clear();
+    await refresh();
+    return true;
+  }
+
+  async function replayAll() {
+    const f = filters();
+    const scope = [f.destination && `destination ${f.destination}`, f.name && `message ${f.name}`, f.search && `matching ${f.search}`].filter(Boolean).join(', ');
+    if (!await confirmAction('Replay all dead messages', `Replay every dead message${scope ? ' with ' + scope : ''} in this store? They are delivered again.`, 'Replay all', false)) return;
+    const result = await post('/api/dead/replay-all', Object.assign(selection(), { destination: f.destination || null, name: f.name || null, search: f.search || null }));
+    notice(`Replayed ${result.changed} dead ${result.changed === 1 ? 'message' : 'messages'}.`, false);
+    announce(`Replayed ${result.changed} messages.`);
+    await refresh();
+  }
+
+  async function openDrawer(id) {
+    state.lastFocus = document.activeElement;
+    const params = new URLSearchParams({ store: String(selection().store) });
+    if (selection().tenant) params.set('tenant', selection().tenant);
+    let detail;
+    try { detail = await api(`/api/messages/${encodeURIComponent(id)}?${params}`); }
+    catch (error) { notice(error.message, true); return; }
+    state.detail = detail;
+    const m = detail.message;
+    $('drawer-title').textContent = m.messageName;
+    const rows = [
+      ['Id', m.id], ['Status', m.status], ['Destination', m.destination], ['Transport', m.transport],
+      ['Partition key', m.partitionKey], ['Tenant', m.tenantId], ['Attempts', String(m.attempts)],
+      ['Created', m.createdAt && new Date(m.createdAt).toLocaleString()], ['Available at', new Date(m.availableAt).toLocaleString()],
+      ['Sent at', m.sentAt && new Date(m.sentAt).toLocaleString()], ['Lease owner', detail.leaseOwner],
+      ['Lease until', detail.leaseUntil && new Date(detail.leaseUntil).toLocaleString()], ['Content type', detail.contentType],
+      ['Trace parent', detail.traceParent], ['Payload size', `${m.payloadBytes.toLocaleString()} bytes`]
+    ];
+    const meta = el('dl', { class: 'meta' });
+    for (const [name, value] of rows) meta.append(el('dt', { text: name }), el('dd', { class: name === 'Id' || name === 'Trace parent' ? 'mono' : '', text: value ?? '—' }));
+    const headers = Object.entries(detail.headers || {});
+    const body = [
+      meta,
+      m.lastError ? el('h3', { text: 'Last error' }) : null,
+      m.lastError ? el('pre', { text: m.lastError }) : null,
+      el('h3', { text: `Headers (${headers.length})` }),
+      headers.length
+        ? el('div', { class: 'table-wrap' }, el('table', {}, el('thead', {}, el('tr', {}, el('th', { scope: 'col', text: 'Name' }), el('th', { scope: 'col', text: 'Value' }))),
+            el('tbody', {}, ...headers.map(([k, v]) => el('tr', {}, el('td', { class: 'mono', text: k }), el('td', { class: 'mono', text: v }))))))
+        : el('p', { class: 'sub', text: 'No headers.' }),
+      el('h3', { text: 'Payload' }),
+      detail.payloadShown
+        ? el('div', {}, el('pre', { tabindex: '0', 'aria-label': 'Payload', text: detail.payload ?? '' }),
+            detail.payloadTruncated ? el('p', { text: 'Showing the first 64 KB.' }) : null)
+        : el('p', { text: 'Payloads are hidden. Enable ShowPayloads in the dashboard options to see them.' })
+    ];
+    $('drawer-body').replaceChildren(...body.filter(Boolean));
+    $('drawer-replay').disabled = !(m.status === 'Dead' || m.status === 'Sent');
+    $('scrim').classList.remove('hidden');
+    $('drawer').classList.remove('hidden');
+    $('drawer-close').focus();
+  }
+
+  function closeDrawer() {
+    $('drawer').classList.add('hidden');
+    $('scrim').classList.add('hidden');
+    state.detail = null;
+    if (state.lastFocus && document.contains(state.lastFocus)) state.lastFocus.focus();
+  }
+
+  async function refresh() {
+    try {
+      await Promise.all([loadStats(), loadMessages()]);
+    } catch (error) {
+      notice(error.message, true);
+    }
+  }
+
+  function resetPaging() { state.cursors = [null]; state.page = 0; state.selected.clear(); }
+
+  function guarded(action) {
+    return async () => { try { await action(); } catch (error) { notice(error.message, true); } };
+  }
+
+  $('filters').addEventListener('submit', event => { event.preventDefault(); resetPaging(); guarded(loadMessages)(); });
+  $('f-reset').addEventListener('click', () => {
+    $('f-status').value = 'Dead'; $('f-destination').value = ''; $('f-name').value = ''; $('f-search').value = '';
+    resetPaging(); guarded(loadMessages)();
+  });
+  $('store').addEventListener('change', () => { resetPaging(); guarded(loadMessages)(); });
+  $('tenant').addEventListener('change', () => { resetPaging(); guarded(loadMessages)(); });
+  $('refresh').addEventListener('click', () => { notice(''); refresh(); });
+  $('older').addEventListener('click', guarded(async () => {
+    state.cursors[state.page + 1] = state.next; state.page++; state.selected.clear(); await loadMessages(); $('rows').querySelector('input, button')?.focus();
+  }));
+  $('newer').addEventListener('click', guarded(async () => { state.page = Math.max(0, state.page - 1); state.selected.clear(); await loadMessages(); }));
+  $('select-all').addEventListener('change', event => {
+    state.selected = event.target.checked ? new Set(state.messages.map(m => m.id)) : new Set();
+    renderMessages();
+  });
+  $('replay-selected').addEventListener('click', guarded(() => mutate('replay', [...state.selected])));
+  $('delete-selected').addEventListener('click', guarded(() => mutate('delete', [...state.selected])));
+  $('replay-all').addEventListener('click', guarded(replayAll));
+  $('drawer-close').addEventListener('click', closeDrawer);
+  $('scrim').addEventListener('click', closeDrawer);
+  $('drawer-replay').addEventListener('click', guarded(async () => { const id = state.detail.message.id; if (await mutate('replay', [id])) closeDrawer(); }));
+  $('drawer-delete').addEventListener('click', guarded(async () => { const id = state.detail.message.id; if (await mutate('delete', [id])) closeDrawer(); }));
+  document.addEventListener('keydown', event => {
+    const drawer = $('drawer');
+    if (drawer.classList.contains('hidden') || $('confirm').open) return;
+    if (event.key === 'Escape') { closeDrawer(); return; }
+    if (event.key !== 'Tab') return;
+    // Keep keyboard focus inside the open drawer.
+    const focusable = [...drawer.querySelectorAll('button:not(:disabled), [tabindex="0"], a[href]')].filter(n => n.offsetParent !== null);
+    if (!focusable.length) return;
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) { last.focus(); event.preventDefault(); }
+    else if (!event.shiftKey && document.activeElement === last) { first.focus(); event.preventDefault(); }
+  });
+  $('auto-refresh').addEventListener('change', event => {
+    clearInterval(state.timer);
+    state.timer = event.target.checked ? setInterval(() => { if (!state.detail && !$('confirm').open) refresh(); }, 10000) : null;
+    announce(event.target.checked ? 'Auto-refresh on' : 'Auto-refresh off');
+  });
+
+  loadConfig().then(refresh).catch(error => notice(error.message, true));
+})();
+</script>
+</body>
+</html>

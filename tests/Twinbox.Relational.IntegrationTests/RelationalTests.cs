@@ -278,7 +278,7 @@ public sealed record OrderPlaced(string Reference);
 
 public static class StoreCases
 {
-    public static TheoryData<ConformanceCase<IOutboxStore>> All => [.. OutboxStoreConformance.Cases];
+    public static TheoryData<ConformanceCase<IOutboxStore>> All => [.. OutboxStoreConformance.Cases, .. OutboxAdminConformance.Cases];
 }
 
 public sealed class PostgreSqlTests(PostgreSqlDatabase database) : RelationalTests<PostgreSqlDatabase>(database);
