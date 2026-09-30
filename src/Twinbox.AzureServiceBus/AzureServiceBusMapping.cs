@@ -64,10 +64,8 @@ internal static class AzureServiceBusMapping
             headers.GetValueOrDefault(TransportHeaders.PartitionKey) ?? PartitionKeyFromSession(message));
     }
 
-    /// <summary>
-    /// True for failures a retry cannot fix, so the outbox dead-letters instead of backing off. Access errors stay
-    /// transient: an RBAC or key fix should release the backlog rather than find it dead-lettered.
-    /// </summary>
+    /// <summary>True for failures a retry cannot fix, so the outbox dead-letters instead of backing off. Access errors
+    /// stay transient: an RBAC or key fix should release the backlog rather than find it dead-lettered.</summary>
     public static bool IsPermanentSendFailure(Exception exception) =>
         exception is ServiceBusException { Reason: ServiceBusFailureReason.MessagingEntityNotFound or ServiceBusFailureReason.MessageSizeExceeded };
 

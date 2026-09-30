@@ -88,13 +88,6 @@ internal static class NatsMapping
     public static string Origin(string stream, ulong sequence) =>
         string.Create(CultureInfo.InvariantCulture, $"{stream}:{sequence}");
 
-    public static TimeSpan RetryDelay(NatsOptions options, int attempt)
-    {
-        var factor = Math.Pow(2, Math.Clamp(attempt - 1, 0, 30));
-        var ticks = Math.Min(options.RetryDelay.Ticks * factor, options.MaxRetryDelay.Ticks);
-        return TimeSpan.FromTicks((long)ticks);
-    }
-
     private static Dictionary<string, string> DecodeHeaders(NatsHeaders? headers)
     {
         var decoded = new Dictionary<string, string>(StringComparer.Ordinal);

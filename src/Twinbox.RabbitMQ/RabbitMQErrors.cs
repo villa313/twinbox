@@ -5,10 +5,8 @@ namespace Twinbox.RabbitMQ;
 
 internal static class RabbitMQErrors
 {
-    /// <summary>
-    /// A missing exchange won't appear on retry; unroutable messages may route once a consumer binds. Access refusals stay
-    /// transient: a permissions fix should release the backlog rather than find it dead-lettered.
-    /// </summary>
+    /// <summary>A missing exchange won't appear on retry; unroutable messages may route once a consumer binds. Access
+    /// refusals stay transient: a permissions fix should release the backlog rather than find it dead-lettered.</summary>
     public static bool IsPermanent(Exception error, bool unroutableIsPermanent) => error switch
     {
         PublishException { IsReturn: true } => unroutableIsPermanent,

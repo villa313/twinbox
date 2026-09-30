@@ -109,7 +109,8 @@ internal sealed partial class NatsClients(IOptions<NatsOptions> options, ILogger
         DurableName = listener.DurableConsumer,
         AckPolicy = ConsumerConfigAckPolicy.Explicit,
         AckWait = options.AckWait,
-        MaxDeliver = options.MaxDeliver,
+        // Twinbox enforces MaxDeliveryAttempts itself: a server-side limit would strand a message whose dead-letter copy failed.
+        MaxDeliver = -1,
         MaxAckPending = options.MaxAckPending,
         FilterSubject = listener.FilterSubject,
     };

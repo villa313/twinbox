@@ -83,7 +83,7 @@ public sealed class RegistrationTests
     [Fact]
     public void ConsumerConfig_IsDurableWithExplicitAcksAndTheConfiguredLimits()
     {
-        var options = new NatsOptions { AckWait = TimeSpan.FromSeconds(12), MaxDeliver = 4, MaxAckPending = 64 };
+        var options = new NatsOptions { AckWait = TimeSpan.FromSeconds(12), MaxDeliveryAttempts = 4, MaxAckPending = 64 };
 
         var config = NatsClients.CreateConsumerConfig(options, new NatsListener("ORDERS", "billing", "orders.>"));
 
@@ -91,7 +91,7 @@ public sealed class RegistrationTests
         Assert.Equal("billing", config.Name);
         Assert.Equal(ConsumerConfigAckPolicy.Explicit, config.AckPolicy);
         Assert.Equal(TimeSpan.FromSeconds(12), config.AckWait);
-        Assert.Equal(4, config.MaxDeliver);
+        Assert.Equal(-1, config.MaxDeliver);
         Assert.Equal(64, config.MaxAckPending);
         Assert.Equal("orders.>", config.FilterSubject);
     }
@@ -132,7 +132,7 @@ public sealed class RegistrationTests
     {
         ["blank url"] = o => o.Url = " ",
         ["zero ack wait"] = o => o.AckWait = TimeSpan.Zero,
-        ["zero max deliver"] = o => o.MaxDeliver = 0,
+        ["zero max delivery attempts"] = o => o.MaxDeliveryAttempts = 0,
         ["zero max ack pending"] = o => o.MaxAckPending = 0,
         ["zero prefetch"] = o => o.PrefetchCount = 0,
         ["zero concurrency"] = o => o.ConsumerConcurrency = 0,
