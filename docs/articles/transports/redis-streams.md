@@ -47,8 +47,13 @@ builder.Services.AddTwinbox(twinbox => twinbox
     .AddHandler<OrderPlacedHandler, OrderPlaced>());
 ```
 
-Every instance joins the group under `ConsumerName`, which must differ between instances. Instances in one group
-share the stream's entries; each group gets every entry.
+Every instance joins the group under `ConsumerName`, which must differ between instances. It defaults to the machine
+name, so a restarted instance rejoins as the same consumer; set it yourself when one machine runs several instances
+of the app. Instances in one group share the stream's entries; each group gets every entry.
+
+Instances that go away for good (a replaced container, a renamed host) leave their consumer behind in the group. Each
+sweep deletes other members that have been idle for `RemoveIdleConsumersAfter` with nothing pending; their pending
+entries are reclaimed by the sweep first, and a consumer that is only deleted while it has none loses nothing.
 
 `MessageContext.Source` is the stream key. Entries are handled one at a time, so batch handlers get batches of one
 (see [batch handlers](../concepts/batch-handlers.md)).
@@ -61,10 +66,11 @@ share the stream's entries; each group gets every entry.
 | `ConnectionFactory` | `null` | `Func<IServiceProvider, IConnectionMultiplexer>` supplying an app-owned multiplexer. Never disposed by Twinbox. |
 | `MaxLength` | `null` | Caps each stream sent to at roughly this many entries (`XADD MAXLEN ~`). `null` keeps every entry. Must be positive. |
 | `ClaimIdleAfter` | 1 min | Idle time before an unacknowledged entry is reclaimed. Also the retry delay. At least 1 ms. |
-| `MaxDeliveries` | `10` | Deliveries of an entry before it moves to the dead stream. Must be positive. |
+| `MaxDeliveryAttempts` | `10` | Deliveries of an entry, the first included; a failure on the last one moves it to the dead stream. Must be positive. |
 | `BatchSize` | `10` | Entries read or reclaimed per round trip. Must be positive. |
 | `PollInterval` | 500 ms | Wait before reading again after a read found nothing. Must be positive. |
-| `ConsumerName` | `"<machine>-<process id>"` | This process's name in each consumer group. Required. |
+| `ConsumerName` | machine name | This process's name in each consumer group. Must differ between instances. Required. |
+| `RemoveIdleConsumersAfter` | 1 h | Other group members idle this long with nothing pending are deleted by the sweep. `null` keeps them. Cannot be shorter than `ClaimIdleAfter`. |
 
 Options are set in code; they are not bound from configuration.
 
@@ -88,8 +94,9 @@ one.
 
 ## Failures, retries and dead letters
 
-**Sending.** `WRONGTYPE` (the key is not a stream) and `NOPERM` (missing ACL grant) are permanent: the outbox row is
-dead-lettered. Connection errors, timeouts, OOM and failovers are retried by the outbox. There is no "unroutable"
+**Sending.** `WRONGTYPE` (the key is not a stream) is permanent: the outbox row is dead-lettered. Connection errors,
+timeouts, OOM, failovers and `NOPERM` (missing ACL grant) are retried by the outbox, so an ACL fix releases the
+backlog. There is no "unroutable"
 case: `XADD` creates the stream, and entries nobody reads simply stay there. See
 [retries and dead letters](../concepts/retries-and-dead-letters.md).
 
@@ -99,8 +106,8 @@ case: `XADD` creates the stream, and entries nobody reads simply stay there. See
 - Any other exception: the entry is left pending. A sweep runs every `ClaimIdleAfter / 2` and reclaims entries idle
   for `ClaimIdleAfter` (`XAUTOCLAIM`), so a retry happens between 1x and 1.5x `ClaimIdleAfter` later. The sweep also
   picks up entries left by crashed instances.
-- Handler throws `PermanentDeliveryException`, or fails on delivery `MaxDeliveries`: the entry is dead-lettered.
-- A reclaimed entry already past `MaxDeliveries` (earlier deliveries never reported back, e.g. the process crashed)
+- Handler throws `PermanentDeliveryException`, or fails on delivery `MaxDeliveryAttempts`: the entry is dead-lettered.
+- A reclaimed entry already past `MaxDeliveryAttempts` (earlier deliveries never reported back, e.g. the process crashed)
   is dead-lettered without running the handler.
 
 Dead-lettering appends a copy to the stream `<stream>:dead` with all original fields plus `error` (exception type and
@@ -126,8 +133,7 @@ There is no switch to turn this off.
 
 - `ClaimIdleAfter` is both the retry delay and the crash-detection timeout. Keep it above your longest handler run
   time, or another instance reclaims an entry that is still being handled.
-- The default `ConsumerName` contains the process id, so each restart joins the group as a new consumer. Entries the
-  old consumer left pending wait for the sweep, and old consumers are never removed from the group.
+- Two instances on one machine share the default `ConsumerName`; give each its own.
 - `MaxLength` trimming can drop entries a group has not read yet. It is not applied to dead streams, which grow
   without bound.
 - One entry is handled at a time per listener; there is no concurrency option.

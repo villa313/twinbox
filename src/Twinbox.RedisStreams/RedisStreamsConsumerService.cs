@@ -163,6 +163,29 @@ internal sealed partial class RedisStreamsConsumerService(
             cursor = result.NextStartId;
         }
         while (cursor != StreamStart);
+
+        await RemoveIdleConsumersAsync(database, listener, stoppingToken).ConfigureAwait(false);
+    }
+
+    // Only members with nothing pending go: deleting a consumer drops its pending entries from the group.
+    private async Task RemoveIdleConsumersAsync(IDatabase database, RedisStreamsListener listener, CancellationToken stoppingToken)
+    {
+        if (Options.RemoveIdleConsumersAfter is not { } idleAfter)
+        {
+            return;
+        }
+
+        var consumers = await database.StreamConsumerInfoAsync(listener.Stream, listener.Group).WaitAsync(stoppingToken).ConfigureAwait(false);
+        foreach (var consumer in consumers)
+        {
+            if (consumer.PendingMessageCount == 0
+                && consumer.IdleTimeInMilliseconds >= (long)idleAfter.TotalMilliseconds
+                && consumer.Name != Options.ConsumerName)
+            {
+                await database.StreamDeleteConsumerAsync(listener.Stream, listener.Group, consumer.Name).WaitAsync(stoppingToken).ConfigureAwait(false);
+                LogConsumerRemoved(consumer.Name, listener.Stream, listener.Group, TimeSpan.FromMilliseconds(consumer.IdleTimeInMilliseconds));
+            }
+        }
     }
 
     // XPENDING's counter lives on the server, so it survives the consumer crashes reclaiming exists for, unlike a local tally.
@@ -180,7 +203,7 @@ internal sealed partial class RedisStreamsConsumerService(
     private async Task HandleClaimedAsync(IDatabase database, RedisStreamsListener listener, StreamEntry entry, int attempt, CancellationToken stoppingToken)
     {
         LogReclaimed(RedisStreamsMapping.MessageId(listener.Stream, entry), listener.Stream, (string?)entry.Id, attempt);
-        if (attempt <= Options.MaxDeliveries)
+        if (attempt <= Options.MaxDeliveryAttempts)
         {
             await HandleAsync(database, listener, entry, attempt, stoppingToken).ConfigureAwait(false);
             return;
@@ -208,7 +231,7 @@ internal sealed partial class RedisStreamsConsumerService(
         {
             throw new OperationCanceledException(stoppingToken);
         }
-        catch (Exception ex) when (attempt >= Options.MaxDeliveries)
+        catch (Exception ex) when (attempt >= Options.MaxDeliveryAttempts)
         {
             await DeadLetterAsync(database, listener, entry, RedisStreamsMapping.Describe(ex), ex, stoppingToken).ConfigureAwait(false);
             return;
@@ -244,6 +267,7 @@ internal sealed partial class RedisStreamsConsumerService(
         }
 
         LogDeadLettered(cause, messageId, listener.Stream, listener.DeadStream, error);
+        InboundDiagnostics.RecordDeadLettered(RedisStreamsTransport.TransportName, listener.Stream);
         await AcknowledgeAsync(database, listener, entry, messageId).ConfigureAwait(false);
     }
 
@@ -280,6 +304,9 @@ internal sealed partial class RedisStreamsConsumerService(
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Could not move message {MessageId} from {Stream} to {DeadStream}; retrying it later.")]
     private partial void LogDeadLetterFailed(Exception error, string messageId, string stream, string deadStream);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Removed consumer {Consumer} from group {Group} on Redis stream {Stream}; it was idle for {Idle} with nothing pending.")]
+    private partial void LogConsumerRemoved(string consumer, string stream, string group, TimeSpan idle);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Could not acknowledge message {MessageId} on {Stream}; it may be delivered again.")]
     private partial void LogAcknowledgeFailed(Exception error, string messageId, string stream);

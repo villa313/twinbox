@@ -62,19 +62,21 @@ public sealed class RegistrationTests
         var options = new RedisStreamsOptions();
 
         Assert.Equal(TimeSpan.FromMinutes(1), options.ClaimIdleAfter);
-        Assert.Equal(10, options.MaxDeliveries);
+        Assert.Equal(10, options.MaxDeliveryAttempts);
         Assert.Null(options.MaxLength);
-        Assert.Equal($"{Environment.MachineName}-{Environment.ProcessId}", options.ConsumerName);
+        Assert.Equal(Environment.MachineName, options.ConsumerName);
+        Assert.Equal(TimeSpan.FromHours(1), options.RemoveIdleConsumersAfter);
     }
 
     [Theory]
     [InlineData(nameof(RedisStreamsOptions.Configuration))]
     [InlineData(nameof(RedisStreamsOptions.MaxLength))]
     [InlineData(nameof(RedisStreamsOptions.ClaimIdleAfter))]
-    [InlineData(nameof(RedisStreamsOptions.MaxDeliveries))]
+    [InlineData(nameof(RedisStreamsOptions.MaxDeliveryAttempts))]
     [InlineData(nameof(RedisStreamsOptions.BatchSize))]
     [InlineData(nameof(RedisStreamsOptions.PollInterval))]
     [InlineData(nameof(RedisStreamsOptions.ConsumerName))]
+    [InlineData(nameof(RedisStreamsOptions.RemoveIdleConsumersAfter))]
     public async Task InvalidSetting_FailsValidation(string setting)
     {
         await using var services = new ServiceCollection()
@@ -86,6 +88,19 @@ public sealed class RegistrationTests
             .BuildServiceProvider();
 
         Assert.Throws<OptionsValidationException>(() => services.GetRequiredService<IOptions<RedisStreamsOptions>>().Value);
+    }
+
+    [Fact]
+    public async Task ConfigurationOverload_CanStillRegisterListeners()
+    {
+        await using var services = new ServiceCollection()
+            .AddLogging()
+            .AddTwinbox(b => b.UseInMemoryStore().UseRedisStreams("localhost:6379", o => o.Listen("orders", "billing")))
+            .BuildServiceProvider();
+
+        var options = services.GetRequiredService<IOptions<RedisStreamsOptions>>().Value;
+        Assert.Equal("localhost:6379", options.Configuration);
+        Assert.Equal([new RedisStreamsListener("orders", "billing")], options.Listeners);
     }
 
     [Theory]
@@ -129,8 +144,8 @@ public sealed class RegistrationTests
             case nameof(RedisStreamsOptions.ClaimIdleAfter):
                 options.ClaimIdleAfter = TimeSpan.Zero;
                 break;
-            case nameof(RedisStreamsOptions.MaxDeliveries):
-                options.MaxDeliveries = 0;
+            case nameof(RedisStreamsOptions.MaxDeliveryAttempts):
+                options.MaxDeliveryAttempts = 0;
                 break;
             case nameof(RedisStreamsOptions.BatchSize):
                 options.BatchSize = 0;
@@ -140,6 +155,9 @@ public sealed class RegistrationTests
                 break;
             case nameof(RedisStreamsOptions.ConsumerName):
                 options.ConsumerName = " ";
+                break;
+            case nameof(RedisStreamsOptions.RemoveIdleConsumersAfter):
+                options.RemoveIdleConsumersAfter = options.ClaimIdleAfter / 2;
                 break;
         }
     }

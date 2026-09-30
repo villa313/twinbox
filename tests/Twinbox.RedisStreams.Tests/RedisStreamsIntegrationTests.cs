@@ -34,6 +34,33 @@ public sealed class RedisStreamsIntegrationTests(RedisFixture redis) : IClassFix
     }
 
     [Fact]
+    public async Task IdleConsumerWithNothingPending_IsRemovedFromTheGroup()
+    {
+        var (stream, group) = Names();
+        await redis.Database.StreamCreateConsumerGroupAsync(stream, group, "0-0", createStream: true);
+        await redis.Database.StreamReadGroupAsync(stream, group, "replaced-instance", ">");
+        await Task.Delay(400, TestContext.Current.CancellationToken);
+
+        await using var host = await RedisStreamsTestHost.StartAsync(
+            redis.Configuration,
+            new Journal(),
+            new FailureGate(),
+            b => b.AddHandler<RecordingHandler, OrderPlaced>(),
+            o =>
+            {
+                o.ClaimIdleAfter = TimeSpan.FromMilliseconds(200);
+                o.RemoveIdleConsumersAfter = TimeSpan.FromMilliseconds(300);
+                o.Listen(stream, group);
+            });
+
+        using var cts = new CancellationTokenSource(Timeout);
+        while ((await redis.Database.StreamConsumerInfoAsync(stream, group)).Any(c => c.Name == "replaced-instance"))
+        {
+            await Task.Delay(50, cts.Token);
+        }
+    }
+
+    [Fact]
     public async Task DuplicateDelivery_IsSkippedByTheInbox()
     {
         var (stream, group) = Names();
@@ -163,7 +190,7 @@ public sealed class RedisStreamsIntegrationTests(RedisFixture redis) : IClassFix
     }
 
     [Fact]
-    public async Task EntryFailingEveryDelivery_IsMovedToTheDeadStreamAfterMaxDeliveries()
+    public async Task EntryFailingEveryDelivery_IsMovedToTheDeadStreamAfterMaxDeliveryAttempts()
     {
         var (stream, group) = Names();
         var gate = new FailureGate();
@@ -176,7 +203,7 @@ public sealed class RedisStreamsIntegrationTests(RedisFixture redis) : IClassFix
             o =>
             {
                 o.ClaimIdleAfter = TimeSpan.FromMilliseconds(100);
-                o.MaxDeliveries = 3;
+                o.MaxDeliveryAttempts = 3;
                 o.Listen(stream, group);
             });
 
