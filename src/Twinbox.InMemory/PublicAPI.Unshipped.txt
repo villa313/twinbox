@@ -10,17 +10,17 @@ Twinbox.InMemory.InMemoryOptions.AutoDeliver.get -> bool
 Twinbox.InMemory.InMemoryOptions.AutoDeliver.set -> void
 Twinbox.InMemory.InMemoryOptions.InMemoryOptions() -> void
 Twinbox.InMemory.InMemoryOutboxStore
-Twinbox.InMemory.InMemoryOutboxStore.AppendAsync(System.Collections.Generic.IReadOnlyList<Twinbox.Storage.OutboxMessage!>! messages, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
-Twinbox.InMemory.InMemoryOutboxStore.ClaimAsync(Twinbox.Storage.OutboxClaim! claim, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Twinbox.Storage.OutboxMessage!>!>!
+Twinbox.InMemory.InMemoryOutboxStore.AppendAsync(System.Collections.Generic.IReadOnlyList<Twinbox.OutboxMessage!>! messages, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Twinbox.InMemory.InMemoryOutboxStore.ClaimAsync(Twinbox.Storage.OutboxClaim! claim, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Twinbox.OutboxMessage!>!>!
 Twinbox.InMemory.InMemoryOutboxStore.CompleteAsync(string! owner, System.Collections.Generic.IReadOnlyList<Twinbox.Storage.DispatchOutcome!>! outcomes, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.InMemory.InMemoryOutboxStore.DeleteAsync(System.Collections.Generic.IReadOnlyCollection<System.Guid>! ids, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
-Twinbox.InMemory.InMemoryOutboxStore.GetAsync(System.Guid id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Twinbox.Storage.OutboxMessage?>!
+Twinbox.InMemory.InMemoryOutboxStore.GetAsync(System.Guid id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Twinbox.OutboxMessage?>!
 Twinbox.InMemory.InMemoryOutboxStore.GetStatisticsAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Twinbox.Storage.OutboxStatistics!>!
 Twinbox.InMemory.InMemoryOutboxStore.InMemoryOutboxStore() -> void
 Twinbox.InMemory.InMemoryOutboxStore.PurgeAsync(Twinbox.Storage.OutboxPurge! purge, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
 Twinbox.InMemory.InMemoryOutboxStore.QueryAsync(Twinbox.Storage.OutboxQuery! query, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Twinbox.Storage.OutboxPage!>!
 Twinbox.InMemory.InMemoryOutboxStore.ReplayAsync(System.Collections.Generic.IReadOnlyCollection<System.Guid>! ids, System.DateTimeOffset now, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
-Twinbox.InMemory.InMemoryOutboxStore.Snapshot() -> System.Collections.Generic.IReadOnlyList<Twinbox.Storage.OutboxMessage!>!
+Twinbox.InMemory.InMemoryOutboxStore.Snapshot() -> System.Collections.Generic.IReadOnlyList<Twinbox.OutboxMessage!>!
 Twinbox.InMemory.InMemoryTransport
 Twinbox.InMemory.InMemoryTransport.DeadLettered.get -> System.Collections.Generic.IReadOnlyList<Twinbox.Transport.TransportMessage!>!
 Twinbox.InMemory.InMemoryTransport.DeliverAsync(Twinbox.Transport.IInboundPipeline! pipeline, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!

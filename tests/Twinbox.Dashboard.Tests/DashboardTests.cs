@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Twinbox.Storage;
-using static Twinbox.Storage.OutboxMessageStatus;
+using static Twinbox.OutboxMessageStatus;
 
 namespace Twinbox.Dashboard.Tests;
 

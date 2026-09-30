@@ -1,4 +1,6 @@
-namespace Twinbox.Storage;
+using Twinbox.Storage;
+
+namespace Twinbox;
 
 public sealed record OutboxMessage
 {
