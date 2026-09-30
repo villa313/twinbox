@@ -1,3 +1,4 @@
+using System.Globalization;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Twinbox.Storage;
@@ -5,7 +6,8 @@ using Twinbox.Tenancy;
 
 namespace Twinbox.MongoDB;
 
-internal sealed class MongoOutboxStore(MongoSettings settings, MongoIndexInitializer indexes, TwinboxScopeFactory scopes) : IOutboxStore
+internal sealed class MongoOutboxStore(MongoSettings settings, MongoIndexInitializer indexes, TwinboxScopeFactory scopes)
+    : IOutboxStore, IOutboxAdmin
 {
     private const int Pending = (int)OutboxMessageStatus.Pending;
     private const int Processing = (int)OutboxMessageStatus.Processing;
@@ -14,6 +16,7 @@ internal sealed class MongoOutboxStore(MongoSettings settings, MongoIndexInitial
     private const int MinCandidatePage = 100;
 
     private static readonly BsonDocument BySequence = new(OutboxDocument.Sequence, 1);
+    private static readonly BsonDocument NewestFirst = new(OutboxDocument.Sequence, -1);
     private static readonly BsonDocument Unsent = new(OutboxDocument.Status, new BsonDocument("$in", new BsonArray { Pending, Processing }));
 
     public async Task AppendAsync(IReadOnlyList<OutboxMessage> messages, CancellationToken cancellationToken)
@@ -146,6 +149,78 @@ internal sealed class MongoOutboxStore(MongoSettings settings, MongoIndexInitial
         return new OutboxStatistics(pending, oldest is null ? null : OutboxDocument.ReadTimestamp(oldest[OutboxDocument.CreatedAt]), dead);
     }
 
+    public async Task<OutboxPage> QueryAsync(OutboxQuery query, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(query.Take);
+        await using var lease = await OpenAsync(cancellationToken).ConfigureAwait(false);
+        var matches = await settings.Outbox(lease.Database)
+            .Find(Filter(query))
+            .Sort(NewestFirst)
+            .Limit(query.Take + 1)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        var page = matches.Take(query.Take).ToArray();
+        var next = matches.Count > query.Take
+            ? page[^1][OutboxDocument.Sequence].ToInt64().ToString(CultureInfo.InvariantCulture)
+            : null;
+        return new OutboxPage([.. page.Select(OutboxDocument.ToMessage)], next);
+    }
+
+    public async Task<OutboxMessage?> GetAsync(Guid id, CancellationToken cancellationToken)
+    {
+        await using var lease = await OpenAsync(cancellationToken).ConfigureAwait(false);
+        var document = await settings.Outbox(lease.Database)
+            .Find(new BsonDocument(OutboxDocument.Id, OutboxDocument.Key(id)))
+            .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+        return document is null ? null : OutboxDocument.ToMessage(document);
+    }
+
+    public async Task<int> ReplayAsync(IReadOnlyCollection<Guid> ids, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(ids);
+        if (ids.Count == 0)
+        {
+            return 0;
+        }
+
+        var filter = new BsonDocument
+        {
+            { OutboxDocument.Id, IdIn(ids) },
+            { OutboxDocument.Status, new BsonDocument("$in", new BsonArray { Sent, Dead }) },
+        };
+        var update = new BsonDocument("$set", new BsonDocument
+        {
+            { OutboxDocument.Status, Pending },
+            { OutboxDocument.Attempts, 0 },
+            { OutboxDocument.AvailableAt, OutboxDocument.Timestamp(now) },
+            { OutboxDocument.LastError, BsonNull.Value },
+            { OutboxDocument.SentAt, BsonNull.Value },
+            { OutboxDocument.LeaseOwner, BsonNull.Value },
+            { OutboxDocument.LeaseUntil, BsonNull.Value },
+        });
+
+        await using var lease = await OpenAsync(cancellationToken).ConfigureAwait(false);
+        var result = await settings.Outbox(lease.Database).UpdateManyAsync(filter, update, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+        return (int)result.ModifiedCount;
+    }
+
+    public async Task<int> DeleteAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(ids);
+        if (ids.Count == 0)
+        {
+            return 0;
+        }
+
+        await using var lease = await OpenAsync(cancellationToken).ConfigureAwait(false);
+        var result = await settings.Outbox(lease.Database)
+            .DeleteManyAsync(new BsonDocument(OutboxDocument.Id, IdIn(ids)), cancellationToken)
+            .ConfigureAwait(false);
+        return (int)result.DeletedCount;
+    }
+
     /// <summary>Inserts through the caller's session and transaction; <paramref name="scopedServices"/> picks the database.</summary>
     internal async Task SaveAsync(
         IClientSessionHandle session,
@@ -220,6 +295,43 @@ internal sealed class MongoOutboxStore(MongoSettings settings, MongoIndexInitial
             .ConfigureAwait(false);
         return (int)result.DeletedCount;
     }
+
+    private static BsonDocument Filter(OutboxQuery query)
+    {
+        var filter = new BsonDocument();
+        if (long.TryParse(query.Cursor, NumberStyles.None, CultureInfo.InvariantCulture, out var before))
+        {
+            filter.Add(OutboxDocument.Sequence, new BsonDocument("$lt", before));
+        }
+
+        if (query.Status is { } status)
+        {
+            filter.Add(OutboxDocument.Status, (int)status);
+        }
+
+        if (query.Destination is { } destination)
+        {
+            filter.Add("Destination", destination);
+        }
+
+        if (query.MessageName is { } name)
+        {
+            filter.Add("MessageName", name);
+        }
+
+        if (query.Search is { } search)
+        {
+            var byKey = new BsonDocument(OutboxDocument.PartitionKey, search);
+            filter.AddRange(Guid.TryParse(search, out var id)
+                ? new BsonDocument("$or", new BsonArray { new BsonDocument(OutboxDocument.Id, OutboxDocument.Key(id)), byKey })
+                : byKey);
+        }
+
+        return filter;
+    }
+
+    private static BsonDocument IdIn(IReadOnlyCollection<Guid> ids) =>
+        new("$in", new BsonArray(ids.Distinct().Select(OutboxDocument.Key)));
 
     private static BsonDocument Due(DateTimeOffset now)
     {

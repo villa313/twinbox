@@ -349,7 +349,7 @@ public sealed class MySqlTests(MySqlFixture database) : EntityFrameworkTests<MyS
 
 public static class StoreCases
 {
-    public static TheoryData<ConformanceCase<IOutboxStore>> All => [.. OutboxStoreConformance.Cases];
+    public static TheoryData<ConformanceCase<IOutboxStore>> All => [.. OutboxStoreConformance.Cases, .. OutboxAdminConformance.Cases];
 }
 
 public sealed class SqliteTests(SqliteFixture database) : EntityFrameworkTests<SqliteFixture>(database);

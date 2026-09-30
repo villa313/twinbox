@@ -6,7 +6,7 @@ namespace Twinbox.UnitTests;
 
 public sealed class OutboxStoreConformanceTests
 {
-    public static TheoryData<ConformanceCase<IOutboxStore>> Cases => [.. OutboxStoreConformance.Cases];
+    public static TheoryData<ConformanceCase<IOutboxStore>> Cases => [.. OutboxStoreConformance.Cases, .. OutboxAdminConformance.Cases];
 
     [Theory]
     [MemberData(nameof(Cases))]

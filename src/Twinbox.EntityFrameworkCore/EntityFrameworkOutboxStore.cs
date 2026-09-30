@@ -1,5 +1,7 @@
 using System.Data;
 using System.Data.Common;
+using System.Globalization;
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,11 +12,14 @@ using Twinbox.Tenancy;
 
 namespace Twinbox.EntityFrameworkCore;
 
-internal sealed class EntityFrameworkOutboxStore<TContext>(TwinboxScopeFactory scopeFactory) : IOutboxStore
+internal sealed class EntityFrameworkOutboxStore<TContext>(TwinboxScopeFactory scopeFactory) : IOutboxStore, IOutboxAdmin
     where TContext : DbContext
 {
     // Keeps each Complete batch well under SQL Server's 2100-parameter limit.
     private const int OutcomesPerCommand = 250;
+
+    // Ids go in as individual parameters: collection parameters aren't translated the same way by every provider.
+    private const int IdsPerCommand = 100;
 
     public async Task AppendAsync(IReadOnlyList<OutboxMessage> messages, CancellationToken cancellationToken)
     {
@@ -128,6 +133,85 @@ internal sealed class EntityFrameworkOutboxStore<TContext>(TwinboxScopeFactory s
         }
     }
 
+    public async Task<OutboxPage> QueryAsync(OutboxQuery query, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(query.Take);
+        var scope = scopeFactory.CreateAsyncScope();
+        await using (scope.ConfigureAwait(false))
+        {
+            var rows = Filter(scope.ServiceProvider.GetRequiredService<TContext>().TwinboxOutbox().AsNoTracking(), query);
+            var matches = await rows
+                .OrderByDescending(m => EF.Property<long>(m, TwinboxModelBuilderExtensions.SequenceProperty))
+                .Take(query.Take + 1)
+                .Select(m => new { Message = m, Sequence = EF.Property<long>(m, TwinboxModelBuilderExtensions.SequenceProperty) })
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            var page = matches.Take(query.Take).ToArray();
+            var next = matches.Count > query.Take ? page[^1].Sequence.ToString(CultureInfo.InvariantCulture) : null;
+            return new OutboxPage([.. page.Select(r => r.Message)], next);
+        }
+    }
+
+    public async Task<OutboxMessage?> GetAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var scope = scopeFactory.CreateAsyncScope();
+        await using (scope.ConfigureAwait(false))
+        {
+            return await scope.ServiceProvider.GetRequiredService<TContext>().TwinboxOutbox()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(m => m.Id == id, cancellationToken)
+                .ConfigureAwait(false);
+        }
+    }
+
+    public async Task<int> ReplayAsync(IReadOnlyCollection<Guid> ids, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(ids);
+        var scope = scopeFactory.CreateAsyncScope();
+        await using (scope.ConfigureAwait(false))
+        {
+            var outbox = scope.ServiceProvider.GetRequiredService<TContext>().TwinboxOutbox();
+            var changed = 0;
+            foreach (var chunk in ids.Distinct().Chunk(IdsPerCommand))
+            {
+                changed += await outbox
+                    .Where(IdIn(chunk))
+                    .Where(m => m.Status == OutboxMessageStatus.Dead || m.Status == OutboxMessageStatus.Sent)
+                    .ExecuteUpdateAsync(
+                        s => s.SetProperty(m => m.Status, OutboxMessageStatus.Pending)
+                            .SetProperty(m => m.Attempts, 0)
+                            .SetProperty(m => m.AvailableAt, now)
+                            .SetProperty(m => m.LastError, (string?)null)
+                            .SetProperty(m => m.SentAt, (DateTimeOffset?)null)
+                            .SetProperty(m => m.LeaseOwner, (string?)null)
+                            .SetProperty(m => m.LeaseUntil, (DateTimeOffset?)null),
+                        cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            return changed;
+        }
+    }
+
+    public async Task<int> DeleteAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(ids);
+        var scope = scopeFactory.CreateAsyncScope();
+        await using (scope.ConfigureAwait(false))
+        {
+            var outbox = scope.ServiceProvider.GetRequiredService<TContext>().TwinboxOutbox();
+            var deleted = 0;
+            foreach (var chunk in ids.Distinct().Chunk(IdsPerCommand))
+            {
+                deleted += await outbox.Where(IdIn(chunk)).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            return deleted;
+        }
+    }
+
     private static Task<IReadOnlyList<OutboxMessage>> ClaimInTransactionAsync(
         TContext context,
         TwinboxSql sql,
@@ -187,6 +271,53 @@ internal sealed class EntityFrameworkOutboxStore<TContext>(TwinboxScopeFactory s
         }
 
         return sequences;
+    }
+
+    private static IQueryable<OutboxMessage> Filter(IQueryable<OutboxMessage> rows, OutboxQuery query)
+    {
+        if (long.TryParse(query.Cursor, NumberStyles.None, CultureInfo.InvariantCulture, out var before))
+        {
+            rows = rows.Where(m => EF.Property<long>(m, TwinboxModelBuilderExtensions.SequenceProperty) < before);
+        }
+
+        if (query.Status is { } status)
+        {
+            rows = rows.Where(m => m.Status == status);
+        }
+
+        if (query.Destination is { } destination)
+        {
+            rows = rows.Where(m => m.Destination == destination);
+        }
+
+        if (query.MessageName is { } name)
+        {
+            rows = rows.Where(m => m.MessageName == name);
+        }
+
+        if (query.Search is { } search)
+        {
+            rows = Guid.TryParse(search, out var id)
+                ? rows.Where(m => m.Id == id || m.PartitionKey == search)
+                : rows.Where(m => m.PartitionKey == search);
+        }
+
+        return rows;
+    }
+
+    private static Expression<Func<OutboxMessage, bool>> IdIn(Guid[] ids)
+    {
+        var message = Expression.Parameter(typeof(OutboxMessage), "m");
+        var id = Expression.Property(message, nameof(OutboxMessage.Id));
+        var body = ids.Select(value => (Expression)Expression.Equal(id, Captured(value))).Aggregate(Expression.OrElse);
+        return Expression.Lambda<Func<OutboxMessage, bool>>(body, message);
+    }
+
+    // A closure member rather than a constant, so EF sends each id as a parameter instead of inlining it.
+    private static Expression Captured(Guid value)
+    {
+        Expression<Func<Guid>> capture = () => value;
+        return capture.Body;
     }
 
     private static IEnumerable<DbParameter> OutcomeParameters(DbContext context, DispatchOutcome outcome, int index) =>

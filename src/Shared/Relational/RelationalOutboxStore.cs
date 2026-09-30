@@ -1,5 +1,6 @@
 using System.Data;
 using System.Data.Common;
+using System.Globalization;
 using Twinbox.Serialization;
 using Twinbox.Storage;
 using Twinbox.Tenancy;
@@ -10,11 +11,12 @@ internal sealed class RelationalOutboxStore(
     RelationalSettings settings,
     RelationalDialect dialect,
     SchemaInitializer schema,
-    TwinboxScopeFactory scopes) : IOutboxStore
+    TwinboxScopeFactory scopes) : IOutboxStore, IOutboxAdmin
 {
     // Keeps each command well under SQL Server's 2100-parameter limit.
     private const int RowsPerInsert = 100;
     private const int OutcomesPerCommand = 250;
+    private const int IdsPerCommand = 100;
 
     public async Task AppendAsync(IReadOnlyList<OutboxMessage> messages, CancellationToken cancellationToken)
     {
@@ -96,6 +98,94 @@ internal sealed class RelationalOutboxStore(
             Convert.ToInt64(reader.GetValue(2), System.Globalization.CultureInfo.InvariantCulture));
     }
 
+    public async Task<OutboxPage> QueryAsync(OutboxQuery query, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(query.Take);
+        var hasCursor = long.TryParse(query.Cursor, NumberStyles.None, CultureInfo.InvariantCulture, out var before);
+        var searchesId = Guid.TryParse(query.Search, out var searchId);
+
+        await using var lease = await OpenAsync(cancellationToken).ConfigureAwait(false);
+        await using var command = lease.Connection.Command(dialect.AdminQuery(query, hasCursor, searchesId))
+            .With("@take", query.Take + 1, DbType.Int32);
+        if (hasCursor)
+        {
+            command.With("@before", before, DbType.Int64);
+        }
+
+        if (query.Status is { } status)
+        {
+            command.With("@status", (int)status, DbType.Int32);
+        }
+
+        if (query.Destination is { } destination)
+        {
+            command.With("@destination", destination, DbType.String);
+        }
+
+        if (query.MessageName is { } name)
+        {
+            command.With("@name", name, DbType.String);
+        }
+
+        if (query.Search is { } search)
+        {
+            command.With("@search", search, DbType.String);
+            if (searchesId)
+            {
+                command.With("@searchId", searchId, DbType.Guid);
+            }
+        }
+
+        List<(long Sequence, OutboxMessage Message)> matches;
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
+        {
+            matches = await OutboxRowReader.ReadWithSequenceAsync(reader, cancellationToken).ConfigureAwait(false);
+        }
+
+        var page = matches.Take(query.Take).ToArray();
+        var next = matches.Count > query.Take ? page[^1].Sequence.ToString(CultureInfo.InvariantCulture) : null;
+        return new OutboxPage([.. page.Select(r => r.Message)], next);
+    }
+
+    public async Task<OutboxMessage?> GetAsync(Guid id, CancellationToken cancellationToken)
+    {
+        await using var lease = await OpenAsync(cancellationToken).ConfigureAwait(false);
+        await using var command = lease.Connection.Command(dialect.AdminGet()).With("@id", id, DbType.Guid);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        var rows = await OutboxRowReader.ReadAsync(reader, cancellationToken).ConfigureAwait(false);
+        return rows.Count == 0 ? null : rows[0];
+    }
+
+    public async Task<int> ReplayAsync(IReadOnlyCollection<Guid> ids, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(ids);
+        await using var lease = await OpenAsync(cancellationToken).ConfigureAwait(false);
+        var changed = 0;
+        foreach (var chunk in ids.Distinct().Chunk(IdsPerCommand))
+        {
+            await using var command = WithIds(lease.Connection.Command(dialect.AdminReplay(chunk.Length)), chunk)
+                .With("@now", now, DbType.DateTimeOffset);
+            changed += await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        return changed;
+    }
+
+    public async Task<int> DeleteAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(ids);
+        await using var lease = await OpenAsync(cancellationToken).ConfigureAwait(false);
+        var deleted = 0;
+        foreach (var chunk in ids.Distinct().Chunk(IdsPerCommand))
+        {
+            await using var command = WithIds(lease.Connection.Command(dialect.AdminDelete(chunk.Length)), chunk);
+            deleted += await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        return deleted;
+    }
+
     internal static async Task InsertAsync(
         RelationalDialect dialect,
         DbTransaction transaction,
@@ -163,6 +253,16 @@ internal sealed class RelationalOutboxStore(
 
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         return leased;
+    }
+
+    private static DbCommand WithIds(DbCommand command, Guid[] ids)
+    {
+        for (var i = 0; i < ids.Length; i++)
+        {
+            command.With($"@id{i}", ids[i], DbType.Guid);
+        }
+
+        return command;
     }
 
     private static void AddRow(DbCommand command, OutboxMessage m, int row) => command
