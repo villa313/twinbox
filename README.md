@@ -194,8 +194,8 @@ Endpoints without a derived type deliver `WebhookReceived`; handle it with `IHan
   (`HeaderProfile.CloudEvents("/my-service")`)
 - **Delayed sends:** `new SendOptions { Delay = TimeSpan.FromMinutes(5) }`
 - **Multi-tenancy:** a database per tenant through `UseTenants(...)`, plus several DbContexts per app
-- **Observability:** OpenTelemetry tracing and metrics (`TwinboxDiagnostics.SourceName`), and health checks
-  (`AddHealthChecks().AddTwinbox()`)
+- **Observability:** OpenTelemetry tracing and metrics (`TwinboxDiagnostics.SourceName`), health checks
+  (`AddHealthChecks().AddTwinbox()`), and .NET Aspire integration (`Twinbox.Aspire`, `Twinbox.Aspire.Hosting`)
 - **Dead letters:** a policy for giving up, `IDeadLetterObserver` notifications, and configurable handling of
   unknown messages
 
@@ -259,6 +259,47 @@ The JSON API lives under the same prefix: `GET api/stats`, `GET api/messages?sta
 `GET api/messages/{id}`, `POST api/messages/replay` and `POST api/messages/delete` (`{ "ids": [...] }`), and
 `POST api/dead/replay-all` (by filter). Stores opt in to browsing by implementing `IOutboxAdmin`; every built-in
 store does.
+
+## .NET Aspire
+
+`Twinbox.Aspire` goes in your ServiceDefaults project. It adds Twinbox's trace source and meter to OpenTelemetry and
+registers the health check tagged `ready`, so it shows up on `/health` but not `/alive`. Exporters stay with your
+ServiceDefaults, and calling it twice is harmless.
+
+```csharp
+public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+{
+    builder.ConfigureOpenTelemetry();
+    builder.AddDefaultHealthChecks();
+    builder.AddTwinboxServiceDefaults(o => o.MaxDeadMessages = 10); // o.IncludeInLiveness also tags it "live"
+    // ...
+}
+```
+
+`Twinbox.Aspire.Hosting` goes in the AppHost. It links the app's Twinbox dashboard from the Aspire dashboard and adds
+two resource commands: *Open Twinbox dashboard* and *Replay dead letters*. Both are disabled unless the resource is
+running.
+
+```csharp
+builder.AddProject<Projects.Orders>("orders")
+    .WithTwinboxDashboard("/twinbox"); // the same prefix as MapTwinboxDashboard; endpointName: picks the endpoint
+```
+
+*Replay dead letters* calls the dashboard's API from the AppHost: it fetches `api/config` for the CSRF token and then
+posts `api/dead/replay-all` for every browsable store and tenant. The replayed count goes to the resource's console
+log. The command can't sign in, so it only works when the dashboard doesn't need interactive auth. In development,
+map it with `o.AllowAnonymous = true` or a development-only policy:
+
+```csharp
+var dashboard = app.MapTwinboxDashboard("/twinbox", o => o.AllowAnonymous = app.Environment.IsDevelopment());
+if (!app.Environment.IsDevelopment())
+{
+    dashboard.RequireAuthorization("ops");
+}
+```
+
+*Open Twinbox dashboard* starts a browser on the machine running the AppHost; use the link when the Aspire dashboard is
+remote. The package targets Aspire.Hosting 9.5 or later, which serves both .NET 8 and .NET 10 AppHosts.
 
 ## Moving over from another outbox
 

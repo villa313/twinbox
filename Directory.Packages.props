@@ -94,6 +94,12 @@
     <!-- Earlier releases can leave a producer permanently disconnected after a reconnect race (fixed in 5.3.3). -->
     <PackageVersion Include="DotPulsar" Version="5.3.3" />
     <PackageVersion Include="Dapper" Version="2.1.89" />
+    <!-- The first release built on an OpenTelemetry.Api patched for GHSA-g94r-2vxg-569j. -->
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
+    <!-- The first release whose KubernetesClient carries no advisories; every release ships net8.0 only, which serves net8.0 and net10.0 AppHosts. -->
+    <PackageVersion Include="Aspire.Hosting" Version="9.5.0" />
+    <!-- Aspire.Hosting up to 13.4 brings MessagePack 2.5.192 (GHSA-hv8m-jj95-wg3x and others); 2.5.301 is the patched release of the same line. -->
+    <PackageVersion Include="MessagePack" Version="2.5.301" />
     <!-- The first release with a net8.0 build; no advisories are published against it. -->
     <PackageVersion Include="Oracle.ManagedDataAccess.Core" Version="23.4.0" />
     <!-- The first 3.x release whose dependencies carry no advisories (SharpCompress 0.48.1, Snappier 1.3.1); its net6.0 build serves net8.0. -->
