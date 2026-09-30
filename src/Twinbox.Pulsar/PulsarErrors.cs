@@ -4,11 +4,11 @@ namespace Twinbox.Pulsar;
 
 internal static class PulsarErrors
 {
-    /// <summary>True for rejections a retry cannot fix, so the outbox dead-letters instead of backing off.</summary>
+    /// <summary>True for rejections a retry cannot fix, so the outbox dead-letters instead of backing off. Authorization
+    /// errors stay transient: a permissions fix should release the backlog rather than find it dead-lettered.</summary>
     public static bool IsPermanent(Exception error) => Cause(error) is
         TopicNotFoundException or
         InvalidTopicNameException or
-        AuthorizationException or
         TooLargeMessageException or
         TopicTerminatedException or
         IncompatibleSchemaException or

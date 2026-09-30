@@ -11,6 +11,9 @@ namespace Twinbox;
 
 public static class AzureServiceBusTwinboxBuilderExtensions
 {
+    // The processor's default MaxAutoLockRenewalDuration; a longer hold would lose the lock before the abandon.
+    private static readonly TimeSpan MaxLockRenewal = TimeSpan.FromMinutes(5);
+
     [SuppressMessage("ApiDesign", "RS0026", Justification = "The overloads differ by a required first parameter, so calls cannot be ambiguous.")]
     public static TwinboxBuilder UseAzureServiceBus(
         this TwinboxBuilder builder,
@@ -33,7 +36,9 @@ public static class AzureServiceBusTwinboxBuilderExtensions
 
         var options = builder.Services.AddOptions<AzureServiceBusOptions>()
             .Validate(o => o.MaxConcurrentCalls > 0, "AzureServiceBusOptions.MaxConcurrentCalls must be positive.")
-            .Validate(o => o.PrefetchCount >= 0, "AzureServiceBusOptions.PrefetchCount cannot be negative.");
+            .Validate(o => o.PrefetchCount >= 0, "AzureServiceBusOptions.PrefetchCount cannot be negative.")
+            .Validate(o => o.RetryDelay > TimeSpan.Zero, "AzureServiceBusOptions.RetryDelay must be positive.")
+            .Validate(o => o.MaxRetryDelay >= o.RetryDelay && o.MaxRetryDelay <= MaxLockRenewal, "AzureServiceBusOptions.MaxRetryDelay must be between RetryDelay and 5 minutes.");
         if (configure is not null)
         {
             options.Configure(configure);

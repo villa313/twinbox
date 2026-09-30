@@ -41,7 +41,7 @@ internal sealed class PulsarTestHost : IAsyncDisposable
                 .UsePulsar(options =>
                 {
                     options.ServiceUrl = new Uri(serviceUrl);
-                    options.NegativeAckRedeliveryDelay = TimeSpan.FromMilliseconds(200);
+                    options.RetryDelay = TimeSpan.FromMilliseconds(200);
                     pulsar?.Invoke(options);
                 })
                 .Configure(options => options.Dispatcher.MinPollInterval = TimeSpan.FromMilliseconds(100));

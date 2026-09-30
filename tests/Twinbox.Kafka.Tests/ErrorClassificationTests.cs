@@ -8,7 +8,6 @@ public sealed class ErrorClassificationTests
     [InlineData(ErrorCode.UnknownTopicOrPart)]
     [InlineData(ErrorCode.Local_UnknownTopic)]
     [InlineData(ErrorCode.TopicException)]
-    [InlineData(ErrorCode.TopicAuthorizationFailed)]
     [InlineData(ErrorCode.MsgSizeTooLarge)]
     [InlineData(ErrorCode.InvalidConfig)]
     [InlineData(ErrorCode.Local_InvalidArg)]
@@ -27,7 +26,9 @@ public sealed class ErrorClassificationTests
     [InlineData(ErrorCode.NotLeaderForPartition)]
     [InlineData(ErrorCode.NotEnoughReplicas)]
     [InlineData(ErrorCode.RequestTimedOut)]
-    public void BrokerAndNetworkHiccups_AreTransient(ErrorCode code)
+    [InlineData(ErrorCode.TopicAuthorizationFailed)]
+    [InlineData(ErrorCode.ClusterAuthorizationFailed)]
+    public void BrokerHiccupsAndAccessErrors_AreTransient(ErrorCode code)
     {
         Assert.False(KafkaErrors.IsPermanent(new KafkaException(code)));
         Assert.False(KafkaErrors.IsPermanent(ProduceError(code)));

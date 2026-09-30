@@ -1,6 +1,6 @@
 # RabbitMQ
 
-`Twinbox.RabbitMQ` · transport name `"rabbitmq"` (`RabbitMqTransport.DefaultName`)
+`Twinbox.RabbitMQ` · transport name `"rabbitmq"` (`RabbitMQTransport.TransportName`)
 
 A route destination is a **topic exchange**. Each message is published to that exchange with its message name as the
 routing key. Listeners consume **quorum queues** bound to an exchange with a binding key.
@@ -10,26 +10,30 @@ routing key. Listeners consume **quorum queues** bound to an exchange with a bin
 ```csharp
 builder.Services.AddTwinbox(twinbox => twinbox
     .UseEntityFrameworkCore<AppDbContext>()
-    .UseRabbitMq(rabbit =>
+    .UseRabbitMQ(rabbit =>
     {
         rabbit.HostName = "rabbitmq";
         rabbit.UserName = "app";
-        rabbit.Password = builder.Configuration["RabbitMq:Password"]!;
+        rabbit.Password = builder.Configuration["RabbitMQ:Password"]!;
     })
     .Route<OrderPlaced>().To("orders"));
 ```
 
-`UseRabbitMq` has a single overload that takes an `Action<RabbitMqOptions>`. To connect with a URI, set
-`ConnectionUri`; it overrides the host, port, virtual host and credentials:
+To connect with a URI, pass it as a connection string; it sets `ConnectionUri`, which overrides the host, port,
+virtual host and credentials. The optional callback configures everything else, listeners included:
 
 ```csharp
-twinbox.UseRabbitMq(rabbit => rabbit.ConnectionUri = new Uri("amqps://app:secret@broker.example.com/prod"));
+twinbox.UseRabbitMQ(
+    builder.Configuration.GetConnectionString("rabbitmq")!,
+    rabbit => rabbit.Listen("billing.orders", exchange: "orders"));
 ```
+
+The connection string must be an absolute `amqp://` or `amqps://` URI.
 
 For TLS details or credential providers, `ConfigureConnectionFactory` gets the `ConnectionFactory` last:
 
 ```csharp
-twinbox.UseRabbitMq(rabbit =>
+twinbox.UseRabbitMQ(rabbit =>
 {
     rabbit.HostName = "broker.example.com";
     rabbit.ConfigureConnectionFactory = factory => factory.Ssl.Enabled = true;
@@ -46,7 +50,7 @@ Register a listener per queue with `Listen(queue, exchange, bindingKey = "#")`:
 ```csharp
 builder.Services.AddTwinbox(twinbox => twinbox
     .UseEntityFrameworkCore<AppDbContext>()
-    .UseRabbitMq(rabbit => rabbit
+    .UseRabbitMQ(rabbit => rabbit
         .Listen("billing.orders", exchange: "orders")
         .Listen("billing.refunds", exchange: "payments", bindingKey: "RefundIssued"))
     .AddHandler<OrderPlacedHandler, OrderPlaced>());
@@ -72,9 +76,11 @@ handlers get batches of one (see [batch handlers](../concepts/batch-handlers.md)
 | `ConfigureConnectionFactory` | `null` | Last say over the `ConnectionFactory`, e.g. TLS or credential providers. |
 | `AutoProvision` | `true` | Declare exchanges, queues, bindings and dead-letter topology on first use. |
 | `DeadLetterUnroutable` | `false` | Dead-letter unroutable publishes at once instead of retrying them. |
-| `DeliveryLimit` | `10` | `x-delivery-limit` of declared queues. The broker dead-letters a message once it has been returned more than this many times. Must be positive. |
-| `PrefetchCount` | `20` | Unacknowledged deliveries per listener channel. Must be positive. |
-| `ConsumerConcurrency` | `1` | Deliveries processed in parallel per listener. Above 1, ordering within a queue is lost. |
+| `MaxDeliveryAttempts` | `10` | Deliveries per message, the first included. A handler failure on the last one dead-letters the message. Also the `x-delivery-limit` of declared queues, as a broker-side backstop. Must be positive. |
+| `RetryDelay` | 1 s | Wait before a failed delivery goes back to the queue; doubles per attempt. Must be positive. |
+| `MaxRetryDelay` | 30 s | Cap on `RetryDelay` doubling. |
+| `PrefetchCount` | `20` | Unacknowledged deliveries per listener channel, 1 to 65535. |
+| `ConsumerConcurrency` | `1` | Deliveries processed in parallel per listener, 1 to 65535. Above 1, ordering within a queue is lost. |
 | `PublishChannelPoolSize` | `Environment.ProcessorCount` | Publisher-confirm channels kept for sending; each carries one publish at a time. Must be positive. |
 | `PublishTimeout` | 30 s | Time to get a channel and a publisher confirm. Must be positive. |
 
@@ -103,7 +109,8 @@ flag is set, else 1. Headers that are tables or arrays (such as `x-death`) are n
 
 **Sending.** Each publish waits for a publisher confirm.
 
-- Exchange not found (404) or access refused (403): permanent, the outbox row is dead-lettered.
+- Exchange not found (404): permanent, the outbox row is dead-lettered.
+- Access refused (403): retried by the outbox, so fixing the user's permissions releases the backlog.
 - Unroutable (the exchange returned the message because no queue is bound): retried by the outbox, since a consumer
   may not have bound its queue yet. Set `DeadLetterUnroutable = true` to dead-letter it at once.
 - No confirm or no free channel within `PublishTimeout`, connection errors: retried by the outbox.
@@ -114,8 +121,12 @@ See [retries and dead letters](../concepts/retries-and-dead-letters.md) for the 
 
 - Handler succeeds: the delivery is acked.
 - Handler throws `PermanentDeliveryException`: the delivery is nacked without requeue, so the broker dead-letters it.
-- Any other exception: the delivery is nacked with requeue and redelivered immediately. There is no delay between
-  attempts. Once a message has been returned more than `DeliveryLimit` times, the quorum queue dead-letters it.
+- Any other exception: the delivery is held unacknowledged for `RetryDelay` (doubling per attempt up to
+  `MaxRetryDelay`), then nacked with requeue. Held deliveries count against `PrefetchCount`, so the channel keeps
+  dispatching other messages meanwhile. When the failing delivery was attempt `MaxDeliveryAttempts`, it is nacked
+  without requeue and dead-lettered instead. Attempts come from the quorum queue's delivery count; on other queue
+  types the count is only a guess, so rely on the queue's own policy there.
+- While the host is stopping, a failed delivery is requeued at once for another instance to take.
 
 Dead-lettered messages go through the direct exchange `twinbox.dead-letter` to the queue `<queue>.dlq`.
 
@@ -140,7 +151,7 @@ Listener queues are declared with these arguments:
 | Argument | Value |
 |---|---|
 | `x-queue-type` | `quorum` |
-| `x-delivery-limit` | `DeliveryLimit` |
+| `x-delivery-limit` | `MaxDeliveryAttempts` |
 | `x-dead-letter-exchange` | `twinbox.dead-letter` |
 | `x-dead-letter-routing-key` | `<queue>.dlq` |
 
@@ -149,11 +160,10 @@ own dead-letter configuration, or rejected messages are dropped by the broker.
 
 ## Limitations
 
-- No connection-string overload of `UseRabbitMq`; use `ConnectionUri`.
-- Failed deliveries are requeued immediately, with no backoff between attempts.
+- The retry delay is held in the consumer, not in the broker; a restart during the wait redelivers at once.
 - Queues are always quorum queues. If a queue already exists with different arguments (for example another
-  `DeliveryLimit`), the broker refuses the declaration and the listener keeps retrying with a warning.
+  `MaxDeliveryAttempts`), the broker refuses the declaration and the listener keeps retrying with a warning.
 - Quorum queues dead-letter at most once by default; a dead-lettered message can be lost if `<queue>.dlq` rejects it.
-- The destination prefix (`Twinbox:DestinationPrefix`) applies to routed exchanges, not to `Listen` queue or exchange
-  names.
+- The destination prefix (`Twinbox:DestinationPrefix`) applies to routed exchanges, an explicit
+  `SendOptions.Destination` and webhook destinations (never to `ReplyTo`), not to `Listen` queue or exchange names.
 - Messages without an AMQP `message_id` or `twinbox-message-id` header cannot be deduplicated and are dead-lettered.

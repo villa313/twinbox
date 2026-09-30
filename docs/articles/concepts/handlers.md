@@ -47,7 +47,7 @@ with `AddHandler<THandler, TMessage>()`.
 handlers:
 
 ```csharp
-builder.Services.AddTwinbox(t => t.UseEntityFrameworkCore<AppContext>().UseRabbitMq(ConfigureRabbit));
+builder.Services.AddTwinbox(t => t.UseEntityFrameworkCore<AppContext>().UseRabbitMQ(ConfigureRabbit));
 builder.Services.AddTwinbox(t => t.AddHandlersFromOrdersModule().Route<OrderPlaced>().To("orders"));
 builder.Services.AddTwinbox(t => t.AddHandlersFromBillingModule());
 ```

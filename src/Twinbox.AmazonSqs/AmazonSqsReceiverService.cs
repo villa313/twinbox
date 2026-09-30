@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Amazon.SQS.Model;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -17,19 +18,15 @@ internal sealed partial class AmazonSqsReceiverService(
     private static readonly TimeSpan MaxRestartDelay = TimeSpan.FromSeconds(30);
 
     private readonly ILogger _logger = logger;
+    private readonly ConcurrentDictionary<string, bool> _redrivePolicies = new(StringComparer.Ordinal);
     private readonly TaskCompletionSource _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private int _unprepared;
 
     /// <summary>Completes once every listened queue (and its subscriptions, when auto-created) is ready.</summary>
     public Task Ready => _ready.Task;
 
-    /// <summary>Doubles <see cref="AmazonSqsOptions.RetryDelay"/> per failed attempt, capped at <see cref="AmazonSqsOptions.MaxRetryDelay"/>.</summary>
-    internal static TimeSpan RetryDelay(AmazonSqsOptions options, int attempt)
-    {
-        var factor = Math.Pow(2, Math.Clamp(attempt - 1, 0, 30));
-        var ticks = Math.Min(options.RetryDelay.Ticks * factor, options.MaxRetryDelay.Ticks);
-        return TimeSpan.FromTicks((long)ticks);
-    }
+    internal static TimeSpan RetryDelay(AmazonSqsOptions options, int attempt) =>
+        RetryBackoff.Delay(options.RetryDelay, options.MaxRetryDelay, attempt);
 
     /// <summary>Visibility timeouts are whole seconds, so sub-second delays round up rather than retry immediately.</summary>
     internal static int ToVisibilitySeconds(TimeSpan delay) => (int)Math.Clamp(Math.Ceiling(delay.TotalSeconds), 0, MaxVisibilitySeconds);
@@ -139,6 +136,11 @@ internal sealed partial class AmazonSqsReceiverService(
             {
                 await clients.GetQueueUrlAsync(deadLetterQueue, stoppingToken).ConfigureAwait(false);
             }
+        }
+
+        if (clients.Options.DeadLetterQueue is null)
+        {
+            _redrivePolicies[url] = await clients.HasRedrivePolicyAsync(url, stoppingToken).ConfigureAwait(false);
         }
 
         return url;
@@ -255,8 +257,15 @@ internal sealed partial class AmazonSqsReceiverService(
     {
         if (clients.Options.DeadLetterQueue is not { } deadLetterQueue)
         {
-            LogLeftForRedrive(error, incoming.MessageId, queue);
-            return clients.Options.VisibilityTimeout;
+            if (_redrivePolicies.GetValueOrDefault(url, true))
+            {
+                LogLeftForRedrive(error, incoming.MessageId, queue);
+                return clients.Options.VisibilityTimeout;
+            }
+
+            LogDiscarded(error, incoming.MessageId, queue, incoming.MessageName);
+            InboundDiagnostics.RecordDiscarded(AmazonSqsTransport.TransportName, queue);
+            return await DeleteAsync(queue, url, message).ConfigureAwait(false);
         }
 
         try
@@ -273,6 +282,7 @@ internal sealed partial class AmazonSqsReceiverService(
         }
 
         LogDeadLettered(error, incoming.MessageId, queue, deadLetterQueue);
+        InboundDiagnostics.RecordDeadLettered(AmazonSqsTransport.TransportName, queue);
         return await DeleteAsync(queue, url, message).ConfigureAwait(false);
     }
 
@@ -327,6 +337,9 @@ internal sealed partial class AmazonSqsReceiverService(
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Message {MessageId} from {Queue} failed permanently and no dead-letter queue is set; leaving it to the queue's redrive policy.")]
     private partial void LogLeftForRedrive(Exception error, string messageId, string queue);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Message {MessageId} ('{MessageName}') from {Queue} failed permanently and neither a dead-letter queue nor a redrive policy is set; deleting it.")]
+    private partial void LogDiscarded(Exception error, string messageId, string queue, string messageName);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Could not copy message {MessageId} from {Queue} to {DeadLetterQueue}; retrying it.")]
     private partial void LogDeadLetterFailed(Exception error, string messageId, string queue, string deadLetterQueue);

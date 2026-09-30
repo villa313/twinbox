@@ -23,6 +23,9 @@ internal sealed partial class NatsConsumerService(
     /// <summary>Completes once every listener's consumer exists and is being read.</summary>
     public Task Ready => _ready.Task;
 
+    internal static TimeSpan RetryDelay(NatsOptions options, int attempt) =>
+        RetryBackoff.Delay(options.RetryDelay, options.MaxRetryDelay, attempt);
+
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var listeners = clients.Options.Listeners;
@@ -124,6 +127,14 @@ internal sealed partial class NatsConsumerService(
         var attempt = (int)Math.Min(msg.Metadata?.NumDelivered ?? 1, int.MaxValue);
         var origin = NatsMapping.Origin(msg.Metadata?.Stream ?? listener.Stream, msg.Metadata?.Sequence.Stream ?? 0);
         var message = NatsMapping.ToIncomingMessage(msg.Subject, msg.Data ?? [], msg.Headers, attempt, origin);
+        if (attempt > clients.Options.MaxDeliveryAttempts)
+        {
+            // Back only because its dead-letter copy failed, or because earlier deliveries never reported an outcome.
+            var exhausted = new InvalidOperationException($"Delivery {attempt} is past MaxDeliveryAttempts ({clients.Options.MaxDeliveryAttempts}).");
+            await DeadLetterAsync(msg, message, origin, exhausted, stoppingToken).ConfigureAwait(false);
+            return;
+        }
+
         try
         {
             await pipeline.ProcessAsync(message, stoppingToken).ConfigureAwait(false);
@@ -138,14 +149,14 @@ internal sealed partial class NatsConsumerService(
             // Handing it back now lets another instance take it without waiting out AckWait.
             await SettleAsync(msg, message, m => m.NakAsync(cancellationToken: CancellationToken.None)).ConfigureAwait(false);
         }
-        catch (Exception ex) when (attempt >= clients.Options.MaxDeliver)
+        catch (Exception ex) when (attempt >= clients.Options.MaxDeliveryAttempts)
         {
             LogDeliveriesExhausted(ex, message.MessageId, message.Source, attempt);
             await DeadLetterAsync(msg, message, origin, ex, stoppingToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            var delay = NatsMapping.RetryDelay(clients.Options, attempt);
+            var delay = RetryDelay(clients.Options, attempt);
             LogProcessingFailed(ex, message.MessageId, message.Source, attempt, delay);
             await SettleAsync(msg, message, m => m.NakAsync(delay: delay, cancellationToken: CancellationToken.None)).ConfigureAwait(false);
         }
@@ -155,7 +166,8 @@ internal sealed partial class NatsConsumerService(
     {
         if (clients.Options.DeadLetterSubject is not { } deadLetterSubject)
         {
-            LogTerminated(error, message.MessageId, message.Source);
+            LogTerminated(error, message.MessageId, message.MessageName, message.Source);
+            InboundDiagnostics.RecordDiscarded(NatsTransport.TransportName, message.Source);
             await SettleAsync(msg, message, m => m.AckTerminateAsync(cancellationToken: CancellationToken.None)).ConfigureAwait(false);
             return;
         }
@@ -171,14 +183,16 @@ internal sealed partial class NatsConsumerService(
         }
         catch (Exception ex)
         {
-            // Terminating without the copy would lose the message, so it goes back for another attempt.
-            var delay = NatsMapping.RetryDelay(clients.Options, message.DeliveryAttempt);
+            // Terminating without the copy would lose the message, so it goes back; with no server-side delivery
+            // limit on the consumer, that holds past MaxDeliveryAttempts too.
+            var delay = RetryDelay(clients.Options, message.DeliveryAttempt);
             LogDeadLetterFailed(ex, message.MessageId, message.Source, deadLetterSubject);
             await SettleAsync(msg, message, m => m.NakAsync(delay: delay, cancellationToken: CancellationToken.None)).ConfigureAwait(false);
             return;
         }
 
         LogDeadLettered(error, message.MessageId, message.Source, deadLetterSubject);
+        InboundDiagnostics.RecordDeadLettered(NatsTransport.TransportName, message.Source);
         await SettleAsync(msg, message, m => m.AckTerminateAsync(cancellationToken: CancellationToken.None)).ConfigureAwait(false);
     }
 
@@ -210,8 +224,8 @@ internal sealed partial class NatsConsumerService(
     [LoggerMessage(Level = LogLevel.Error, Message = "Message {MessageId} from {Subject} failed permanently; copied it to {DeadLetterSubject} and terminated it.")]
     private partial void LogDeadLettered(Exception error, string messageId, string subject, string deadLetterSubject);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Message {MessageId} from {Subject} failed permanently and no dead-letter subject is set; terminating it.")]
-    private partial void LogTerminated(Exception error, string messageId, string subject);
+    [LoggerMessage(Level = LogLevel.Error, Message = "Message {MessageId} ('{MessageName}') from {Subject} failed permanently and no dead-letter subject is set; terminating it.")]
+    private partial void LogTerminated(Exception error, string messageId, string messageName, string subject);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Could not copy message {MessageId} from {Subject} to {DeadLetterSubject}; redelivering it.")]
     private partial void LogDeadLetterFailed(Exception error, string messageId, string subject, string deadLetterSubject);

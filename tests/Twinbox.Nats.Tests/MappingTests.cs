@@ -128,7 +128,7 @@ public sealed class MappingTests
     {
         var options = new NatsOptions { RetryDelay = TimeSpan.FromMilliseconds(100), MaxRetryDelay = TimeSpan.FromSeconds(1) };
 
-        Assert.Equal(TimeSpan.FromMilliseconds(expectedMilliseconds), NatsMapping.RetryDelay(options, attempt));
+        Assert.Equal(TimeSpan.FromMilliseconds(expectedMilliseconds), NatsConsumerService.RetryDelay(options, attempt));
     }
 
     private static TransportMessage Outgoing(string? partitionKey) => new(

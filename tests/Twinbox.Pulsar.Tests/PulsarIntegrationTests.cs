@@ -143,7 +143,7 @@ public sealed class PulsarIntegrationTests(PulsarFixture broker) : IClassFixture
     }
 
     [Fact]
-    public async Task MessageFailingEveryDelivery_IsDeadLetteredAfterMaxRedeliveryCount()
+    public async Task MessageFailingEveryDelivery_IsDeadLetteredOnItsLastAllowedDelivery()
     {
         var (topic, subscription) = Names();
         var gate = new FailureGate();
@@ -155,8 +155,8 @@ public sealed class PulsarIntegrationTests(PulsarFixture broker) : IClassFixture
             b => b.AddHandler<RecordingHandler, OrderPlaced>(),
             o =>
             {
-                o.MaxRedeliveryCount = 2;
-                o.NegativeAckRedeliveryDelay = TimeSpan.FromMilliseconds(100);
+                o.MaxDeliveryAttempts = 3;
+                o.RetryDelay = TimeSpan.FromMilliseconds(100);
                 o.Listen(topic, subscription);
             });
 

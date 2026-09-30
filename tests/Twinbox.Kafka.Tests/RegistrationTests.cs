@@ -40,6 +40,19 @@ public sealed class RegistrationTests
         Assert.Equal("broker-1:9092,broker-2:9092", services.GetRequiredService<IOptions<KafkaOptions>>().Value.BootstrapServers);
     }
 
+    [Fact]
+    public async Task BootstrapServersOverload_CanStillRegisterListeners()
+    {
+        await using var services = new ServiceCollection()
+            .AddLogging()
+            .AddTwinbox(b => b.UseInMemoryStore().UseKafka("localhost:9092", o => o.Listen("orders", "billing")))
+            .BuildServiceProvider();
+
+        var options = services.GetRequiredService<IOptions<KafkaOptions>>().Value;
+        Assert.Equal("localhost:9092", options.BootstrapServers);
+        Assert.Equal([new KafkaListener("orders", "billing")], options.Listeners);
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData(" ")]

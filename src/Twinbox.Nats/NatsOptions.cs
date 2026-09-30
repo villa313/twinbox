@@ -32,8 +32,8 @@ public sealed class NatsOptions
     /// <summary>How long the server waits for an acknowledgement before redelivering a message.</summary>
     public TimeSpan AckWait { get; set; } = TimeSpan.FromSeconds(30);
 
-    /// <summary>Deliveries per message; the last failed one dead-letters it.</summary>
-    public int MaxDeliver { get; set; } = 10;
+    /// <summary>Deliveries per message, the first included; the last failed one dead-letters it.</summary>
+    public int MaxDeliveryAttempts { get; set; } = 10;
 
     /// <summary>Unacknowledged messages the server lets a consumer have outstanding across all instances.</summary>
     public int MaxAckPending { get; set; } = 1000;

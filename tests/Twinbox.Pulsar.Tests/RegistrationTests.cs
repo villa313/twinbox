@@ -41,6 +41,24 @@ public sealed class RegistrationTests
         Assert.Equal(new Uri("pulsar+ssl://broker-1:6651"), services.GetRequiredService<IOptions<PulsarOptions>>().Value.ServiceUrl);
     }
 
+    [Fact]
+    public async Task ServiceUrlOverload_CanStillRegisterListeners()
+    {
+        await using var services = new ServiceCollection()
+            .AddLogging()
+            .AddTwinbox(b => b.UseInMemoryStore().UsePulsar("pulsar://localhost:6650", o => o.Listen("orders", "billing")))
+            .BuildServiceProvider();
+
+        Assert.Equal([new PulsarListener("orders", "billing")], services.GetRequiredService<IOptions<PulsarOptions>>().Value.Listeners);
+    }
+
+    [Theory]
+    [InlineData(1, 1_000)]
+    [InlineData(3, 4_000)]
+    [InlineData(10, 30_000)]
+    public void RetryDelay_DoublesPerAttemptUpToItsCap(int attempt, int expectedMilliseconds) =>
+        Assert.Equal(TimeSpan.FromMilliseconds(expectedMilliseconds), PulsarConsumerService.RetryDelay(new PulsarOptions(), attempt));
+
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
@@ -58,8 +76,9 @@ public sealed class RegistrationTests
 
         Assert.Equal(SubscriptionType.Shared, options.SubscriptionType);
         Assert.Equal(SubscriptionInitialPosition.Earliest, options.InitialPosition);
-        Assert.Equal(10, options.MaxRedeliveryCount);
-        Assert.Equal(TimeSpan.FromMinutes(1), options.NegativeAckRedeliveryDelay);
+        Assert.Equal(10, options.MaxDeliveryAttempts);
+        Assert.Equal(TimeSpan.FromSeconds(1), options.RetryDelay);
+        Assert.Equal(TimeSpan.FromSeconds(30), options.MaxRetryDelay);
         Assert.Equal("-dlq", options.DeadLetterSuffix);
         Assert.Equal(1, options.ConsumerConcurrency);
         Assert.Equal(TimeSpan.FromSeconds(30), options.SendTimeout);
@@ -88,8 +107,9 @@ public sealed class RegistrationTests
     [InlineData("ServiceUrlScheme")]
     [InlineData(nameof(PulsarOptions.SubscriptionType))]
     [InlineData(nameof(PulsarOptions.InitialPosition))]
-    [InlineData(nameof(PulsarOptions.MaxRedeliveryCount))]
-    [InlineData(nameof(PulsarOptions.NegativeAckRedeliveryDelay))]
+    [InlineData(nameof(PulsarOptions.MaxDeliveryAttempts))]
+    [InlineData(nameof(PulsarOptions.RetryDelay))]
+    [InlineData(nameof(PulsarOptions.MaxRetryDelay))]
     [InlineData(nameof(PulsarOptions.DeadLetterSuffix))]
     [InlineData(nameof(PulsarOptions.ConsumerConcurrency))]
     [InlineData("ConcurrentExclusive")]
@@ -118,8 +138,7 @@ public sealed class RegistrationTests
                 o.ServiceUrl = new Uri("pulsar://localhost:6650");
                 o.SubscriptionType = type;
                 o.ConsumerConcurrency = 4;
-                o.MaxRedeliveryCount = 0;
-                o.NegativeAckRedeliveryDelay = TimeSpan.Zero;
+                o.MaxDeliveryAttempts = 1;
             }))
             .BuildServiceProvider();
 
@@ -153,11 +172,14 @@ public sealed class RegistrationTests
             case nameof(PulsarOptions.InitialPosition):
                 options.InitialPosition = (SubscriptionInitialPosition)42;
                 break;
-            case nameof(PulsarOptions.MaxRedeliveryCount):
-                options.MaxRedeliveryCount = -1;
+            case nameof(PulsarOptions.MaxDeliveryAttempts):
+                options.MaxDeliveryAttempts = 0;
                 break;
-            case nameof(PulsarOptions.NegativeAckRedeliveryDelay):
-                options.NegativeAckRedeliveryDelay = TimeSpan.FromMilliseconds(-1);
+            case nameof(PulsarOptions.RetryDelay):
+                options.RetryDelay = TimeSpan.Zero;
+                break;
+            case nameof(PulsarOptions.MaxRetryDelay):
+                options.MaxRetryDelay = options.RetryDelay / 2;
                 break;
             case nameof(PulsarOptions.DeadLetterSuffix):
                 options.DeadLetterSuffix = " ";

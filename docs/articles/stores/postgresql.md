@@ -8,7 +8,7 @@
 ```csharp
 builder.Services.AddTwinbox(twinbox => twinbox
     .UsePostgreSql(connectionString)
-    .UseRabbitMq(o => o.ConnectionUri = new Uri(rabbitUri))
+    .UseRabbitMQ(o => o.ConnectionUri = new Uri(rabbitUri))
     .Route<OrderPlaced>().To("orders"));
 ```
 

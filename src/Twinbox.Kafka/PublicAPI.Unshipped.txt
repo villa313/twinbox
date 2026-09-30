@@ -38,4 +38,4 @@ Twinbox.Kafka.KafkaTransport.SendAsync(Twinbox.Transport.TransportMessage! messa
 Twinbox.KafkaTwinboxBuilderExtensions
 const Twinbox.Kafka.KafkaTransport.TransportName = "kafka" -> string!
 static Twinbox.KafkaTwinboxBuilderExtensions.UseKafka(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.Kafka.KafkaOptions!>! configure) -> Twinbox.TwinboxBuilder!
-static Twinbox.KafkaTwinboxBuilderExtensions.UseKafka(this Twinbox.TwinboxBuilder! builder, string! bootstrapServers) -> Twinbox.TwinboxBuilder!
+static Twinbox.KafkaTwinboxBuilderExtensions.UseKafka(this Twinbox.TwinboxBuilder! builder, string! bootstrapServers, System.Action<Twinbox.Kafka.KafkaOptions!>? configure = null) -> Twinbox.TwinboxBuilder!

@@ -19,9 +19,9 @@ public sealed class TransportTests
     }
 
     [Fact]
-    public void UnauthorizedAccess_IsPermanent()
+    public void UnauthorizedAccess_IsTransient()
     {
-        Assert.True(AzureServiceBusMapping.IsPermanentSendFailure(new UnauthorizedAccessException("no send claim")));
+        Assert.False(AzureServiceBusMapping.IsPermanentSendFailure(new UnauthorizedAccessException("no send claim")));
     }
 
     [Fact]
@@ -55,10 +55,10 @@ public sealed class TransportTests
     }
 
     [Fact]
-    public async Task SendAsync_WithSessions_SetsSessionId()
+    public async Task SendAsync_WithSessionIds_SetsSessionId()
     {
         var client = new FakeServiceBusClient();
-        await using var transport = new AzureServiceBusTransport(client, new AzureServiceBusOptions { UseSessions = true });
+        await using var transport = new AzureServiceBusTransport(client, new AzureServiceBusOptions { SendSessionIds = true });
 
         await transport.SendAsync(MappingTests.Outgoing("order-1"), default);
 

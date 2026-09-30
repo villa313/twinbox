@@ -43,7 +43,7 @@ public sealed class HttpEndpointOptions
 
     internal IReadOnlySet<int> SuccessStatusCodes => _successStatusCodes;
 
-    /// <summary>Retries these status codes, on top of 408, 429 and 5xx, for vendors that report busy states oddly.</summary>
+    /// <summary>Retries these status codes, on top of 401, 403, 408, 429 and 5xx, for vendors that report busy states oddly.</summary>
     public HttpEndpointOptions TreatAsTransient(params int[] statusCodes) => AddStatusCodes(_transientStatusCodes, statusCodes);
 
     /// <summary>Counts these status codes as delivered, e.g. 409 from a vendor rejecting a repeat it already applied.</summary>

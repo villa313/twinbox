@@ -24,13 +24,8 @@ internal sealed partial class KafkaConsumerService(
     /// <summary>Completes once every listener has subscribed.</summary>
     public Task Ready => _ready.Task;
 
-    /// <summary>Doubles <see cref="KafkaOptions.RetryDelay"/> per failed attempt, capped at <see cref="KafkaOptions.MaxRetryDelay"/>.</summary>
-    internal static TimeSpan RetryDelay(KafkaOptions options, int attempt)
-    {
-        var factor = Math.Pow(2, Math.Clamp(attempt - 1, 0, 30));
-        var ticks = Math.Min(options.RetryDelay.Ticks * factor, options.MaxRetryDelay.Ticks);
-        return TimeSpan.FromTicks((long)ticks);
-    }
+    internal static TimeSpan RetryDelay(KafkaOptions options, int attempt) =>
+        RetryBackoff.Delay(options.RetryDelay, options.MaxRetryDelay, attempt);
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -258,7 +253,7 @@ internal sealed partial class KafkaConsumerService(
         }
         catch (PermanentDeliveryException ex)
         {
-            return DeadLetter(record, message.MessageId, ex, stoppingToken);
+            return DeadLetter(record, message.MessageId, message.MessageName, ex, stoppingToken);
         }
         catch (Exception) when (stoppingToken.IsCancellationRequested)
         {
@@ -271,11 +266,17 @@ internal sealed partial class KafkaConsumerService(
         }
     }
 
-    private bool DeadLetter(ConsumeResult<string?, byte[]> record, string messageId, PermanentDeliveryException error, CancellationToken stoppingToken)
+    private bool DeadLetter(
+        ConsumeResult<string?, byte[]> record,
+        string messageId,
+        string messageName,
+        PermanentDeliveryException error,
+        CancellationToken stoppingToken)
     {
         if (clients.Options.DeadLetterTopic is not { } deadLetterTopic)
         {
-            LogSkipped(error, messageId, record.Topic, record.Partition.Value, record.Offset.Value);
+            LogSkipped(error, messageId, messageName, record.Topic, record.Partition.Value, record.Offset.Value);
+            InboundDiagnostics.RecordDiscarded(KafkaTransport.TransportName, record.Topic);
             return true;
         }
 
@@ -284,6 +285,7 @@ internal sealed partial class KafkaConsumerService(
             clients.EnsureTopicAsync(deadLetterTopic, stoppingToken).GetAwaiter().GetResult();
             clients.ProduceAsync(deadLetterTopic, KafkaMapping.ToDeadLetter(record, error), stoppingToken).GetAwaiter().GetResult();
             LogDeadLettered(error, messageId, record.Topic, deadLetterTopic);
+            InboundDiagnostics.RecordDeadLettered(KafkaTransport.TransportName, record.Topic);
             return true;
         }
         catch (Exception) when (stoppingToken.IsCancellationRequested)
@@ -407,8 +409,8 @@ internal sealed partial class KafkaConsumerService(
     [LoggerMessage(Level = LogLevel.Error, Message = "Message {MessageId} from {Topic} failed permanently; copied it to {DeadLetterTopic}.")]
     private partial void LogDeadLettered(Exception error, string messageId, string topic, string deadLetterTopic);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Message {MessageId} from {Topic} [{Partition}] @{Offset} failed permanently and no dead-letter topic is set; skipping it.")]
-    private partial void LogSkipped(Exception error, string messageId, string topic, int partition, long offset);
+    [LoggerMessage(Level = LogLevel.Error, Message = "Message {MessageId} ('{MessageName}') from {Topic} [{Partition}] @{Offset} failed permanently and no dead-letter topic is set; skipping it.")]
+    private partial void LogSkipped(Exception error, string messageId, string messageName, string topic, int partition, long offset);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Could not copy message {MessageId} from {Topic} to {DeadLetterTopic}; retrying it.")]
     private partial void LogDeadLetterFailed(Exception error, string messageId, string topic, string deadLetterTopic);

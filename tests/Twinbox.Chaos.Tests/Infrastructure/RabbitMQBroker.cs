@@ -5,7 +5,7 @@ using Testcontainers.RabbitMq;
 namespace Twinbox.Chaos.Tests;
 
 /// <summary>A broker of its own on a fixed port, so clients can reconnect to the same address after a restart.</summary>
-public sealed class RabbitMqBroker : IAsyncLifetime
+public sealed class RabbitMQBroker : IAsyncLifetime
 {
     private readonly RabbitMqContainer _container = new RabbitMqBuilder("rabbitmq:4.1-alpine").WithPortBinding(Ports.Free(), 5672).Build();
 

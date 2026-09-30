@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -10,13 +11,18 @@ public static class AmazonSqsTwinboxBuilderExtensions
 {
     private static readonly TimeSpan MaxVisibilityTimeout = TimeSpan.FromHours(12);
 
-    public static TwinboxBuilder UseAmazonSqs(this TwinboxBuilder builder, string region)
+    [SuppressMessage("ApiDesign", "RS0026", Justification = "The overloads differ by a required first parameter, so calls cannot be ambiguous.")]
+    public static TwinboxBuilder UseAmazonSqs(this TwinboxBuilder builder, string region, Action<AmazonSqsOptions>? configure = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(region);
-        return builder.UseAmazonSqs(options => options.Region = region);
+        return builder.UseAmazonSqs(options =>
+        {
+            options.Region = region;
+            configure?.Invoke(options);
+        });
     }
 
-    /// <summary>Sends through SQS and SNS, and consumes the queues registered with ListenToQueue and Subscribe.</summary>
+    /// <summary>Sends through SQS and SNS, and consumes the queues registered with <see cref="AmazonSqsOptions.Listen(string)"/>.</summary>
     public static TwinboxBuilder UseAmazonSqs(this TwinboxBuilder builder, Action<AmazonSqsOptions> configure)
     {
         ArgumentNullException.ThrowIfNull(builder);

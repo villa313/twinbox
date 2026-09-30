@@ -83,6 +83,50 @@ public sealed class EmulatorTests(ServiceBusEmulatorFixture emulator) : IClassFi
         await host.StopAsync(TestContext.Current.CancellationToken);
     }
 
+    [Fact]
+    public async Task SessionListener_ReceivesMessagesWithoutAPartitionKey()
+    {
+        var journal = new Journal();
+        using var host = CreateHost(journal, b => b
+            .UseAzureServiceBus(emulator.ConnectionString, o =>
+            {
+                o.SendSessionIds = true;
+                o.Listen("sessions", sessions: true);
+            })
+            .Route<OrderPlaced>().To("sessions")
+            .AddHandler<OrderPlacedHandler, OrderPlaced>());
+        await host.StartAsync(TestContext.Current.CancellationToken);
+
+        await SendAsync(host, new OrderPlaced(9));
+        await WaitUntilAsync(() => journal.Entries.Count == 1);
+
+        Assert.StartsWith("9:", journal.Entries[0], StringComparison.Ordinal);
+        await host.StopAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task FailedMessage_IsAbandonedOnlyAfterTheRetryDelay()
+    {
+        var journal = new Journal();
+        using var host = CreateHost(journal, b => b
+            .UseAzureServiceBus(emulator.ConnectionString, o =>
+            {
+                o.RetryDelay = TimeSpan.FromSeconds(3);
+                o.Listen("retries");
+            })
+            .Route<OrderPlaced>().To("retries")
+            .AddHandler<FailFirstAttemptHandler, OrderPlaced>());
+        await host.StartAsync(TestContext.Current.CancellationToken);
+        var started = System.Diagnostics.Stopwatch.StartNew();
+
+        await SendAsync(host, new OrderPlaced(10));
+        await WaitUntilAsync(() => journal.Entries.Count == 1);
+
+        Assert.Equal(["10:attempt-2"], journal.Entries);
+        Assert.True(started.Elapsed >= TimeSpan.FromSeconds(2.9), $"Redelivered after {started.Elapsed}.");
+        await host.StopAsync(TestContext.Current.CancellationToken);
+    }
+
     private static IHost CreateHost(Journal journal, Action<TwinboxBuilder> configure)
     {
         var builder = Host.CreateEmptyApplicationBuilder(new HostApplicationBuilderSettings());
@@ -161,6 +205,20 @@ public sealed class EmulatorTests(ServiceBusEmulatorFixture emulator) : IClassFi
         public Task HandleAsync(OrderPlaced message, MessageContext context, CancellationToken cancellationToken)
         {
             journal.Add($"{message.OrderId}:{context.MessageId}", context.Source);
+            return Task.CompletedTask;
+        }
+    }
+
+    public sealed class FailFirstAttemptHandler(Journal journal) : IHandle<OrderPlaced>
+    {
+        public Task HandleAsync(OrderPlaced message, MessageContext context, CancellationToken cancellationToken)
+        {
+            if (context.DeliveryAttempt == 1)
+            {
+                throw new InvalidOperationException("first attempt fails");
+            }
+
+            journal.Add($"{message.OrderId}:attempt-{context.DeliveryAttempt}", context.Source);
             return Task.CompletedTask;
         }
     }

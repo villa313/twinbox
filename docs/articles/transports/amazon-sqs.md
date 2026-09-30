@@ -1,6 +1,6 @@
 # Amazon SQS and SNS
 
-`Twinbox.AmazonSqs` · transport name `"amazonsqs"`
+`Twinbox.AmazonSqs` · transport name `"amazonsqs"` (`AmazonSqsTransport.TransportName`)
 
 A route destination is an SQS queue name or URL. A destination that starts with `sns:` (`AmazonSqsTransport.TopicPrefix`)
 is an SNS topic name or ARN instead, so one message can fan out to several queues. On the receiving side Twinbox
@@ -8,12 +8,12 @@ long-polls SQS queues and deletes each message only after the inbox has handled 
 
 ## Setup
 
-With a region (send only; credentials come from the SDK's default chain):
+With a region, and optionally a callback for everything else (credentials come from the SDK's default chain):
 
 ```csharp
 builder.Services.AddTwinbox(twinbox => twinbox
     .UseEntityFrameworkCore<AppDbContext>()
-    .UseAmazonSqs("eu-west-1")
+    .UseAmazonSqs("eu-west-1", options => options.Listen("billing-requests"))
     .Route<OrderPlaced>().To("sns:orders")
     .Route<InvoiceRequested>().To("billing-requests"));
 ```
@@ -28,8 +28,8 @@ builder.Services.AddTwinbox(twinbox => twinbox
         options.Region = "eu-west-1";
         options.Credentials = new BasicAWSCredentials(accessKey, secretKey);
         options.DeadLetterQueue = "billing-dead-letter";
-        options.Subscribe("billing-orders", "orders");
-        options.ListenToQueue("billing-requests");
+        options.Listen("billing-orders", topic: "orders");
+        options.Listen("billing-requests");
     })
     .Route<OrderPlaced>().To("sns:orders"));
 ```
@@ -39,8 +39,8 @@ authentication region.
 
 ## Receiving
 
-- `ListenToQueue(queue)` consumes a queue, by name or URL.
-- `Subscribe(queue, topic)` consumes a queue fed by an SNS topic. With `AutoCreate` on, Twinbox creates what is missing,
+- `Listen(queue)` consumes a queue, by name or URL.
+- `Listen(queue, topic)` consumes a queue fed by an SNS topic. With `AutoCreate` on, Twinbox creates what is missing,
   allows the topic to send to the queue and subscribes it with raw message delivery. Without it, the subscription must
   already exist. The topic may be given with or without the `sns:` prefix, or as an ARN.
 
@@ -61,7 +61,7 @@ one poller.
 | `WaitTimeSeconds` | `20` | Long-poll duration per receive, 0 to 20. |
 | `MaxNumberOfMessages` | `10` | Messages fetched per receive, 1 to 10. |
 | `MaxConcurrency` | `10` | Messages handled at once per queue. Must be positive. |
-| `DeadLetterQueue` | `null` | Queue that receives copies of permanently failing messages. `null` leaves them to the queue's redrive policy. Cannot be blank. |
+| `DeadLetterQueue` | `null` | Queue that receives copies of permanently failing messages. `null` leaves them to the queue's redrive policy, or deletes them after logging when there is none. Cannot be blank. |
 | `RetryDelay` | 1 second | First delay before a failed message becomes visible again. Doubles per attempt. Must be positive. |
 | `MaxRetryDelay` | 5 minutes | Cap on the retry delay. Between `RetryDelay` and 12 hours. |
 
@@ -102,8 +102,13 @@ Receiving:
   (`maxReceiveCount`) on the queue to stop retries.
 - `PermanentDeliveryException` with `DeadLetterQueue` set: the message is copied there, keeping its id and adding
   `twinbox-error` and `twinbox-origin` (the source queue), then deleted. If the copy fails, it is retried.
-- `PermanentDeliveryException` without `DeadLetterQueue`: the message is left in place and comes back after the
-  visibility timeout, until the queue's redrive policy moves it.
+- `PermanentDeliveryException` without `DeadLetterQueue`, on a queue with a redrive policy: the message is left in
+  place and comes back after the visibility timeout, until the redrive policy moves it.
+- `PermanentDeliveryException` with neither: the message is logged at error level, counted in
+  `twinbox.inbox.discarded` and deleted (see
+  [the transports overview](index.md#permanent-failures-without-a-dead-letter-destination)). Whether a queue has a
+  redrive policy is read once when its listener starts; if that read fails (for example without
+  `sqs:GetQueueAttributes`), the queue is assumed to have one.
 
 A handler interrupted by shutdown hands its message back at once, so another instance can pick it up.
 
@@ -128,6 +133,7 @@ permission. Pass ARNs and queue URLs to skip lookups.
 ## Limitations
 
 - No batch consumption: batch handlers receive batches of one. See [Batch handlers](../concepts/batch-handlers.md).
-- Without a redrive policy on the queue and without `DeadLetterQueue`, a failing message is retried forever.
-- The two overloads differ: `UseAmazonSqs(region)` cannot register listeners.
+- Without a redrive policy on the queue and without `DeadLetterQueue`, a message whose handler keeps failing
+  transiently is retried forever.
+- A redrive policy added or removed while a listener runs is noticed only when the listener restarts.
 - `DeadLetterQueue` must be an SQS queue, not an SNS topic.

@@ -30,7 +30,7 @@ Once sent, order depends on the broker and on how consumers are configured:
 
 | Transport | The partition key becomes | Ordered receiving needs |
 |---|---|---|
-| [Azure Service Bus](../transports/azure-service-bus.md) | `SessionId` when `UseSessions` is on | Session-enabled entities and `UseSessions = true` |
+| [Azure Service Bus](../transports/azure-service-bus.md) | `SessionId` when `SendSessionIds` is on | Session-enabled entities, `SendSessionIds = true` and `Listen(..., sessions: true)` |
 | [Event Hubs](../transports/event-hubs.md) | The event's partition key | Nothing extra: a partition is processed in order |
 | [Amazon SQS](../transports/amazon-sqs.md) | The FIFO message group id | A `.fifo` queue or topic |
 | [Google Pub/Sub](../transports/google-pubsub.md) | The ordering key when `EnableMessageOrdering` is on | `EnableMessageOrdering = true` |

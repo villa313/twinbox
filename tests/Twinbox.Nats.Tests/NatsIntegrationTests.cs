@@ -1,6 +1,7 @@
 using System.Text;
 using NATS.Client.Core;
 using NATS.Client.JetStream;
+using NATS.Client.JetStream.Models;
 using Twinbox.Storage;
 using Twinbox.Transport;
 
@@ -204,7 +205,7 @@ public sealed class NatsIntegrationTests(NatsFixture server) : IClassFixture<Nat
             b => b.AddHandler<RecordingHandler, OrderPlaced>(),
             o =>
             {
-                o.MaxDeliver = 3;
+                o.MaxDeliveryAttempts = 3;
                 o.DeadLetterSubject = deadLetterSubject;
                 o.AddStream(names.Stream, names.AllSubjects)
                     .AddStream(deadLetterStream, deadLetterSubject)
@@ -217,6 +218,37 @@ public sealed class NatsIntegrationTests(NatsFixture server) : IClassFixture<Nat
         Assert.Equal("doomed-6", Header(copy, TransportHeaders.MessageId));
         Assert.Contains("is held", Header(copy, NatsMapping.ErrorHeader), StringComparison.Ordinal);
         Assert.Equal(3, gate.Failures);
+    }
+
+    [Fact]
+    public async Task DeadLetterCopyFailingOnTheLastDelivery_IsRetriedUntilItLands()
+    {
+        var names = Names.Create();
+        var deadLetterStream = $"{names.Stream}_DLQ";
+        var deadLetterSubject = $"dead-{names.Suffix}.orders";
+        var gate = new FailureGate();
+        gate.Hold(9);
+        await using var host = await NatsTestHost.StartAsync(
+            server.Url,
+            new Journal(),
+            gate,
+            b => b.AddHandler<RecordingHandler, OrderPlaced>(),
+            o =>
+            {
+                o.MaxDeliveryAttempts = 2;
+                o.DeadLetterSubject = deadLetterSubject;
+                o.AddStream(names.Stream, names.AllSubjects).Listen(names.Stream, names.Consumer);
+            });
+
+        await host.Transport.SendAsync(Message("stranded-9", names.Subject("placed"), 9, null), TestContext.Current.CancellationToken);
+        await gate.WaitForFailuresAsync(2, Timeout);
+        await Task.Delay(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        await server.JetStream.CreateStreamAsync(new StreamConfig(deadLetterStream, [deadLetterSubject]), TestContext.Current.CancellationToken);
+
+        var copy = await server.ReadFirstAsync(deadLetterStream, Timeout);
+        Assert.Equal("stranded-9", Header(copy, TransportHeaders.MessageId));
+        Assert.Equal(2, gate.Failures);
+        await WaitForSettledAsync(names);
     }
 
     [Fact]

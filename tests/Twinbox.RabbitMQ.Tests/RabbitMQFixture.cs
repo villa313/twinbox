@@ -3,7 +3,7 @@ using Testcontainers.RabbitMq;
 
 namespace Twinbox.RabbitMQ.Tests;
 
-public sealed class RabbitMqFixture : IAsyncLifetime
+public sealed class RabbitMQFixture : IAsyncLifetime
 {
     private readonly RabbitMqContainer _container = new RabbitMqBuilder("rabbitmq:4.1-alpine").Build();
 

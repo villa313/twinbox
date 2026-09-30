@@ -10,7 +10,6 @@ public sealed class ErrorClassificationTests
     [InlineData(400, NatsErrors.MessageTooLarge)]
     [InlineData(503, NatsErrors.MessageTooLarge)]
     [InlineData(400, 10071)]
-    [InlineData(403, 10000)]
     [InlineData(413, 10000)]
     public void RejectionsRetryingCannotFix_ArePermanent(int code, int errCode) =>
         Assert.True(NatsErrors.IsPermanent(new NatsJSApiException(Error(code, errCode))));
@@ -20,12 +19,13 @@ public sealed class ErrorClassificationTests
     [InlineData(503, 10039)]
     [InlineData(500, 10049)]
     [InlineData(408, 10000)]
-    public void UnavailabilityAndFullStreams_AreTransient(int code, int errCode) =>
+    [InlineData(403, 10000)]
+    public void UnavailabilityFullStreamsAndDenials_AreTransient(int code, int errCode) =>
         Assert.False(NatsErrors.IsPermanent(new NatsJSApiException(Error(code, errCode))));
 
     [Fact]
-    public void PermissionViolation_IsPermanent() =>
-        Assert.True(NatsErrors.IsPermanent(new NatsServerException("Permissions Violation for Publish to \"orders.placed\"")));
+    public void PermissionViolation_IsTransient() =>
+        Assert.False(NatsErrors.IsPermanent(new NatsServerException("Permissions Violation for Publish to \"orders.placed\"")));
 
     [Fact]
     public void OtherServerErrors_AreTransient()

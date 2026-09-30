@@ -17,17 +17,17 @@ Twinbox.GooglePubSub.GooglePubSubOptions.EmulatorHost.set -> void
 Twinbox.GooglePubSub.GooglePubSubOptions.EnableMessageOrdering.get -> bool
 Twinbox.GooglePubSub.GooglePubSubOptions.EnableMessageOrdering.set -> void
 Twinbox.GooglePubSub.GooglePubSubOptions.GooglePubSubOptions() -> void
+Twinbox.GooglePubSub.GooglePubSubOptions.Listen(string! subscription, string! topic) -> Twinbox.GooglePubSub.GooglePubSubOptions!
 Twinbox.GooglePubSub.GooglePubSubOptions.MaxDeliveryAttempts.get -> int
 Twinbox.GooglePubSub.GooglePubSubOptions.MaxDeliveryAttempts.set -> void
 Twinbox.GooglePubSub.GooglePubSubOptions.MaxOutstandingMessages.get -> long
 Twinbox.GooglePubSub.GooglePubSubOptions.MaxOutstandingMessages.set -> void
-Twinbox.GooglePubSub.GooglePubSubOptions.ProjectId.get -> string!
+Twinbox.GooglePubSub.GooglePubSubOptions.ProjectId.get -> string?
 Twinbox.GooglePubSub.GooglePubSubOptions.ProjectId.set -> void
-Twinbox.GooglePubSub.GooglePubSubOptions.Subscribe(string! subscription, string! topic) -> Twinbox.GooglePubSub.GooglePubSubOptions!
 Twinbox.GooglePubSub.GooglePubSubTransport
 Twinbox.GooglePubSub.GooglePubSubTransport.Name.get -> string!
 Twinbox.GooglePubSub.GooglePubSubTransport.SendAsync(Twinbox.Transport.TransportMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.GooglePubSubTwinboxBuilderExtensions
 const Twinbox.GooglePubSub.GooglePubSubTransport.TransportName = "googlepubsub" -> string!
 static Twinbox.GooglePubSubTwinboxBuilderExtensions.UseGooglePubSub(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.GooglePubSub.GooglePubSubOptions!>! configure) -> Twinbox.TwinboxBuilder!
-static Twinbox.GooglePubSubTwinboxBuilderExtensions.UseGooglePubSub(this Twinbox.TwinboxBuilder! builder, string! projectId) -> Twinbox.TwinboxBuilder!
+static Twinbox.GooglePubSubTwinboxBuilderExtensions.UseGooglePubSub(this Twinbox.TwinboxBuilder! builder, string! projectId, System.Action<Twinbox.GooglePubSub.GooglePubSubOptions!>? configure = null) -> Twinbox.TwinboxBuilder!

@@ -5,7 +5,7 @@ using Twinbox.Transport;
 
 namespace Twinbox.RabbitMQ;
 
-internal static class RabbitMqMessageMapper
+internal static class RabbitMQMessageMapper
 {
     public const string DeliveryCountHeader = "x-delivery-count";
 

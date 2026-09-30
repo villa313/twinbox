@@ -61,6 +61,27 @@ public sealed class RegistrationTests
         Assert.Null(options.ConnectionString);
     }
 
+    [Fact]
+    public async Task ShortcutOverloads_CanStillRegisterListeners()
+    {
+        await using var services = new ServiceCollection()
+            .AddLogging()
+            .AddTwinbox(b => b.UseInMemoryStore()
+                .UseEventHubs(ConnectionString, o => o.Listen("orders", "$Default", StorageConnectionString, "checkpoints")))
+            .BuildServiceProvider();
+        var credential = new FakeCredential();
+        await using var withCredential = new ServiceCollection()
+            .AddLogging()
+            .AddTwinbox(b => b.UseInMemoryStore()
+                .UseEventHubs("my-namespace.servicebus.windows.net", credential, o => o.Listen("orders", "$Default", StorageConnectionString, "checkpoints")))
+            .BuildServiceProvider();
+
+        Assert.Single(services.GetRequiredService<IOptions<EventHubsOptions>>().Value.Listeners);
+        var options = withCredential.GetRequiredService<IOptions<EventHubsOptions>>().Value;
+        Assert.Single(options.Listeners);
+        Assert.Same(credential, options.Credential);
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData(" ")]

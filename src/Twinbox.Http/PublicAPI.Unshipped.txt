@@ -29,7 +29,6 @@ Twinbox.Http.HttpTransport.SendAsync(Twinbox.Transport.TransportMessage! message
 Twinbox.HttpTwinboxBuilderExtensions
 const Twinbox.Http.HttpEndpointOptions.DefaultIdempotencyKeyHeader = "Idempotency-Key" -> string!
 const Twinbox.Http.HttpOptions.SectionName = "Twinbox:Http" -> string!
-const Twinbox.Http.HttpTransport.HttpClientNamePrefix = "twinbox-http:" -> string!
 const Twinbox.Http.HttpTransport.TransportName = "http" -> string!
 static Twinbox.Http.HttpTransport.HttpClientName(string! endpoint) -> string!
 static Twinbox.HttpTwinboxBuilderExtensions.UseHttp(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.Http.HttpOptions!>? configure = null) -> Twinbox.TwinboxBuilder!

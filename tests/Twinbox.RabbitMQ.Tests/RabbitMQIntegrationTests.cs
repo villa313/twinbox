@@ -6,7 +6,7 @@ using Twinbox.Transport;
 namespace Twinbox.RabbitMQ.Tests;
 
 [Trait("Category", "Integration")]
-public sealed class RabbitMqIntegrationTests(RabbitMqFixture broker) : IClassFixture<RabbitMqFixture>
+public sealed class RabbitMQIntegrationTests(RabbitMQFixture broker) : IClassFixture<RabbitMQFixture>
 {
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
 
@@ -15,7 +15,7 @@ public sealed class RabbitMqIntegrationTests(RabbitMqFixture broker) : IClassFix
     {
         var (exchange, queue) = Names();
         var journal = new Journal();
-        await using var host = await RabbitMqTestHost.StartAsync(
+        await using var host = await RabbitMQTestHost.StartAsync(
             broker.ConnectionUri,
             journal,
             b => b.Route<OrderPlaced>().To(exchange).AddHandler<RecordingHandler, OrderPlaced>(),
@@ -34,7 +34,7 @@ public sealed class RabbitMqIntegrationTests(RabbitMqFixture broker) : IClassFix
     {
         var (exchange, queue) = Names();
         var journal = new Journal();
-        await using var host = await RabbitMqTestHost.StartAsync(
+        await using var host = await RabbitMQTestHost.StartAsync(
             broker.ConnectionUri,
             journal,
             b => b.AddHandler<RecordingHandler, OrderPlaced>(),
@@ -56,7 +56,7 @@ public sealed class RabbitMqIntegrationTests(RabbitMqFixture broker) : IClassFix
     {
         var (exchange, queue) = Names();
         var journal = new Journal();
-        await using var host = await RabbitMqTestHost.StartAsync(
+        await using var host = await RabbitMQTestHost.StartAsync(
             broker.ConnectionUri,
             journal,
             b => b.AddHandler<FailFirstAttemptHandler, OrderPlaced>(),
@@ -69,10 +69,55 @@ public sealed class RabbitMqIntegrationTests(RabbitMqFixture broker) : IClassFix
     }
 
     [Fact]
+    public async Task TransientHandlerFailure_WaitsOutTheRetryDelayBeforeRedelivery()
+    {
+        var (exchange, queue) = Names();
+        var journal = new Journal();
+        await using var host = await RabbitMQTestHost.StartAsync(
+            broker.ConnectionUri,
+            journal,
+            b => b.AddHandler<FailFirstAttemptHandler, OrderPlaced>(),
+            o =>
+            {
+                o.Listen(queue, exchange);
+                o.RetryDelay = TimeSpan.FromSeconds(2);
+            });
+        var started = System.Diagnostics.Stopwatch.StartNew();
+
+        await host.Transport.SendAsync(Message("retry-2", exchange, """{"orderId":6}"""), TestContext.Current.CancellationToken);
+
+        await journal.WaitForAsync(2, Timeout);
+        Assert.True(started.Elapsed >= TimeSpan.FromSeconds(1.9), $"Redelivered after {started.Elapsed}.");
+    }
+
+    [Fact]
+    public async Task TransientHandlerFailure_IsDeadLetteredOnTheLastAllowedDelivery()
+    {
+        var (exchange, queue) = Names();
+        var journal = new Journal();
+        await using var host = await RabbitMQTestHost.StartAsync(
+            broker.ConnectionUri,
+            journal,
+            b => b.AddHandler<AlwaysFailingHandler, OrderPlaced>(),
+            o =>
+            {
+                o.Listen(queue, exchange);
+                o.MaxDeliveryAttempts = 3;
+                o.RetryDelay = TimeSpan.FromMilliseconds(100);
+            });
+
+        await host.Transport.SendAsync(Message("exhausted-1", exchange, """{"orderId":7}"""), TestContext.Current.CancellationToken);
+
+        var deadLettered = await WaitForMessageAsync($"{queue}.dlq");
+        Assert.Equal("exhausted-1", deadLettered.BasicProperties.MessageId);
+        Assert.Equal([1, 2, 3], journal.Handled);
+    }
+
+    [Fact]
     public async Task PermanentHandlerFailure_LandsInTheDeadLetterQueue()
     {
         var (exchange, queue) = Names();
-        await using var host = await RabbitMqTestHost.StartAsync(
+        await using var host = await RabbitMQTestHost.StartAsync(
             broker.ConnectionUri,
             new Journal(),
             b => b.AddHandler<RejectingHandler, OrderPlaced>(),
@@ -89,7 +134,7 @@ public sealed class RabbitMqIntegrationTests(RabbitMqFixture broker) : IClassFix
     public async Task UnroutableMessage_IsRetryableByDefault()
     {
         var (exchange, _) = Names();
-        await using var host = await RabbitMqTestHost.StartAsync(broker.ConnectionUri, new Journal(), _ => { });
+        await using var host = await RabbitMQTestHost.StartAsync(broker.ConnectionUri, new Journal(), _ => { });
 
         var error = await Assert.ThrowsAsync<InvalidOperationException>(
             () => host.Transport.SendAsync(Message("lost-0", exchange, "{}"), TestContext.Current.CancellationToken));
@@ -101,7 +146,7 @@ public sealed class RabbitMqIntegrationTests(RabbitMqFixture broker) : IClassFix
     public async Task UnroutableMessage_IsPermanentWhenConfigured()
     {
         var (exchange, _) = Names();
-        await using var host = await RabbitMqTestHost.StartAsync(
+        await using var host = await RabbitMQTestHost.StartAsync(
             broker.ConnectionUri,
             new Journal(),
             _ => { },
@@ -117,7 +162,7 @@ public sealed class RabbitMqIntegrationTests(RabbitMqFixture broker) : IClassFix
     public async Task UnroutableOutboxMessage_IsDeadLetteredInTheOutbox()
     {
         var (exchange, _) = Names();
-        await using var host = await RabbitMqTestHost.StartAsync(
+        await using var host = await RabbitMQTestHost.StartAsync(
             broker.ConnectionUri,
             new Journal(),
             b => b.Route<OrderPlaced>().To(exchange),
@@ -138,7 +183,7 @@ public sealed class RabbitMqIntegrationTests(RabbitMqFixture broker) : IClassFix
     public async Task MissingExchange_IsReportedAsPermanentFailure()
     {
         var (exchange, _) = Names();
-        await using var host = await RabbitMqTestHost.StartAsync(
+        await using var host = await RabbitMQTestHost.StartAsync(
             broker.ConnectionUri,
             new Journal(),
             _ => { },

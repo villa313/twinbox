@@ -2,9 +2,9 @@ using RabbitMQ.Client;
 
 namespace Twinbox.RabbitMQ;
 
-public sealed class RabbitMqOptions
+public sealed class RabbitMQOptions
 {
-    private readonly List<RabbitMqListener> _listeners = [];
+    private readonly List<RabbitMQListener> _listeners = [];
 
     /// <summary>An amqp:// or amqps:// URI; when set it overrides the host, port, virtual host and credentials.</summary>
     public Uri? ConnectionUri { get; set; }
@@ -35,30 +35,38 @@ public sealed class RabbitMqOptions
     /// </summary>
     public bool DeadLetterUnroutable { get; set; }
 
-    /// <summary>Deliveries per message before the quorum queue dead-letters it.</summary>
-    public int DeliveryLimit { get; set; } = 10;
+    /// <summary>Deliveries per message, the first included; the last failed one dead-letters it. Auto-provisioned quorum
+    /// queues also get this as their x-delivery-limit, as a backstop for deliveries that never report back.</summary>
+    public int MaxDeliveryAttempts { get; set; } = 10;
 
-    public ushort PrefetchCount { get; set; } = 20;
+    /// <summary>First wait before a message whose handler failed goes back to the queue; doubles up to <see cref="MaxRetryDelay"/>.
+    /// The message is held unacknowledged meanwhile, so it counts against <see cref="PrefetchCount"/>.</summary>
+    public TimeSpan RetryDelay { get; set; } = TimeSpan.FromSeconds(1);
 
-    /// <summary>Deliveries processed in parallel per listener; above 1, ordering within a queue is lost.</summary>
-    public ushort ConsumerConcurrency { get; set; } = 1;
+    public TimeSpan MaxRetryDelay { get; set; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>Unacknowledged deliveries the broker sends each listener ahead of processing, up to 65535.</summary>
+    public int PrefetchCount { get; set; } = 20;
+
+    /// <summary>Deliveries processed in parallel per listener, up to 65535; above 1, ordering within a queue is lost.</summary>
+    public int ConsumerConcurrency { get; set; } = 1;
 
     /// <summary>Channels kept for publishing; a channel carries one publish at a time.</summary>
     public int PublishChannelPoolSize { get; set; } = Environment.ProcessorCount;
 
     public TimeSpan PublishTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
-    internal IReadOnlyList<RabbitMqListener> Listeners => _listeners;
+    internal IReadOnlyList<RabbitMQListener> Listeners => _listeners;
 
     /// <summary>Consumes <paramref name="queue"/>, bound to <paramref name="exchange"/> with <paramref name="bindingKey"/>.</summary>
-    public RabbitMqOptions Listen(string queue, string exchange, string bindingKey = "#")
+    public RabbitMQOptions Listen(string queue, string exchange, string bindingKey = "#")
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(queue);
         ArgumentException.ThrowIfNullOrWhiteSpace(exchange);
         ArgumentNullException.ThrowIfNull(bindingKey);
-        _listeners.Add(new RabbitMqListener(queue, exchange, bindingKey));
+        _listeners.Add(new RabbitMQListener(queue, exchange, bindingKey));
         return this;
     }
 }
 
-internal sealed record RabbitMqListener(string Queue, string Exchange, string BindingKey);
+internal sealed record RabbitMQListener(string Queue, string Exchange, string BindingKey);

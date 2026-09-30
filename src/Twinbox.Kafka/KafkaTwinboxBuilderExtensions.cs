@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -8,10 +9,15 @@ namespace Twinbox;
 
 public static class KafkaTwinboxBuilderExtensions
 {
-    public static TwinboxBuilder UseKafka(this TwinboxBuilder builder, string bootstrapServers)
+    [SuppressMessage("ApiDesign", "RS0026", Justification = "The overloads differ by a required first parameter, so calls cannot be ambiguous.")]
+    public static TwinboxBuilder UseKafka(this TwinboxBuilder builder, string bootstrapServers, Action<KafkaOptions>? configure = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(bootstrapServers);
-        return builder.UseKafka(options => options.BootstrapServers = bootstrapServers);
+        return builder.UseKafka(options =>
+        {
+            options.BootstrapServers = bootstrapServers;
+            configure?.Invoke(options);
+        });
     }
 
     /// <summary>Sends through Kafka and consumes the topics registered with <see cref="KafkaOptions.Listen"/>.</summary>

@@ -38,7 +38,8 @@ public sealed class AmazonSqsOptions
     /// <summary>Messages handled at once per queue. FIFO queues still handle each message group in order.</summary>
     public int MaxConcurrency { get; set; } = 10;
 
-    /// <summary>Where permanently failing messages are copied before deletion; null leaves them to the queue's redrive policy.</summary>
+    /// <summary>Where permanently failing messages are copied before deletion; null leaves them to the queue's redrive
+    /// policy, or deletes them after logging when the queue has none.</summary>
     public string? DeadLetterQueue { get; set; }
 
     /// <summary>First delay before a message whose handler failed becomes visible again; doubles up to <see cref="MaxRetryDelay"/>.</summary>
@@ -50,7 +51,7 @@ public sealed class AmazonSqsOptions
     internal IReadOnlyList<AmazonSqsListener> Listeners => _listeners;
 
     /// <summary>Consumes <paramref name="queue"/>, a queue name or URL.</summary>
-    public AmazonSqsOptions ListenToQueue(string queue)
+    public AmazonSqsOptions Listen(string queue)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(queue);
         _listeners.Add(new AmazonSqsListener(queue, null));
@@ -58,7 +59,7 @@ public sealed class AmazonSqsOptions
     }
 
     /// <summary>Consumes <paramref name="queue"/> fed by SNS <paramref name="topic"/>; subscribes it with raw delivery when <see cref="AutoCreate"/> is on.</summary>
-    public AmazonSqsOptions Subscribe(string queue, string topic)
+    public AmazonSqsOptions Listen(string queue, string topic)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(queue);
         ArgumentException.ThrowIfNullOrWhiteSpace(topic);

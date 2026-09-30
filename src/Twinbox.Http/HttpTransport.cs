@@ -10,7 +10,7 @@ public sealed partial class HttpTransport : ITransport
 {
     public const string TransportName = "http";
 
-    public const string HttpClientNamePrefix = "twinbox-http:";
+    private const string HttpClientNamePrefix = "twinbox-http:";
 
     private readonly IHttpClientFactory _clients;
     private readonly TimeProvider _time;

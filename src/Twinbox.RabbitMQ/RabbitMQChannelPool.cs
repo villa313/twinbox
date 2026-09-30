@@ -4,7 +4,7 @@ using RabbitMQ.Client;
 namespace Twinbox.RabbitMQ;
 
 /// <summary>Publisher-confirm channels handed out one caller at a time, since a channel is not safe for concurrent publishes.</summary>
-internal sealed class RabbitMqChannelPool(RabbitMqConnection connection, int size) : IAsyncDisposable
+internal sealed class RabbitMQChannelPool(RabbitMQConnection connection, int size) : IAsyncDisposable
 {
     private readonly ConcurrentBag<IChannel> _idle = [];
     private readonly SemaphoreSlim _slots = new(Math.Max(1, size), Math.Max(1, size));

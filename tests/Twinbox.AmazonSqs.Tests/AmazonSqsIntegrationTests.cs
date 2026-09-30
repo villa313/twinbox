@@ -1,5 +1,7 @@
 using System.Text;
+using Amazon.SQS.Model;
 using Twinbox.Storage;
+using Twinbox.Tests.Shared;
 using Twinbox.Transport;
 
 namespace Twinbox.AmazonSqs.Tests;
@@ -19,7 +21,7 @@ public sealed class AmazonSqsIntegrationTests(LocalStackFixture localStack) : IC
             journal,
             new FailureGate(),
             b => b.Route<OrderPlaced>().To(queue).AddHandler<RecordingHandler, OrderPlaced>(),
-            o => o.ListenToQueue(queue));
+            o => o.Listen(queue));
 
         await host.SendAsync(new OrderPlaced(1));
         await journal.WaitForAsync(1, Timeout);
@@ -39,7 +41,7 @@ public sealed class AmazonSqsIntegrationTests(LocalStackFixture localStack) : IC
             journal,
             new FailureGate(),
             b => b.AddHandler<RecordingHandler, OrderPlaced>(),
-            o => o.ListenToQueue(queue));
+            o => o.Listen(queue));
         var cancellation = TestContext.Current.CancellationToken;
 
         await host.Transport.SendAsync(Message("dup-1", queue, 1, null), cancellation);
@@ -64,13 +66,13 @@ public sealed class AmazonSqsIntegrationTests(LocalStackFixture localStack) : IC
             shipping,
             new FailureGate(),
             b => b.AddHandler<RecordingHandler, OrderPlaced>(),
-            o => o.Subscribe(shippingQueue, topic));
+            o => o.Listen(shippingQueue, topic));
         await using var billingHost = await AmazonSqsTestHost.StartAsync(
             localStack,
             billing,
             new FailureGate(),
             b => b.Route<OrderPlaced>().To(AmazonSqsTransport.TopicPrefix + topic).AddHandler<RecordingHandler, OrderPlaced>(),
-            o => o.Subscribe(billingQueue, topic));
+            o => o.Listen(billingQueue, topic));
 
         await billingHost.SendAsync(new OrderPlaced(7));
         await billing.WaitForAsync(7, Timeout);
@@ -95,7 +97,7 @@ public sealed class AmazonSqsIntegrationTests(LocalStackFixture localStack) : IC
             o =>
             {
                 o.MaxConcurrency = 10;
-                o.ListenToQueue(queue);
+                o.Listen(queue);
             });
         var cancellation = TestContext.Current.CancellationToken;
 
@@ -133,7 +135,7 @@ public sealed class AmazonSqsIntegrationTests(LocalStackFixture localStack) : IC
             o =>
             {
                 o.DeadLetterQueue = deadLetterQueue;
-                o.ListenToQueue(queue);
+                o.Listen(queue);
             });
 
         await host.Transport.SendAsync(Message("poison-1", queue, 3, "customer-3"), TestContext.Current.CancellationToken);
@@ -150,6 +152,53 @@ public sealed class AmazonSqsIntegrationTests(LocalStackFixture localStack) : IC
     }
 
     [Fact]
+    public async Task PermanentHandlerFailureWithNowhereToDeadLetter_IsCountedAndDeleted()
+    {
+        var queue = Name("orders");
+        using var discarded = new CounterProbe("twinbox.inbox.discarded", queue);
+        await using var host = await AmazonSqsTestHost.StartAsync(
+            localStack,
+            new Journal(),
+            new FailureGate(),
+            b => b.AddHandler<RejectingHandler, OrderPlaced>(),
+            o => o.Listen(queue));
+
+        await host.Transport.SendAsync(Message("poison-2", queue, 4, null), TestContext.Current.CancellationToken);
+
+        await WaitForEmptyAsync(queue);
+        Assert.Equal(1, discarded.Value);
+    }
+
+    [Fact]
+    public async Task PermanentHandlerFailureOnAQueueWithARedrivePolicy_IsLeftToIt()
+    {
+        var queue = Name("orders");
+        var redriveQueue = queue + "-redrive";
+        var redriveUrl = await localStack.CreateQueueAsync(redriveQueue);
+        var redriveArn = (await localStack.Sqs.GetQueueAttributesAsync(redriveUrl, ["QueueArn"])).QueueARN;
+        await localStack.Sqs.CreateQueueAsync(new CreateQueueRequest
+        {
+            QueueName = queue,
+            Attributes = new() { ["RedrivePolicy"] = $$"""{"deadLetterTargetArn":"{{redriveArn}}","maxReceiveCount":"1"}""" },
+        });
+        await using var host = await AmazonSqsTestHost.StartAsync(
+            localStack,
+            new Journal(),
+            new FailureGate(),
+            b => b.AddHandler<RejectingHandler, OrderPlaced>(),
+            o =>
+            {
+                o.VisibilityTimeout = TimeSpan.FromSeconds(1);
+                o.Listen(queue);
+            });
+
+        await host.Transport.SendAsync(Message("poison-3", queue, 5, null), TestContext.Current.CancellationToken);
+
+        var redriven = await localStack.ReceiveOneAsync(redriveQueue, Timeout);
+        Assert.Equal("poison-3", AmazonSqsMapping.ToIncoming(redriven, redriveQueue).MessageId);
+    }
+
+    [Fact]
     public async Task TransientHandlerFailure_IsRetriedWithAGrowingAttemptCount()
     {
         var queue = Name("orders");
@@ -161,7 +210,7 @@ public sealed class AmazonSqsIntegrationTests(LocalStackFixture localStack) : IC
             journal,
             gate,
             b => b.AddHandler<RecordingHandler, OrderPlaced>(),
-            o => o.ListenToQueue(queue));
+            o => o.Listen(queue));
 
         await host.Transport.SendAsync(Message("flaky-5", queue, 5, null), TestContext.Current.CancellationToken);
         await gate.WaitForFailuresAsync(2, Timeout);

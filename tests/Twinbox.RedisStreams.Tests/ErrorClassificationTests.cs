@@ -6,8 +6,6 @@ public sealed class ErrorClassificationTests
 {
     [Theory]
     [InlineData("WRONGTYPE Operation against a key holding the wrong kind of value")]
-    [InlineData("NOPERM User app has no permissions to run the 'xadd' command")]
-    [InlineData("NOPERM No permissions to access a key")]
     public void RejectionsRetryingCannotFix_ArePermanent(string message) =>
         Assert.True(RedisStreamsErrors.IsPermanent(new RedisServerException(message)));
 
@@ -17,6 +15,8 @@ public sealed class ErrorClassificationTests
     [InlineData("LOADING Redis is loading the dataset in memory")]
     [InlineData("BUSY Redis is busy running a script.")]
     [InlineData("CLUSTERDOWN The cluster is down")]
+    [InlineData("NOPERM User app has no permissions to run the 'xadd' command")]
+    [InlineData("NOPERM No permissions to access a key")]
     public void ServerConditionsThatPass_AreTransient(string message) =>
         Assert.False(RedisStreamsErrors.IsPermanent(new RedisServerException(message)));
 

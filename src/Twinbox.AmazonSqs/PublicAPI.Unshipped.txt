@@ -11,7 +11,8 @@ Twinbox.AmazonSqs.AmazonSqsOptions.Credentials.get -> Amazon.Runtime.AWSCredenti
 Twinbox.AmazonSqs.AmazonSqsOptions.Credentials.set -> void
 Twinbox.AmazonSqs.AmazonSqsOptions.DeadLetterQueue.get -> string?
 Twinbox.AmazonSqs.AmazonSqsOptions.DeadLetterQueue.set -> void
-Twinbox.AmazonSqs.AmazonSqsOptions.ListenToQueue(string! queue) -> Twinbox.AmazonSqs.AmazonSqsOptions!
+Twinbox.AmazonSqs.AmazonSqsOptions.Listen(string! queue) -> Twinbox.AmazonSqs.AmazonSqsOptions!
+Twinbox.AmazonSqs.AmazonSqsOptions.Listen(string! queue, string! topic) -> Twinbox.AmazonSqs.AmazonSqsOptions!
 Twinbox.AmazonSqs.AmazonSqsOptions.MaxConcurrency.get -> int
 Twinbox.AmazonSqs.AmazonSqsOptions.MaxConcurrency.set -> void
 Twinbox.AmazonSqs.AmazonSqsOptions.MaxNumberOfMessages.get -> int
@@ -24,7 +25,6 @@ Twinbox.AmazonSqs.AmazonSqsOptions.RetryDelay.get -> System.TimeSpan
 Twinbox.AmazonSqs.AmazonSqsOptions.RetryDelay.set -> void
 Twinbox.AmazonSqs.AmazonSqsOptions.ServiceUrl.get -> System.Uri?
 Twinbox.AmazonSqs.AmazonSqsOptions.ServiceUrl.set -> void
-Twinbox.AmazonSqs.AmazonSqsOptions.Subscribe(string! queue, string! topic) -> Twinbox.AmazonSqs.AmazonSqsOptions!
 Twinbox.AmazonSqs.AmazonSqsOptions.VisibilityTimeout.get -> System.TimeSpan
 Twinbox.AmazonSqs.AmazonSqsOptions.VisibilityTimeout.set -> void
 Twinbox.AmazonSqs.AmazonSqsOptions.WaitTimeSeconds.get -> int
@@ -36,4 +36,4 @@ Twinbox.AmazonSqsTwinboxBuilderExtensions
 const Twinbox.AmazonSqs.AmazonSqsTransport.TopicPrefix = "sns:" -> string!
 const Twinbox.AmazonSqs.AmazonSqsTransport.TransportName = "amazonsqs" -> string!
 static Twinbox.AmazonSqsTwinboxBuilderExtensions.UseAmazonSqs(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.AmazonSqs.AmazonSqsOptions!>! configure) -> Twinbox.TwinboxBuilder!
-static Twinbox.AmazonSqsTwinboxBuilderExtensions.UseAmazonSqs(this Twinbox.TwinboxBuilder! builder, string! region) -> Twinbox.TwinboxBuilder!
+static Twinbox.AmazonSqsTwinboxBuilderExtensions.UseAmazonSqs(this Twinbox.TwinboxBuilder! builder, string! region, System.Action<Twinbox.AmazonSqs.AmazonSqsOptions!>? configure = null) -> Twinbox.TwinboxBuilder!

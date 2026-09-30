@@ -39,6 +39,8 @@ A failed send marks the producer span with an error status.
 | `twinbox.outbox.delivery_latency` | Histogram | ms | `destination` | Time from `Send` (row creation) to delivery. Includes any `Delay`. |
 | `twinbox.inbox.processed` | Counter | | | Incoming messages handled. |
 | `twinbox.inbox.duplicates` | Counter | | | Incoming messages skipped as already processed. |
+| `twinbox.inbox.dead_lettered` | Counter | | `transport`, `source` | Incoming messages a transport moved to a dead-letter destination. |
+| `twinbox.inbox.discarded` | Counter | | `transport`, `source` | Incoming messages that failed permanently and were acknowledged because no dead-letter destination exists. See [Transports](transports/index.md#permanent-failures-without-a-dead-letter-destination). |
 
 Useful alerts: `dead_lettered` above zero, `failed` rate climbing for one destination, and the p99 of
 `delivery_latency`. The backlog itself (pending count and age) comes from the health check or the

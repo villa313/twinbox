@@ -9,7 +9,7 @@ replica set is fine for development.
 ```csharp
 builder.Services.AddTwinbox(twinbox => twinbox
     .UseMongoDB("mongodb://localhost:27017/?replicaSet=rs0", databaseName: "shop")
-    .UseRabbitMq(o => o.ConnectionUri = new Uri(rabbitUri))
+    .UseRabbitMQ(o => o.ConnectionUri = new Uri(rabbitUri))
     .Route<OrderPlaced>().To("orders"));
 ```
 

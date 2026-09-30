@@ -19,7 +19,7 @@ public sealed class GooglePubSubIntegrationTests(PubSubFixture pubSub) : IClassF
             journal,
             new FailureGate(),
             b => b.Route<OrderPlaced>().To(topic).AddHandler<RecordingHandler, OrderPlaced>(),
-            o => o.Subscribe(subscription, topic));
+            o => o.Listen(subscription, topic));
 
         await host.SendAsync(new OrderPlaced(1));
         await journal.WaitForAsync(1, Timeout);
@@ -39,7 +39,7 @@ public sealed class GooglePubSubIntegrationTests(PubSubFixture pubSub) : IClassF
             journal,
             new FailureGate(),
             b => b.AddHandler<RecordingHandler, OrderPlaced>(),
-            o => o.Subscribe(subscription, topic));
+            o => o.Listen(subscription, topic));
         var cancellation = TestContext.Current.CancellationToken;
 
         await host.Transport.SendAsync(Message("dup-1", topic, 1, null), cancellation);
@@ -67,7 +67,7 @@ public sealed class GooglePubSubIntegrationTests(PubSubFixture pubSub) : IClassF
             o =>
             {
                 o.EnableMessageOrdering = true;
-                o.Subscribe(subscription, topic);
+                o.Listen(subscription, topic);
             });
         var cancellation = TestContext.Current.CancellationToken;
 
@@ -107,7 +107,7 @@ public sealed class GooglePubSubIntegrationTests(PubSubFixture pubSub) : IClassF
             o =>
             {
                 o.DeadLetterTopic = deadLetterTopic;
-                o.Subscribe(subscription, topic);
+                o.Listen(subscription, topic);
             });
 
         await host.Transport.SendAsync(Message("poison-1", topic, 3, "customer-3"), TestContext.Current.CancellationToken);
@@ -134,7 +134,7 @@ public sealed class GooglePubSubIntegrationTests(PubSubFixture pubSub) : IClassF
             journal,
             gate,
             b => b.AddHandler<RecordingHandler, OrderPlaced>(),
-            o => o.Subscribe(subscription, topic));
+            o => o.Listen(subscription, topic));
 
         await host.Transport.SendAsync(Message("flaky-5", topic, 5, null), TestContext.Current.CancellationToken);
         await gate.WaitForFailuresAsync(2, Timeout);

@@ -14,8 +14,8 @@ builder.Services.AddTwinbox(twinbox => twinbox
     .Route<OrderPlaced>().To("orders.placed"));
 ```
 
-The `Action<NatsOptions>` overload exposes every option. `ConfigureConnection` gets the final say over the client's
-`NatsOpts`, for credentials, NKeys, JWTs or TLS:
+Both overloads expose every option: `UseNats(url, nats => ...)` takes an optional callback after the URL.
+`ConfigureConnection` gets the final say over the client's `NatsOpts`, for credentials, NKeys, JWTs or TLS:
 
 ```csharp
 twinbox.UseNats(nats =>
@@ -58,7 +58,7 @@ time, so batch handlers get batches of one (see [batch handlers](../concepts/bat
 | `DeadLetterUnroutable` | `false` | Dead-letter sends to a subject no stream captures at once instead of retrying them. |
 | `DeadLetterSubject` | `null` | Subject that permanently failed messages are copied to. `null` only logs and terminates them. Cannot be blank. |
 | `AckWait` | 30 s | Time the server waits for an ack before redelivering. Must be positive. |
-| `MaxDeliver` | `10` | Deliveries per message; a failure on the last one dead-letters it. Must be positive. |
+| `MaxDeliveryAttempts` | `10` | Deliveries per message, the first included; a failure on the last one dead-letters it. Must be positive. |
 | `MaxAckPending` | `1000` | Unacknowledged messages outstanding per consumer, across all instances. Must be positive. |
 | `PrefetchCount` | `20` | Messages each listener pulls ahead. `AckWait` runs for them while they wait. Must be positive. |
 | `ConsumerConcurrency` | `1` | Messages processed in parallel per listener. Above 1, ordering is lost. Must be positive. |
@@ -91,8 +91,9 @@ server's delivery count.
 
 **Sending.** Each publish waits for the JetStream ack.
 
-- JetStream API errors 400, 403 or 413, "message too large", permission violations and payloads over the server's
-  maximum: permanent, the outbox row is dead-lettered.
+- JetStream API errors 400 or 413, "message too large" and payloads over the server's maximum: permanent, the outbox
+  row is dead-lettered.
+- Permission violations and 403 rejections: retried, so fixing the user's permissions releases the backlog.
 - No stream captures the subject: retried by the outbox, since the stream may not exist yet. Set
   `DeadLetterUnroutable = true` to dead-letter it at once.
 - Other rejections (for example a full stream or no JetStream response) and connection errors: retried.
@@ -103,13 +104,17 @@ A duplicate ack counts as success. See [retries and dead letters](../concepts/re
 
 - Handler succeeds: the message is acked.
 - Any other exception: the message is nacked with a delay of `RetryDelay * 2^(attempt - 1)`, capped at `MaxRetryDelay`.
-- Handler throws `PermanentDeliveryException`, or fails on delivery `MaxDeliver`: the message is dead-lettered.
+- Handler throws `PermanentDeliveryException`, or fails on delivery `MaxDeliveryAttempts`: the message is dead-lettered.
+- A delivery past `MaxDeliveryAttempts` (its dead-letter copy failed, or earlier deliveries never reported back) is
+  dead-lettered without running the handler again.
 - Host shutting down: in-flight messages are nacked without delay so another instance can take them.
 
 Dead-lettering copies the message to `DeadLetterSubject` with its headers plus `twinbox-error` (exception type and
 message), `twinbox-origin` (`<stream>:<sequence>`) and `Nats-Msg-Id: dead-letter:<origin>`, then terminates the
-original. If the copy fails, the original is nacked and tried again. With no `DeadLetterSubject`, the message is only
-logged and terminated.
+original. If the copy fails, the original is nacked and tried again, however many deliveries it has had: the durable
+consumer is created without a server-side delivery limit, so Twinbox's own `MaxDeliveryAttempts` decides. With no
+`DeadLetterSubject`, the message is logged at error level, counted in `twinbox.inbox.discarded` and terminated (see
+[the transports overview](index.md#permanent-failures-without-a-dead-letter-destination)).
 
 ## Ordering
 
@@ -120,8 +125,8 @@ overtake it. Instances sharing a durable consumer split its messages and do not 
 
 ## Provisioning
 
-- Listeners always create or update their durable consumer with explicit acks, `AckWait`, `MaxDeliver`,
-  `MaxAckPending` and the filter subject. Settings changed on the server are overwritten at startup.
+- Listeners always create or update their durable consumer with explicit acks, `AckWait`, `MaxAckPending`, the
+  filter subject and no delivery limit (`MaxDeliver = -1`). Settings changed on the server are overwritten at startup.
 - Streams are created only when `AutoCreateStreams = true`, and only those registered with `AddStream`. They get
   `DuplicateWindow`; all other settings are server defaults. An existing stream is kept as is.
 - Otherwise every stream must exist beforehand, including one that captures `DeadLetterSubject`.
@@ -130,8 +135,6 @@ overtake it. Instances sharing a durable consumer split its messages and do not 
 
 - No in-progress acks: a handler running longer than `AckWait` gets its message redelivered while it still runs.
   Prefetched messages also use up `AckWait` while they wait.
-- If copying to `DeadLetterSubject` fails on the last allowed delivery, the server will not deliver the message
-  again; it stays unacknowledged in the stream.
 - `DuplicateWindow` applies only to streams created by Twinbox.
-- The destination prefix (`Twinbox:DestinationPrefix`) applies to routed subjects, not to `Listen` or `AddStream`
-  names.
+- The destination prefix (`Twinbox:DestinationPrefix`) applies to routed subjects, an explicit
+  `SendOptions.Destination` and webhook destinations (never to `ReplyTo`), not to `Listen` or `AddStream` names.

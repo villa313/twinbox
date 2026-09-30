@@ -6,23 +6,23 @@ using Twinbox.Transport;
 namespace Twinbox.RabbitMQ;
 
 /// <summary>Publishes to a topic exchange named by the destination, using the message name as the routing key.</summary>
-public sealed partial class RabbitMqTransport : ITransport, IAsyncDisposable
+public sealed partial class RabbitMQTransport : ITransport, IAsyncDisposable
 {
-    public const string DefaultName = "rabbitmq";
+    public const string TransportName = "rabbitmq";
 
     private readonly ILogger _logger;
-    private readonly RabbitMqOptions _options;
-    private readonly RabbitMqChannelPool _channels;
+    private readonly RabbitMQOptions _options;
+    private readonly RabbitMQChannelPool _channels;
     private readonly ConcurrentDictionary<string, bool> _declaredExchanges = new(StringComparer.Ordinal);
 
-    internal RabbitMqTransport(RabbitMqConnection connection, RabbitMqOptions options, ILogger<RabbitMqTransport> logger)
+    internal RabbitMQTransport(RabbitMQConnection connection, RabbitMQOptions options, ILogger<RabbitMQTransport> logger)
     {
         _logger = logger;
         _options = options;
-        _channels = new RabbitMqChannelPool(connection, options.PublishChannelPoolSize);
+        _channels = new RabbitMQChannelPool(connection, options.PublishChannelPoolSize);
     }
 
-    public string Name => DefaultName;
+    public string Name => TransportName;
 
     public async Task SendAsync(TransportMessage message, CancellationToken cancellationToken)
     {
@@ -48,7 +48,7 @@ public sealed partial class RabbitMqTransport : ITransport, IAsyncDisposable
                 message.Destination,
                 message.MessageName,
                 mandatory: true,
-                RabbitMqMessageMapper.ToProperties(message),
+                RabbitMQMessageMapper.ToProperties(message),
                 message.Body,
                 timeout.Token).ConfigureAwait(false);
         }
@@ -57,14 +57,14 @@ public sealed partial class RabbitMqTransport : ITransport, IAsyncDisposable
             discard = true;
             throw new TimeoutException($"Publishing to exchange '{message.Destination}' was not confirmed within {_options.PublishTimeout}.", ex);
         }
-        catch (Exception ex) when (RabbitMqErrors.IsPermanent(ex, _options.DeadLetterUnroutable))
+        catch (Exception ex) when (RabbitMQErrors.IsPermanent(ex, _options.DeadLetterUnroutable))
         {
             _declaredExchanges.TryRemove(message.Destination, out _);
-            throw new PermanentDeliveryException(RabbitMqErrors.Describe(ex, message.Destination, message.MessageName), ex);
+            throw new PermanentDeliveryException(RabbitMQErrors.Describe(ex, message.Destination, message.MessageName), ex);
         }
-        catch (Exception ex) when (RabbitMqErrors.IsUnroutable(ex))
+        catch (Exception ex) when (RabbitMQErrors.IsUnroutable(ex))
         {
-            throw new InvalidOperationException(RabbitMqErrors.Describe(ex, message.Destination, message.MessageName), ex);
+            throw new InvalidOperationException(RabbitMQErrors.Describe(ex, message.Destination, message.MessageName), ex);
         }
         catch (OperationCanceledException)
         {
@@ -86,7 +86,7 @@ public sealed partial class RabbitMqTransport : ITransport, IAsyncDisposable
             return;
         }
 
-        await RabbitMqTopology.DeclareExchangeAsync(channel, exchange, cancellationToken).ConfigureAwait(false);
+        await RabbitMQTopology.DeclareExchangeAsync(channel, exchange, cancellationToken).ConfigureAwait(false);
         if (_declaredExchanges.TryAdd(exchange, true))
         {
             LogExchangeDeclared(exchange);

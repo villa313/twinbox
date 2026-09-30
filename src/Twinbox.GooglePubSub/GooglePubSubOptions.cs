@@ -7,8 +7,9 @@ public sealed class GooglePubSubOptions
 {
     private readonly List<GooglePubSubSubscription> _subscriptions = [];
 
-    /// <summary>Project that short topic and subscription names belong to; full "projects/…/topics/…" names may point elsewhere.</summary>
-    public string ProjectId { get; set; } = string.Empty;
+    /// <summary>Project that short topic and subscription names belong to; full "projects/…/topics/…" names may point
+    /// elsewhere. Required once any short name is used.</summary>
+    public string? ProjectId { get; set; }
 
     /// <summary>host:port of the Pub/Sub emulator, reached without credentials; when null, PUBSUB_EMULATOR_HOST is still honoured.</summary>
     public string? EmulatorHost { get; set; }
@@ -37,13 +38,14 @@ public sealed class GooglePubSubOptions
     /// <summary>Receives copies of permanently failing messages. Pub/Sub drops what reaches a topic without subscriptions.</summary>
     public string? DeadLetterTopic { get; set; }
 
-    /// <summary>Deliveries before an auto-created subscription forwards a message to <see cref="DeadLetterTopic"/>, 5 to 100.</summary>
-    public int MaxDeliveryAttempts { get; set; } = 5;
+    /// <summary>Deliveries, the first included, before an auto-created subscription forwards a message to
+    /// <see cref="DeadLetterTopic"/>; 5 to 100. Only used when both are set.</summary>
+    public int MaxDeliveryAttempts { get; set; } = 10;
 
     internal IReadOnlyList<GooglePubSubSubscription> Subscriptions => _subscriptions;
 
     /// <summary>Consumes <paramref name="subscription"/> of <paramref name="topic"/>; the topic is only used to create the subscription.</summary>
-    public GooglePubSubOptions Subscribe(string subscription, string topic)
+    public GooglePubSubOptions Listen(string subscription, string topic)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(subscription);
         ArgumentException.ThrowIfNullOrWhiteSpace(topic);

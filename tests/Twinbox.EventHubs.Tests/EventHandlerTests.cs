@@ -1,6 +1,7 @@
 using Azure.Messaging.EventHubs;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Twinbox.Tests.Shared;
 using Twinbox.Transport;
 
 namespace Twinbox.EventHubs.Tests;
@@ -47,6 +48,19 @@ public sealed class EventHandlerTests
 
         Assert.Equal(["batch[msg-1,msg-2,msg-3]", "msg-1@1", "msg-2@1", "msg-3@1"], _pipeline.Calls);
         Assert.Equal([1L, 2L, 3L], _checkpoints);
+    }
+
+    [Fact]
+    public async Task PermanentFailureWithoutADeadLetterHub_IsCountedAsDiscarded()
+    {
+        var eventHub = $"orders-{Guid.NewGuid():N}";
+        using var discarded = new CounterProbe("twinbox.inbox.discarded", eventHub);
+        _pipeline.Permanent.Add("msg-1");
+
+        await Handler().HandleAsync(Partition() with { EventHub = eventHub }, Events(1), CancellationToken.None);
+
+        Assert.Equal(1, discarded.Value);
+        Assert.Equal([1L], _checkpoints);
     }
 
     [Fact]

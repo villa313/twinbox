@@ -16,4 +16,7 @@
     <ProjectReference Include="../../src/Twinbox.EventHubs/Twinbox.EventHubs.csproj" />
     <ProjectReference Include="../../src/Twinbox.InMemory/Twinbox.InMemory.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../Shared/CounterProbe.cs" LinkBase="Shared" />
+  </ItemGroup>
 </Project>

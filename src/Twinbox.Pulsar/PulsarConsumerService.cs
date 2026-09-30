@@ -25,6 +25,9 @@ internal sealed partial class PulsarConsumerService(
 
     private PulsarOptions Options => clients.Options;
 
+    internal static TimeSpan RetryDelay(PulsarOptions options, int attempt) =>
+        RetryBackoff.Delay(options.RetryDelay, options.MaxRetryDelay, attempt);
+
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var listeners = Options.Listeners;
@@ -129,20 +132,21 @@ internal sealed partial class PulsarConsumerService(
         }
         catch (PermanentDeliveryException ex)
         {
-            return await DeadLetterAsync(consumer, listener, message, ex, lifetime).ConfigureAwait(false);
+            return await DeadLetterAsync(consumer, listener, message, attempt, ex, lifetime).ConfigureAwait(false);
         }
         catch (Exception) when (lifetime.IsCancellationRequested)
         {
             throw new OperationCanceledException(lifetime);
         }
-        catch (Exception ex) when (attempt > Options.MaxRedeliveryCount)
+        catch (Exception ex) when (attempt >= Options.MaxDeliveryAttempts)
         {
-            return await DeadLetterAsync(consumer, listener, message, ex, lifetime).ConfigureAwait(false);
+            return await DeadLetterAsync(consumer, listener, message, attempt, ex, lifetime).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            LogProcessingFailed(ex, incoming.MessageId, listener.Topic, attempt, Options.NegativeAckRedeliveryDelay);
-            _ = RedeliverLaterAsync(consumer, listener, message.MessageId, lifetime);
+            var delay = RetryDelay(Options, attempt);
+            LogProcessingFailed(ex, incoming.MessageId, listener.Topic, attempt, delay);
+            _ = RedeliverLaterAsync(consumer, listener, message.MessageId, delay, lifetime);
             return false;
         }
 
@@ -151,7 +155,12 @@ internal sealed partial class PulsarConsumerService(
     }
 
     private async Task<bool> DeadLetterAsync(
-        IConsumer<ReadOnlySequence<byte>> consumer, PulsarListener listener, IMessage<ReadOnlySequence<byte>> message, Exception error, CancellationToken lifetime)
+        IConsumer<ReadOnlySequence<byte>> consumer,
+        PulsarListener listener,
+        IMessage<ReadOnlySequence<byte>> message,
+        int attempt,
+        Exception error,
+        CancellationToken lifetime)
     {
         var messageId = PulsarMapping.IdOf(listener.Topic, message);
         var deadLetterTopic = PulsarMapping.DeadLetterTopic(listener.Topic, Options.DeadLetterSuffix);
@@ -168,22 +177,23 @@ internal sealed partial class PulsarConsumerService(
         {
             // Acknowledging without the copy would lose the message, so it is redelivered and dead-lettered again later.
             LogDeadLetterFailed(ex, messageId, listener.Topic, deadLetterTopic);
-            _ = RedeliverLaterAsync(consumer, listener, message.MessageId, lifetime);
+            _ = RedeliverLaterAsync(consumer, listener, message.MessageId, RetryDelay(Options, attempt), lifetime);
             return false;
         }
 
         LogDeadLettered(error, messageId, listener.Topic, deadLetterTopic);
+        InboundDiagnostics.RecordDeadLettered(PulsarTransport.TransportName, listener.Topic);
         await AcknowledgeAsync(consumer, listener, message, lifetime).ConfigureAwait(false);
         return true;
     }
 
     // DotPulsar has no negative acknowledgement, so the message stays unacknowledged until the delay has passed and is then
     // handed back explicitly; the broker bumps its redelivery count, which becomes the next DeliveryAttempt.
-    private async Task RedeliverLaterAsync(IConsumer consumer, PulsarListener listener, MessageId messageId, CancellationToken lifetime)
+    private async Task RedeliverLaterAsync(IConsumer consumer, PulsarListener listener, MessageId messageId, TimeSpan delay, CancellationToken lifetime)
     {
         try
         {
-            await Task.Delay(Options.NegativeAckRedeliveryDelay, lifetime).ConfigureAwait(false);
+            await Task.Delay(delay, lifetime).ConfigureAwait(false);
             await consumer.RedeliverUnacknowledgedMessages([messageId], lifetime).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (lifetime.IsCancellationRequested)
