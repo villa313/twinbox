@@ -30,5 +30,5 @@ Twinbox.EventHubs.EventHubsTransport.SendAsync(Twinbox.Transport.TransportMessag
 Twinbox.EventHubsTwinboxBuilderExtensions
 const Twinbox.EventHubs.EventHubsTransport.TransportName = "eventhubs" -> string!
 static Twinbox.EventHubsTwinboxBuilderExtensions.UseEventHubs(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.EventHubs.EventHubsOptions!>! configure) -> Twinbox.TwinboxBuilder!
-static Twinbox.EventHubsTwinboxBuilderExtensions.UseEventHubs(this Twinbox.TwinboxBuilder! builder, string! connectionString) -> Twinbox.TwinboxBuilder!
-static Twinbox.EventHubsTwinboxBuilderExtensions.UseEventHubs(this Twinbox.TwinboxBuilder! builder, string! fullyQualifiedNamespace, Azure.Core.TokenCredential! credential) -> Twinbox.TwinboxBuilder!
+static Twinbox.EventHubsTwinboxBuilderExtensions.UseEventHubs(this Twinbox.TwinboxBuilder! builder, string! connectionString, System.Action<Twinbox.EventHubs.EventHubsOptions!>? configure = null) -> Twinbox.TwinboxBuilder!
+static Twinbox.EventHubsTwinboxBuilderExtensions.UseEventHubs(this Twinbox.TwinboxBuilder! builder, string! fullyQualifiedNamespace, Azure.Core.TokenCredential! credential, System.Action<Twinbox.EventHubs.EventHubsOptions!>? configure = null) -> Twinbox.TwinboxBuilder!

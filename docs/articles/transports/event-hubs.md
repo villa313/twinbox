@@ -1,6 +1,6 @@
 # Azure Event Hubs
 
-`Twinbox.EventHubs` · transport name `"eventhubs"`
+`Twinbox.EventHubs` · transport name `"eventhubs"` (`EventHubsTransport.TransportName`)
 
 A route destination is the name of an event hub in the configured namespace. Each outbox message becomes one event,
 sent with the partition key so events of one key land on one partition. On the receiving side Twinbox runs a partition
@@ -9,16 +9,18 @@ handled an event.
 
 ## Setup
 
-With a connection string (send only):
+With a connection string, and optionally a callback for everything else, listeners included:
 
 ```csharp
 builder.Services.AddTwinbox(twinbox => twinbox
     .UseEntityFrameworkCore<AppDbContext>()
-    .UseEventHubs(builder.Configuration.GetConnectionString("EventHubs")!)
+    .UseEventHubs(
+        builder.Configuration.GetConnectionString("EventHubs")!,
+        options => options.Listen("orders", "billing", storageConnectionString, "checkpoints"))
     .Route<OrderPlaced>().To("orders"));
 ```
 
-With a token credential (send only):
+With a token credential:
 
 ```csharp
 builder.Services.AddTwinbox(twinbox => twinbox
@@ -27,7 +29,7 @@ builder.Services.AddTwinbox(twinbox => twinbox
     .Route<OrderPlaced>().To("orders"));
 ```
 
-To listen, use the options overload:
+Or set everything on the options:
 
 ```csharp
 builder.Services.AddTwinbox(twinbox => twinbox
@@ -107,7 +109,9 @@ Receiving: Event Hubs has no acknowledgement or redelivery, so Twinbox retries i
   limit. Only that partition waits.
 - `PermanentDeliveryException`: the event is copied to `DeadLetterEventHub` with properties `twinbox-error` and
   `twinbox-origin` (`<event hub>:<partition>:<sequence number>`), then checkpointed past. Without a dead-letter hub
-  it is logged and skipped. If the copy fails, the event is retried like a handler failure.
+  it is logged at error level, counted in `twinbox.inbox.discarded` and checkpointed past (see
+  [the transports overview](index.md#permanent-failures-without-a-dead-letter-destination)). If the copy fails, the
+  event is retried like a handler failure.
 
 The delivery attempt is counted in memory and starts again at 1 after a restart or a partition moving to another
 instance. A failed checkpoint write only means the event may be read again, which the inbox deduplicates.
@@ -132,6 +136,5 @@ or permission), it retries with backoff up to 30 seconds until it succeeds or th
 
 - A handler that keeps throwing a transient exception stalls its partition forever. Throw `PermanentDeliveryException`
   for messages that can never succeed.
-- Without `DeadLetterEventHub`, permanently failing events are dropped after logging.
-- The two shortcut overloads (connection string, namespace plus credential) cannot listen; use the options overload.
+- Without `DeadLetterEventHub`, permanently failing events are dropped after logging and counting them.
 - One consumer group per `Listen` call; the same event hub under two consumer groups reports the same `Source`.

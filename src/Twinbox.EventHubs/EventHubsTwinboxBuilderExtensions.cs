@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Azure.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -9,14 +10,24 @@ namespace Twinbox;
 
 public static class EventHubsTwinboxBuilderExtensions
 {
-    public static TwinboxBuilder UseEventHubs(this TwinboxBuilder builder, string connectionString)
+    [SuppressMessage("ApiDesign", "RS0026", Justification = "The overloads differ by required leading parameters, so calls cannot be ambiguous.")]
+    public static TwinboxBuilder UseEventHubs(this TwinboxBuilder builder, string connectionString, Action<EventHubsOptions>? configure = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
-        return builder.UseEventHubs(options => options.ConnectionString = connectionString);
+        return builder.UseEventHubs(options =>
+        {
+            options.ConnectionString = connectionString;
+            configure?.Invoke(options);
+        });
     }
 
-    /// <summary>For token credentials such as DefaultAzureCredential; use the options overload to also listen.</summary>
-    public static TwinboxBuilder UseEventHubs(this TwinboxBuilder builder, string fullyQualifiedNamespace, TokenCredential credential)
+    /// <summary>For token credentials such as DefaultAzureCredential.</summary>
+    [SuppressMessage("ApiDesign", "RS0026", Justification = "The overloads differ by required leading parameters, so calls cannot be ambiguous.")]
+    public static TwinboxBuilder UseEventHubs(
+        this TwinboxBuilder builder,
+        string fullyQualifiedNamespace,
+        TokenCredential credential,
+        Action<EventHubsOptions>? configure = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(fullyQualifiedNamespace);
         ArgumentNullException.ThrowIfNull(credential);
@@ -24,6 +35,7 @@ public static class EventHubsTwinboxBuilderExtensions
         {
             options.FullyQualifiedNamespace = fullyQualifiedNamespace;
             options.Credential = credential;
+            configure?.Invoke(options);
         });
     }
 

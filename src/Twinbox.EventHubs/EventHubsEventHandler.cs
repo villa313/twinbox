@@ -12,13 +12,8 @@ internal sealed partial class EventHubsEventHandler(EventHubsClients clients, II
 {
     private readonly ILogger _logger = logger;
 
-    /// <summary>Doubles <see cref="EventHubsOptions.RetryDelay"/> per failed attempt, capped at <see cref="EventHubsOptions.MaxRetryDelay"/>.</summary>
-    internal static TimeSpan RetryDelay(EventHubsOptions options, int attempt)
-    {
-        var factor = Math.Pow(2, Math.Clamp(attempt - 1, 0, 30));
-        var ticks = Math.Min(options.RetryDelay.Ticks * factor, options.MaxRetryDelay.Ticks);
-        return TimeSpan.FromTicks((long)ticks);
-    }
+    internal static TimeSpan RetryDelay(EventHubsOptions options, int attempt) =>
+        RetryBackoff.Delay(options.RetryDelay, options.MaxRetryDelay, attempt);
 
     /// <summary>Returns once every event is handled and checkpointed; throws <see cref="OperationCanceledException"/> when the partition stops first.</summary>
     public async Task HandleAsync(PartitionContext partition, IReadOnlyList<EventData> events, CancellationToken cancellationToken)
@@ -111,6 +106,7 @@ internal sealed partial class EventHubsEventHandler(EventHubsClients clients, II
         if (clients.Options.DeadLetterEventHub is not { } deadLetterEventHub)
         {
             LogSkipped(error, messageId, partition.EventHub, partition.PartitionId, data.SequenceNumber);
+            InboundDiagnostics.RecordDiscarded(EventHubsTransport.TransportName, partition.EventHub);
             return true;
         }
 
@@ -119,6 +115,7 @@ internal sealed partial class EventHubsEventHandler(EventHubsClients clients, II
             var copy = EventHubsMapping.ToDeadLetter(data, partition.EventHub, partition.PartitionId, error);
             await clients.SendAsync(deadLetterEventHub, copy, data.PartitionKey, cancellationToken).ConfigureAwait(false);
             LogDeadLettered(error, messageId, partition.EventHub, deadLetterEventHub);
+            InboundDiagnostics.RecordDeadLettered(EventHubsTransport.TransportName, partition.EventHub);
             return true;
         }
         catch (Exception) when (cancellationToken.IsCancellationRequested)
