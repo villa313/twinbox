@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Google Cloud Pub/Sub transport for Twinbox: publishes to topics with optional ordering keys, and acknowledges each subscription message only after the inbox has handled it.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Twinbox/Twinbox.csproj" />
+    <PackageReference Include="Google.Cloud.PubSub.V1" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Twinbox.GooglePubSub.Tests" />
+  </ItemGroup>
+</Project>

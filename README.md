@@ -180,7 +180,7 @@ Endpoints without a derived type deliver `WebhookReceived`; handle it with `IHan
 ## Features
 
 - **Storage:** EF Core (SQL Server, PostgreSQL, MySQL, Oracle, SQLite), Dapper/ADO.NET (SQL Server, PostgreSQL, MySQL, Oracle), MongoDB, in-memory
-- **Transports:** Azure Service Bus, Azure Event Hubs, Amazon SQS/SNS, RabbitMQ, Kafka, NATS JetStream, Redis Streams, Apache Pulsar, HTTP APIs and webhooks, local delivery, in-memory
+- **Transports:** Azure Service Bus, Azure Event Hubs, Amazon SQS/SNS, Google Cloud Pub/Sub, RabbitMQ, Kafka, NATS JetStream, Redis Streams, Apache Pulsar, HTTP APIs and webhooks, local delivery, in-memory
 - **Delivery:** at-least-once, plus an inbox for effectively-once processing that is deduplicated per handler
 - **Retries:** exponential backoff with jitter and a circuit breaker per destination, configurable from
   `appsettings.json` (`Twinbox:Destinations:{name}:Retry`)
