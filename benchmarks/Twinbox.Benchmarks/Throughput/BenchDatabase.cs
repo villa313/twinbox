@@ -20,7 +20,12 @@ internal abstract class BenchDatabase : IAsyncDisposable
 
     public const string InsertAdoOrder = "INSERT INTO ado_orders (reference) VALUES (@reference)";
 
+    public virtual string? Analyze => null;
+
     public abstract Task StartAsync();
+
+    /// <summary>Truncating keeps runs independent; deleting leaves dead rows that slow the next run.</summary>
+    public virtual string Clear(string table) => "TRUNCATE TABLE " + table;
 
     public virtual string AdoTable(string name) => throw new NotSupportedException();
 
@@ -38,6 +43,8 @@ internal sealed class PostgreSqlBench : BenchDatabase
     private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:17-alpine").Build();
 
     public override string Name => "PostgreSQL 17";
+
+    public override string? Analyze => "ANALYZE";
 
     public override string CreateAdoOrders => "CREATE TABLE IF NOT EXISTS ado_orders (reference varchar(64) NOT NULL)";
 
@@ -93,6 +100,8 @@ internal sealed class SqliteBench : BenchDatabase
     public override string Name => "SQLite (file)";
 
     public override bool HasAdoStore => false;
+
+    public override string Clear(string table) => "DELETE FROM " + table;
 
     public override Task StartAsync() => Task.CompletedTask;
 

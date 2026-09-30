@@ -53,8 +53,8 @@ internal sealed class BenchStore(BenchDatabase database, bool ado)
         {
             await using var scope = services.CreateAsyncScope();
             var context = scope.ServiceProvider.GetRequiredService<BenchContext>();
-            await context.Database.EnsureCreatedAsync();
-            await context.ResetAsync();
+            await context.CreateTablesAsync();
+            await context.ClearAsync(database.Clear);
             return;
         }
 
@@ -65,13 +65,26 @@ internal sealed class BenchStore(BenchDatabase database, bool ado)
         foreach (var statement in new[]
         {
             database.CreateAdoOrders,
-            "DELETE FROM ado_orders",
-            "DELETE FROM " + database.AdoTable("TwinboxOutbox"),
-            "DELETE FROM " + database.AdoTable("TwinboxInbox"),
+            database.Clear("ado_orders"),
+            database.Clear(database.AdoTable("TwinboxOutbox")),
+            database.Clear(database.AdoTable("TwinboxInbox")),
         })
         {
             await Execute(connection, statement);
         }
+    }
+
+    /// <summary>Refreshes planner statistics after a bulk load, as a long-running database would have them.</summary>
+    public async Task AnalyzeAsync()
+    {
+        if (database.Analyze is not { } analyze)
+        {
+            return;
+        }
+
+        await using var connection = database.Connect();
+        await connection.OpenAsync();
+        await Execute(connection, analyze);
     }
 
     private static async Task Execute(DbConnection connection, string sql)

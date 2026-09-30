@@ -29,6 +29,7 @@ internal static class DispatchScenario
                 {
                     await store.ResetAsync();
                     await SeedAsync(outbox, payload, messages);
+                    await store.AnalyzeAsync();
                 },
                 async () =>
                 {
