@@ -96,14 +96,14 @@ internal sealed partial class RelationalDialect
                     [ContentType] nvarchar(128) NOT NULL,
                     [Headers] nvarchar(max) NOT NULL,
                     [TraceParent] nvarchar(64) NULL,
-                    [CreatedAt] datetimeoffset NOT NULL,
-                    [AvailableAt] datetimeoffset NOT NULL,
+                    [CreatedAt] datetimeoffset(6) NOT NULL,
+                    [AvailableAt] datetimeoffset(6) NOT NULL,
                     [Attempts] int NOT NULL,
                     [Status] int NOT NULL,
                     [LeaseOwner] nvarchar(256) NULL,
-                    [LeaseUntil] datetimeoffset NULL,
+                    [LeaseUntil] datetimeoffset(6) NULL,
                     [LastError] nvarchar(2000) NULL,
-                    [SentAt] datetimeoffset NULL);
+                    [SentAt] datetimeoffset(6) NULL);
                 CREATE UNIQUE INDEX [IX_{_settings.OutboxTable}_Id] ON {Outbox} ([Id]);
                 CREATE INDEX [IX_{_settings.OutboxTable}_Status_AvailableAt] ON {Outbox} ([Status], [AvailableAt]);
                 CREATE INDEX [IX_{_settings.OutboxTable}_PartitionKey_Status] ON {Outbox} ([PartitionKey], [Status]);
@@ -114,7 +114,7 @@ internal sealed partial class RelationalDialect
                     [MessageId] nvarchar(256) NOT NULL,
                     [Consumer] nvarchar(256) NOT NULL,
                     [Source] nvarchar(256) NOT NULL,
-                    [ProcessedAt] datetimeoffset NOT NULL,
+                    [ProcessedAt] datetimeoffset(6) NOT NULL,
                     CONSTRAINT [PK_{_settings.InboxTable}] PRIMARY KEY ([MessageId], [Consumer]));
                 CREATE INDEX [IX_{_settings.InboxTable}_ProcessedAt] ON {Inbox} ([ProcessedAt]);
             END;

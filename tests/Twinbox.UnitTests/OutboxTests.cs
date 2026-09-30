@@ -163,6 +163,18 @@ public sealed class OutboxTests
     }
 
     [Fact]
+    public async Task EmptyPartitionKey_MeansNoPartition()
+    {
+        await using var host = TestHost.Create(b => b.Route<OrderPlaced>().To("orders"));
+
+        await host.SendAsync(o => o.Send(new OrderPlaced(1), new SendOptions { PartitionKey = string.Empty }));
+
+        var row = Assert.Single(host.Harness.Store.Snapshot());
+        Assert.Null(row.PartitionKey);
+        Assert.Null(row.TenantId);
+    }
+
+    [Fact]
     public async Task Store_RecordsSentStatus()
     {
         await using var host = TestHost.Create(b => b.Route<OrderPlaced>().To("orders"));

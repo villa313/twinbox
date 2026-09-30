@@ -44,8 +44,9 @@ internal sealed class MessagePreparer(
                 MessageName = name,
                 Transport = messageRoutes[i].Transport ?? transports.ResolveDefaultName(),
                 Destination = messageRoutes[i].Destination,
-                PartitionKey = sendOptions?.PartitionKey,
-                TenantId = tenantId,
+                // Empty means "none": some databases (Oracle) can't tell an empty string from NULL.
+                PartitionKey = NullIfEmpty(sendOptions?.PartitionKey),
+                TenantId = NullIfEmpty(tenantId),
                 Payload = payload,
                 ContentType = serializer.ContentType,
                 Headers = headers,
@@ -81,4 +82,6 @@ internal sealed class MessagePreparer(
         options.Value.DestinationPrefix is { Length: > 0 } prefix
             ? [.. routes.Select(r => r with { Destination = prefix + r.Destination })]
             : routes;
+
+    private static string? NullIfEmpty(string? value) => string.IsNullOrEmpty(value) ? null : value;
 }

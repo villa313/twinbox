@@ -36,6 +36,24 @@ public sealed class ModelTests
         Assert.Equal([TwinboxEntities.Inbox, TwinboxEntities.Outbox], names);
     }
 
+    [Fact]
+    public void Timestamps_KeepMicrosecondsOnEveryProvider()
+    {
+        var mySql = ModelFor(o => o.UseMySQL("server=localhost;database=twinbox;user=twinbox;password=twinbox"));
+        var sqlServer = ModelFor(o => o.UseSqlServer("Server=localhost;Database=twinbox"));
+
+        Assert.Equal(6, mySql.FindEntityType(TwinboxEntities.Outbox)!.FindProperty("AvailableAt")!.GetPrecision());
+        Assert.Equal(6, sqlServer.FindEntityType(TwinboxEntities.Outbox)!.FindProperty("AvailableAt")!.GetPrecision());
+    }
+
+    private static IModel ModelFor(Action<DbContextOptionsBuilder<ShopContext>> configure)
+    {
+        var options = new DbContextOptionsBuilder<ShopContext>();
+        configure(options);
+        using var context = new ShopContext(options.Options);
+        return context.Model;
+    }
+
     private static IModel BuildModel(Action<TwinboxModelOptions> configure)
     {
         var builder = new ModelBuilder();

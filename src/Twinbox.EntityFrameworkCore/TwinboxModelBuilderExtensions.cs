@@ -50,15 +50,22 @@ public static class TwinboxModelBuilderExtensions
                     headers => headers));
 
             // Oracle's provider maps unbounded binary and text to RAW(2000) and NVARCHAR2(2000), too small for payloads.
-            if (modelBuilder.Model.GetAnnotations().Any(a => a.Name.StartsWith("Oracle:", StringComparison.Ordinal)))
+            if (HasProviderAnnotation(modelBuilder, "Oracle:"))
             {
                 outbox.Property(m => m.Payload).HasColumnType("BLOB");
                 outbox.Property(m => m.Headers).HasColumnType("NCLOB");
             }
+
+            // Microseconds everywhere: some MySQL providers default to whole seconds, making messages look due early.
+            outbox.Property(m => m.CreatedAt).HasPrecision(6);
+            outbox.Property(m => m.AvailableAt).HasPrecision(6);
+            outbox.Property(m => m.LeaseUntil).HasPrecision(6);
+            outbox.Property(m => m.SentAt).HasPrecision(6);
         });
 
         modelBuilder.SharedTypeEntity<InboxRecord>(TwinboxEntities.Inbox, inbox =>
         {
+            inbox.Property(r => r.ProcessedAt).HasPrecision(6);
             MapTable(inbox.Metadata, options.InboxTable, options.Schema);
             inbox.HasKey(r => new { r.MessageId, r.Consumer });
             inbox.HasIndex(r => r.ProcessedAt);
@@ -69,6 +76,9 @@ public static class TwinboxModelBuilderExtensions
 
         return modelBuilder;
     }
+
+    private static bool HasProviderAnnotation(ModelBuilder modelBuilder, string prefix) =>
+        modelBuilder.Model.GetAnnotations().Any(a => a.Name.StartsWith(prefix, StringComparison.Ordinal));
 
     // An explicit ToTable would stop naming conventions from rewriting the default name, so only set what was asked for.
     private static void MapTable(IMutableEntityType entityType, string? table, string? schema)
