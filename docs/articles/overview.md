@@ -24,6 +24,11 @@ You keep your own `DbContext`, `DbConnection` or `IClientSessionHandle`. Twinbox
 
 ## Packages
 
+Most apps install two packages, a store for their database and a transport for their broker; the core `Twinbox`
+package comes with them. The [home page](../index.md#which-packages-do-i-need) maps each database and broker to its
+package and setup call, and `dotnet new install Twinbox.Templates` followed by
+`dotnet new twinbox --store <store> --transport <transport>` generates a working app for any pair.
+
 | Package | What it adds |
 |---|---|
 | `Twinbox` | The core: `AddTwinbox`, dispatcher, inbox pipeline, retries, routing, tenancy, health checks. |
@@ -39,6 +44,7 @@ You keep your own `DbContext`, `DbConnection` or `IClientSessionHandle`. Twinbox
 | `Twinbox.Dashboard` | Operations page and JSON API: stats, browsing, replay and removal of dead messages. |
 | `Twinbox.Aspire`, `Twinbox.Aspire.Hosting` | Service defaults (OpenTelemetry, health check) and AppHost integration. |
 | `Twinbox.Testing` | Deterministic test harness and store conformance suites. |
+| `Twinbox.Templates` | `dotnet new twinbox`: an ASP.NET Core app wired with the store and transport you pick. |
 
 All packages target .NET 8 and .NET 10 and are trimming and Native AOT compatible. A source generator in the core
 package registers handlers without reflection.

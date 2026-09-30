@@ -10,6 +10,44 @@ a bus abstraction or a special transaction API.
 >
 > **Docs:** https://villa313.github.io/twinbox/
 
+## Which packages do I need?
+
+A typical app installs **two packages: one store and one transport**. The core `Twinbox` package comes with them.
+
+```bash
+dotnet new install Twinbox.Templates
+dotnet new twinbox --store efcore-postgres --transport rabbitmq   # the fastest start: a working app to copy from
+```
+
+| Your database | Package | Setup call |
+|---|---|---|
+| EF Core (SQL Server, PostgreSQL, MySQL, Oracle, SQLite) | `Twinbox.EntityFrameworkCore` | `UseEntityFrameworkCore<TContext>()` |
+| SQL Server with Dapper / ADO.NET | `Twinbox.SqlServer` | `UseSqlServer(connectionString)` |
+| PostgreSQL with Dapper / ADO.NET | `Twinbox.PostgreSql` | `UsePostgreSql(connectionString)` |
+| MySQL with Dapper / ADO.NET | `Twinbox.MySql` | `UseMySql(connectionString)` |
+| Oracle with Dapper / ADO.NET | `Twinbox.Oracle` | `UseOracle(connectionString)` |
+| MongoDB | `Twinbox.MongoDB` | `UseMongoDB(connectionString, databaseName)` |
+| None yet (tests, demos) | built into `Twinbox` | `UseInMemoryStore()` |
+
+| Your broker | Package | Setup call |
+|---|---|---|
+| Azure Service Bus | `Twinbox.AzureServiceBus` | `UseAzureServiceBus(connectionString)` |
+| Azure Event Hubs | `Twinbox.EventHubs` | `UseEventHubs(connectionString)` |
+| Amazon SQS / SNS | `Twinbox.AmazonSqs` | `UseAmazonSqs(region)` |
+| Google Cloud Pub/Sub | `Twinbox.GooglePubSub` | `UseGooglePubSub(projectId)` |
+| RabbitMQ | `Twinbox.RabbitMQ` | `UseRabbitMQ(connectionString)` |
+| Kafka | `Twinbox.Kafka` | `UseKafka(bootstrapServers)` |
+| NATS JetStream | `Twinbox.Nats` | `UseNats(url)` |
+| Redis Streams | `Twinbox.RedisStreams` | `UseRedisStreams(configuration)` |
+| Apache Pulsar | `Twinbox.Pulsar` | `UsePulsar(serviceUrl)` |
+| HTTP APIs and outgoing webhooks | `Twinbox.Http` | `UseHttp(http => ...)` |
+| None (in-process events) | built into `Twinbox` | `UseLocalDelivery()` |
+
+Optional add-ons: `Twinbox.Dashboard` (operations page), `Twinbox.Webhooks` (signed webhook ingress),
+`Twinbox.Testing` (test harness), `Twinbox.Aspire` / `Twinbox.Aspire.Hosting` (.NET Aspire),
+`Twinbox.AzureFunctions` (dispatch from Functions). `Twinbox.Abstractions` holds `IOutbox` and `IHandle<T>` alone,
+for libraries that only define messages and handlers.
+
 ## Why
 
 A service that writes to its database and then publishes to a broker can fail between the two. It either loses
