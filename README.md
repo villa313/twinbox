@@ -142,6 +142,40 @@ twinbox
 - Each endpoint uses the `IHttpClientFactory` client `twinbox-http:{name}`. Add auth handlers with
   `e.ConfigureHttpClient = c => c.AddHttpMessageHandler<VendorAuthHandler>()`, or with
   `services.AddHttpClient(HttpTransport.HttpClientName("partner-webhook"))` for endpoints defined in configuration.
+## Receiving webhooks
+
+`Twinbox.Webhooks` verifies a webhook's signature over the raw body, stores it in the outbox and answers 200 right
+away. Your handler runs afterwards through the dispatcher, with retries, and once per provider event id, so a
+provider retrying an event it already delivered doesn't run your code twice.
+
+```csharp
+builder.Services.AddTwinbox(twinbox => twinbox
+    .UseSqlServer(connectionString)
+    .AddWebhooks()
+    .AddHandler<StripeEvents, StripeEvent>());
+
+app.MapWebhookInbox<StripeEvent>("/webhooks/stripe",
+    w => w.VerifyStripe(WebhookSecrets.FromConfiguration("Stripe:WebhookSecret")));
+app.MapWebhookInbox("/webhooks/github", w => w.VerifyGitHub(WebhookSecrets.Of(gitHubSecret)));
+
+public sealed record StripeEvent : WebhookReceived;
+
+public class StripeEvents : IHandle<StripeEvent>
+{
+    public Task HandleAsync(StripeEvent webhook, MessageContext context, CancellationToken ct)
+    {
+        // webhook.EventId, webhook.EventType, webhook.Body (raw JSON), webhook.Headers
+    }
+}
+```
+
+Built-in verifiers: `VerifyStripe`, `VerifyShopify`, `VerifyGitHub`, `VerifyStandardWebhooks` (also Svix) and
+`VerifyHmac` for any header-borne HMAC; `Verify(IWebhookVerifier)` plugs in your own. Every endpoint needs one.
+Pass several secrets, or a configuration array, to rotate without dropping webhooks. Bad or stale signatures get
+401 (timestamps must be within 5 minutes where the scheme signs one), bodies over 1 MB get 413
+(`WithMaxBodySize`), and a failed write gets 500 so the provider retries. The event type and id of Shopify, GitHub
+and generic-HMAC webhooks come from headers their signatures don't cover, so don't trust them beyond routing.
+Endpoints without a derived type deliver `WebhookReceived`; handle it with `IHandle<WebhookReceived>`.
 
 ## Features
 
