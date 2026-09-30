@@ -1,6 +1,6 @@
 # Apache Kafka
 
-`Twinbox.Kafka` · transport name `"kafka"`
+`Twinbox.Kafka` · transport name `"kafka"` (`KafkaTransport.TransportName`)
 
 A route destination is a Kafka topic. Each outbox message becomes one record keyed by its partition key. On the
 receiving side Twinbox runs one consumer per listened topic and consumer group, and commits a record's offset only after
@@ -8,12 +8,12 @@ the inbox has handled it.
 
 ## Setup
 
-With bootstrap servers (send only):
+With bootstrap servers, and optionally a callback for everything else:
 
 ```csharp
 builder.Services.AddTwinbox(twinbox => twinbox
     .UseEntityFrameworkCore<AppDbContext>()
-    .UseKafka("localhost:9092")
+    .UseKafka("localhost:9092", kafka => kafka.Listen("payments", "billing"))
     .Route<OrderPlaced>().To("orders"));
 ```
 
@@ -87,8 +87,8 @@ key. A missing content type becomes `application/octet-stream`. Records without 
 ## Failures, retries and dead letters
 
 Sending: these error codes are permanent and dead-letter the outbox row: `UnknownTopicOrPart`, `Local_UnknownTopic`,
-`TopicException`, `TopicAuthorizationFailed`, `MsgSizeTooLarge`, `InvalidConfig` and `Local_InvalidArg`. Anything else
-is retried by the outbox. A fatal producer error replaces the producer. See
+`TopicException`, `MsgSizeTooLarge`, `InvalidConfig` and `Local_InvalidArg`. Anything else is retried by the outbox,
+including authorization failures, so fixing an ACL releases the backlog instead of finding it dead-lettered. A fatal producer error replaces the producer. See
 [Retries and dead letters](../concepts/retries-and-dead-letters.md).
 
 Receiving: Kafka has no per-record acknowledgement, so Twinbox retries in place.
@@ -98,7 +98,9 @@ Receiving: Kafka has no per-record acknowledgement, so Twinbox retries in place.
   doubling up to `MaxRetryDelay`. There is no attempt limit. Other partitions keep flowing.
 - `PermanentDeliveryException`: the record is copied to `DeadLetterTopic` with its key, value and headers, plus
   `twinbox-error` and `twinbox-origin` (`<topic>:<partition>:<offset>`), then committed past. Without a dead-letter
-  topic it is logged and skipped. If the copy fails, the record is retried like a handler failure.
+  topic it is logged at error level, counted in `twinbox.inbox.discarded` and committed past (see
+  [the transports overview](index.md#permanent-failures-without-a-dead-letter-destination)). If the copy fails, the
+  record is retried like a handler failure.
 
 The delivery attempt is counted in memory and resets after a restart or rebalance. A failed commit only means the record
 may be read again, which the inbox deduplicates.
@@ -124,8 +126,7 @@ are. With it off, topics must exist (unless the brokers auto-create them); a mis
 
 - A handler that keeps throwing a transient exception stalls its partition forever. Throw `PermanentDeliveryException`
   for records that can never succeed.
-- Without `DeadLetterTopic`, permanently failing records are dropped after logging.
+- Without `DeadLetterTopic`, permanently failing records are dropped after logging and counting them.
 - One consumer thread per listener handles all its assigned partitions one batch at a time; scale out with more
   instances or partitions.
 - Offsets are committed synchronously per record or batch, which trades throughput for simple redelivery bounds.
-- `UseKafka(bootstrapServers)` cannot register listeners; use the options overload.

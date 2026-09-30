@@ -7,11 +7,11 @@ internal static class KafkaErrors
     /// <summary>True for rejections a retry cannot fix, so the outbox dead-letters instead of backing off.</summary>
     public static bool IsPermanent(Exception error) => error is KafkaException { Error.Code: var code } && IsPermanent(code);
 
+    // Authorization failures stay transient: an ACL fix should release the backlog rather than find it dead-lettered.
     public static bool IsPermanent(ErrorCode code) => code is
         ErrorCode.UnknownTopicOrPart or
         ErrorCode.Local_UnknownTopic or
         ErrorCode.TopicException or
-        ErrorCode.TopicAuthorizationFailed or
         ErrorCode.MsgSizeTooLarge or
         ErrorCode.InvalidConfig or
         ErrorCode.Local_InvalidArg;

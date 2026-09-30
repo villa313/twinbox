@@ -1,6 +1,7 @@
 using System.Text;
 using Confluent.Kafka;
 using Twinbox.Storage;
+using Twinbox.Tests.Shared;
 using Twinbox.Transport;
 
 namespace Twinbox.Kafka.Tests;
@@ -114,6 +115,24 @@ public sealed class KafkaIntegrationTests(KafkaFixture broker) : IClassFixture<K
         Assert.Contains("can never be handled", Header(deadLettered, KafkaMapping.ErrorHeader), StringComparison.Ordinal);
         Assert.Equal($"{topic}:0:0", Header(deadLettered, KafkaMapping.OriginHeader));
         await WaitForCommitAsync(group, topic, 1);
+    }
+
+    [Fact]
+    public async Task PermanentHandlerFailureWithoutADeadLetterTopic_IsCountedAndSkipped()
+    {
+        var (topic, group) = Names();
+        using var discarded = new CounterProbe("twinbox.inbox.discarded", topic);
+        await using var host = await KafkaTestHost.StartAsync(
+            broker.BootstrapServers,
+            new Journal(),
+            new FailureGate(),
+            b => b.AddHandler<RejectingHandler, OrderPlaced>(),
+            o => o.Listen(topic, group));
+
+        await host.Transport.SendAsync(Message("poison-2", topic, 4, "customer-4"), TestContext.Current.CancellationToken);
+
+        await WaitForCommitAsync(group, topic, 1);
+        Assert.Equal(1, discarded.Value);
     }
 
     [Fact]
