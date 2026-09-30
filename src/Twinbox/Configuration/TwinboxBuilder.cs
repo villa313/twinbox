@@ -1,4 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Twinbox.Inbox;
@@ -89,7 +91,6 @@ public sealed class TwinboxBuilder
         return this;
     }
 
-    /// <summary>Also writes and reads another system's header names; see <see cref="HeaderProfile"/>.</summary>
     /// <summary>Runs <typeparamref name="TFilter"/> around every handler call; filters run in registration order.</summary>
     public TwinboxBuilder AddFilter<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TFilter>()
         where TFilter : class, IMessageFilter
@@ -105,6 +106,7 @@ public sealed class TwinboxBuilder
         return this;
     }
 
+    /// <summary>Also writes and reads another system's header names; see <see cref="HeaderProfile"/>.</summary>
     public TwinboxBuilder UseHeaderProfile(HeaderProfile profile)
     {
         ArgumentNullException.ThrowIfNull(profile);
@@ -137,6 +139,17 @@ public sealed class TwinboxBuilder
         ArgumentNullException.ThrowIfNull(serializer);
         Services.Replace(ServiceDescriptor.Singleton(serializer));
         return this;
+    }
+
+    /// <summary>
+    /// Keeps the default JSON format but takes message metadata from <paramref name="typeInfoResolver"/>, e.g. a
+    /// source-generated <see cref="System.Text.Json.Serialization.JsonSerializerContext"/>, as Native AOT requires.
+    /// </summary>
+    public TwinboxBuilder UseJsonTypeInfoResolver(IJsonTypeInfoResolver typeInfoResolver)
+    {
+        ArgumentNullException.ThrowIfNull(typeInfoResolver);
+        return UseSerializer(new SystemTextJsonMessageSerializer(
+            new JsonSerializerOptions(JsonSerializerDefaults.Web) { TypeInfoResolver = typeInfoResolver }));
     }
 }
 

@@ -374,6 +374,7 @@ Twinbox.TwinboxBuilder.Configure(System.Action<Twinbox.TwinboxOptions!>! configu
 Twinbox.TwinboxBuilder.Route<TMessage>() -> Twinbox.RouteBuilder<TMessage!>!
 Twinbox.TwinboxBuilder.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 Twinbox.TwinboxBuilder.UseHeaderProfile(Twinbox.Transport.HeaderProfile! profile) -> Twinbox.TwinboxBuilder!
+Twinbox.TwinboxBuilder.UseJsonTypeInfoResolver(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver! typeInfoResolver) -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.UseLocalDelivery() -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.UseSerializer(Twinbox.Serialization.IMessageSerializer! serializer) -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.UseTenants(System.Action<Twinbox.TenancyOptions!>! configure) -> Twinbox.TwinboxBuilder!

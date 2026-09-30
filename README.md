@@ -202,6 +202,20 @@ Endpoints without a derived type deliver `WebhookReceived`; handle it with `IHan
 Payloads are JSON with camelCase property names (`JsonSerializerDefaults.Web`). Pass your own
 `JsonSerializerOptions` to `UseSerializer(new SystemTextJsonMessageSerializer(options))` if you need something else.
 
+For Native AOT and trimmed apps, give the serializer a source-generated context covering your messages, and
+register handlers with `AddHandler<THandler, TMessage>()` or the generated `AddHandlersFrom...()`:
+
+```csharp
+[JsonSerializable(typeof(OrderPlaced))]
+internal sealed partial class AppJsonContext : JsonSerializerContext;
+
+builder.Services.AddTwinbox(twinbox => twinbox
+    .UseJsonTypeInfoResolver(AppJsonContext.Default)
+    .AddHandlersFromMyApp());
+```
+
+`samples/Twinbox.AotSmoke` is published with Native AOT in CI. Twinbox.EntityFrameworkCore isn't AOT compatible.
+
 ## Azure Functions
 
 Functions apps (isolated worker) can't count on background services, so `Twinbox.AzureFunctions` turns them off
