@@ -166,7 +166,7 @@ internal sealed partial class NatsConsumerService(
     {
         if (clients.Options.DeadLetterSubject is not { } deadLetterSubject)
         {
-            LogTerminated(error, message.MessageId, message.Source);
+            LogTerminated(error, message.MessageId, message.MessageName, message.Source);
             InboundDiagnostics.RecordDiscarded(NatsTransport.TransportName, message.Source);
             await SettleAsync(msg, message, m => m.AckTerminateAsync(cancellationToken: CancellationToken.None)).ConfigureAwait(false);
             return;
@@ -224,8 +224,8 @@ internal sealed partial class NatsConsumerService(
     [LoggerMessage(Level = LogLevel.Error, Message = "Message {MessageId} from {Subject} failed permanently; copied it to {DeadLetterSubject} and terminated it.")]
     private partial void LogDeadLettered(Exception error, string messageId, string subject, string deadLetterSubject);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Message {MessageId} from {Subject} failed permanently and no dead-letter subject is set; terminating it.")]
-    private partial void LogTerminated(Exception error, string messageId, string subject);
+    [LoggerMessage(Level = LogLevel.Error, Message = "Message {MessageId} ('{MessageName}') from {Subject} failed permanently and no dead-letter subject is set; terminating it.")]
+    private partial void LogTerminated(Exception error, string messageId, string messageName, string subject);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Could not copy message {MessageId} from {Subject} to {DeadLetterSubject}; redelivering it.")]
     private partial void LogDeadLetterFailed(Exception error, string messageId, string subject, string deadLetterSubject);

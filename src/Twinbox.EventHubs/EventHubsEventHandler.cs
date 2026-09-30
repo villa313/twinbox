@@ -83,7 +83,7 @@ internal sealed partial class EventHubsEventHandler(EventHubsClients clients, II
         }
         catch (PermanentDeliveryException ex)
         {
-            return await DeadLetterAsync(partition, data, message.MessageId, ex, cancellationToken).ConfigureAwait(false);
+            return await DeadLetterAsync(partition, data, message, ex, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception) when (cancellationToken.IsCancellationRequested)
         {
@@ -99,13 +99,14 @@ internal sealed partial class EventHubsEventHandler(EventHubsClients clients, II
     private async Task<bool> DeadLetterAsync(
         PartitionContext partition,
         EventData data,
-        string messageId,
+        IncomingMessage message,
         PermanentDeliveryException error,
         CancellationToken cancellationToken)
     {
+        var messageId = message.MessageId;
         if (clients.Options.DeadLetterEventHub is not { } deadLetterEventHub)
         {
-            LogSkipped(error, messageId, partition.EventHub, partition.PartitionId, data.SequenceNumber);
+            LogSkipped(error, messageId, message.MessageName, partition.EventHub, partition.PartitionId, data.SequenceNumber);
             InboundDiagnostics.RecordDiscarded(EventHubsTransport.TransportName, partition.EventHub);
             return true;
         }
@@ -153,8 +154,8 @@ internal sealed partial class EventHubsEventHandler(EventHubsClients clients, II
     [LoggerMessage(Level = LogLevel.Error, Message = "Event {MessageId} from {EventHub} failed permanently; copied it to {DeadLetterEventHub}.")]
     private partial void LogDeadLettered(Exception error, string messageId, string eventHub, string deadLetterEventHub);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Event {MessageId} from {EventHub} [{PartitionId}] #{SequenceNumber} failed permanently and no dead-letter event hub is set; skipping it.")]
-    private partial void LogSkipped(Exception error, string messageId, string eventHub, string partitionId, long sequenceNumber);
+    [LoggerMessage(Level = LogLevel.Error, Message = "Event {MessageId} ('{MessageName}') from {EventHub} [{PartitionId}] #{SequenceNumber} failed permanently and no dead-letter event hub is set; skipping it.")]
+    private partial void LogSkipped(Exception error, string messageId, string messageName, string eventHub, string partitionId, long sequenceNumber);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Could not copy event {MessageId} from {EventHub} to {DeadLetterEventHub}; retrying it.")]
     private partial void LogDeadLetterFailed(Exception error, string messageId, string eventHub, string deadLetterEventHub);
