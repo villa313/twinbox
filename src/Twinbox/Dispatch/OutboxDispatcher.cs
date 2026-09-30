@@ -111,7 +111,7 @@ internal sealed partial class OutboxDispatcher(
         ConcurrentBag<DispatchOutcome> outcomes,
         CancellationToken cancellationToken)
     {
-        var destination = settings.Destinations.GetValueOrDefault(key.Destination);
+        var destination = settings.Destinations.GetValueOrDefault(settings.ToLogicalDestination(key.Destination));
         var retry = destination?.Retry ?? settings.Retry;
         var breaker = _breakers.GetOrAdd(key, _ => new CircuitBreaker(destination?.CircuitBreaker ?? settings.CircuitBreaker));
 

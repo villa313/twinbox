@@ -398,6 +398,8 @@ Twinbox.TwinboxOptions.Retention.get -> Twinbox.RetentionOptions!
 Twinbox.TwinboxOptions.Retention.set -> void
 Twinbox.TwinboxOptions.Retry.get -> Twinbox.RetryOptions!
 Twinbox.TwinboxOptions.Retry.set -> void
+Twinbox.TwinboxOptions.ToLogicalDestination(string! destination) -> string!
+Twinbox.TwinboxOptions.ToPhysicalDestination(string! destination) -> string!
 Twinbox.TwinboxOptions.TwinboxOptions() -> void
 Twinbox.UnknownMessagePolicy
 Twinbox.UnknownMessagePolicy.DeadLetter = 0 -> Twinbox.UnknownMessagePolicy

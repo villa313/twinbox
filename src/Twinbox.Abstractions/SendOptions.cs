@@ -9,13 +9,13 @@ public sealed record SendOptions
 
     public IReadOnlyDictionary<string, string>? Headers { get; init; }
 
-    /// <summary>Sends to this address instead of the message type's routes, e.g. a reply queue.</summary>
+    /// <summary>Sends to this logical destination instead of the message type's routes; the destination prefix applies.</summary>
     public string? Destination { get; init; }
 
     /// <summary>Transport for <see cref="Destination"/>; only needed when several transports are registered.</summary>
     public string? Transport { get; init; }
 
-    /// <summary>Where the receiver should send its reply.</summary>
+    /// <summary>Where the receiver should reply: a physical address, sent as is without the destination prefix.</summary>
     public string? ReplyTo { get; init; }
 
     /// <summary>Defaults to the correlation id of the message being handled, so a whole conversation shares one.</summary>

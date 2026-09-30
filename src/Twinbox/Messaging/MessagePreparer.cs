@@ -14,13 +14,14 @@ internal sealed class MessagePreparer(
     IMessageIdGenerator ids,
     TimeProvider time)
 {
-    public IReadOnlyList<OutboxMessage> Prepare<TMessage>(TMessage message, SendOptions? sendOptions, string? tenantId)
+    /// <summary>A <paramref name="physicalDestination"/> is an address as the broker knows it (a reply address) and isn't prefixed.</summary>
+    public IReadOnlyList<OutboxMessage> Prepare<TMessage>(TMessage message, SendOptions? sendOptions, string? tenantId, bool physicalDestination = false)
         where TMessage : class
     {
         // Route and serialize by the runtime type, so events collected as a base type still reach their own routes.
         var messageType = message.GetType();
         var messageRoutes = sendOptions?.Destination is { } destination
-            ? [new Route(destination, sendOptions.Transport)]
+            ? [new Route(physicalDestination ? destination : options.Value.ToPhysicalDestination(destination), sendOptions.Transport)]
             : Prefixed(routes.Get(messageType));
         if (messageRoutes.Count == 0)
         {
@@ -79,9 +80,7 @@ internal sealed class MessagePreparer(
     }
 
     private IReadOnlyList<Route> Prefixed(IReadOnlyList<Route> routes) =>
-        options.Value.DestinationPrefix is { Length: > 0 } prefix
-            ? [.. routes.Select(r => r with { Destination = prefix + r.Destination })]
-            : routes;
+        [.. routes.Select(r => r with { Destination = options.Value.ToPhysicalDestination(r.Destination) })];
 
     private static string? NullIfEmpty(string? value) => string.IsNullOrEmpty(value) ? null : value;
 }

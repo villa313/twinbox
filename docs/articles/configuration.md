@@ -33,7 +33,7 @@ builder.Services.AddTwinbox(twinbox => twinbox
 | Key | Default | Description |
 |---|---|---|
 | `InstanceId` | `{machine}-{pid}-{guid}` | Lease owner name. Must be unique per running process; the default already is. |
-| `DestinationPrefix` | `null` | Prepended to every routed destination. See [Routing](concepts/routing.md#destination-prefix). |
+| `DestinationPrefix` | `null` | Prepended once to every logical destination (routes, `SendOptions.Destination`, webhooks), not to reply addresses. See [Routing](concepts/routing.md#destination-prefix). |
 
 ## `Dispatcher`
 
@@ -68,8 +68,8 @@ again.
 
 ## `Destinations:{name}`
 
-`Retry` and `CircuitBreaker` blocks that override the global ones for one destination. See
-[Retries](concepts/retries-and-dead-letters.md#per-destination-settings).
+`Retry` and `CircuitBreaker` blocks that override the global ones for one destination, keyed by its logical name
+(without `DestinationPrefix`). See [Retries](concepts/retries-and-dead-letters.md#per-destination-settings).
 
 ## `Retention`
 

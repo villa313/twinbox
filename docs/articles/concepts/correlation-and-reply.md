@@ -66,6 +66,8 @@ several transports are registered:
 outbox.Reply(context, response, transport: "rabbitmq");
 ```
 
-The reply address is used as is: the [destination prefix](routing.md#destination-prefix) is not added. The requester
+Reply addresses are physical: neither `SendOptions.ReplyTo` nor `Reply` adds the
+[destination prefix](routing.md#destination-prefix), so set `ReplyTo` to the address your listener uses (for example
+`options.ToPhysicalDestination("checkout-replies")` when that listener follows the prefix). The requester
 needs a listener on that address and a handler for the response type. Replies are asynchronous messages; there is no
 blocking "send and wait" API.

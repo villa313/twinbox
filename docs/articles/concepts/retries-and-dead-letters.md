@@ -46,8 +46,10 @@ Breaker state is kept in memory per instance.
 
 ## Per-destination settings
 
-Override retry and breaker settings for one destination. The key is the destination as stored on the message, so it
-includes the [destination prefix](routing.md#destination-prefix) if you use one. Keys are case-insensitive.
+Override retry and breaker settings for one destination. The key is the logical destination, without the
+[destination prefix](routing.md#destination-prefix), so the same configuration works in every environment. Keys are
+case-insensitive. A destination's settings apply on every transport that sends to it; each transport keeps its own
+breaker state.
 
 ```json
 {

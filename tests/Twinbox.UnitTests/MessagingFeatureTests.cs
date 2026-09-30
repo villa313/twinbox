@@ -87,6 +87,63 @@ public sealed class MessagingFeatureTests
         Assert.Equal("staging-orders", Assert.Single(host.Harness.Transport.Sent).Destination);
     }
 
+    [Fact]
+    public async Task DestinationPrefix_IsAppliedOnceToExplicitDestinations()
+    {
+        await using var host = TestHost.Create(b => b.Configure(o => o.DestinationPrefix = "staging-"));
+
+        await host.SendAsync(o => o.Send(new OrderPlaced(1), new SendOptions { Destination = "orders" }));
+        await host.Harness.DrainAsync();
+
+        Assert.Equal("staging-orders", Assert.Single(host.Harness.Transport.Sent).Destination);
+    }
+
+    [Fact]
+    public async Task DestinationPrefix_IsNotAppliedToReplyAddresses()
+    {
+        await using var host = TestHost.Create(b => b
+            .Route<PriceRequest>().To("pricing")
+            .AddHandler<PricingHandler, PriceRequest>()
+            .Configure(o => o.DestinationPrefix = "staging-"));
+
+        await host.SendAsync(o => o.Send(new PriceRequest("sku-1"), new SendOptions { ReplyTo = "staging-checkout-replies" }));
+        await host.Harness.DrainAsync();
+
+        var destinations = host.Harness.Transport.Sent.Select(m => m.Destination).Order(StringComparer.Ordinal);
+        Assert.Equal(["staging-checkout-replies", "staging-pricing"], destinations);
+        Assert.Equal("staging-checkout-replies", host.Harness.Transport.Sent.Single(m => m.Destination == "staging-pricing").Headers[TransportHeaders.ReplyTo]);
+    }
+
+    [Fact]
+    public async Task DestinationOverrides_AreKeyedByTheLogicalName()
+    {
+        await using var host = TestHost.Create(b => b
+            .Route<OrderPlaced>().To("orders")
+            .Configure(o =>
+            {
+                o.DestinationPrefix = "staging-";
+                o.Destinations["orders"] = new DestinationOptions { Retry = new RetryOptions { MaxAttempts = 1 } };
+            }));
+        host.Harness.Transport.OnSend = _ => throw new TimeoutException("broker slow");
+
+        await host.SendAsync(o => o.Send(new OrderPlaced(1)));
+        await host.Harness.DrainAsync();
+
+        Assert.Equal(1, Assert.Single(host.Harness.DeadLetteredOutgoing()).Attempts);
+    }
+
+    [Theory]
+    [InlineData(null, "orders", "orders", "orders")]
+    [InlineData("staging-", "orders", "staging-orders", "orders")]
+    public void DestinationPrefix_ConvertsBetweenLogicalAndPhysicalNames(string? prefix, string logical, string physical, string roundTrip)
+    {
+        var options = new TwinboxOptions { DestinationPrefix = prefix };
+
+        Assert.Equal(physical, options.ToPhysicalDestination(logical));
+        Assert.Equal(roundTrip, options.ToLogicalDestination(physical));
+        Assert.Equal("replies", options.ToLogicalDestination("replies"));
+    }
+
     public sealed record PriceRequest(string Sku);
 
     public sealed record PriceQuote(string Sku, decimal Price);
