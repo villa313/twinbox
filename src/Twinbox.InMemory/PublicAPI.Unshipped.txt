@@ -37,7 +37,7 @@ Twinbox.InMemory.InMemoryUnitOfWork
 Twinbox.InMemory.InMemoryUnitOfWork.CommitAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Twinbox.InMemory.InMemoryUnitOfWork.InMemoryUnitOfWork(Twinbox.Storage.IOutboxSession! session, Twinbox.Storage.IOutboxStore! store, Twinbox.Storage.IDispatchSignal! signal) -> void
 Twinbox.InMemoryTwinboxBuilderExtensions
-const Twinbox.InMemory.InMemoryTransport.DefaultName = "inmemory" -> string!
+const Twinbox.InMemory.InMemoryTransport.TransportName = "inmemory" -> string!
 static Twinbox.InMemoryTwinboxBuilderExtensions.UseInMemory(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.InMemory.InMemoryTransportOptions!>? configure = null) -> Twinbox.TwinboxBuilder!
 static Twinbox.InMemoryTwinboxBuilderExtensions.UseInMemoryStore(this Twinbox.TwinboxBuilder! builder) -> Twinbox.TwinboxBuilder!
 static Twinbox.InMemoryTwinboxBuilderExtensions.UseInMemoryTransport(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.InMemory.InMemoryTransportOptions!>? configure = null) -> Twinbox.TwinboxBuilder!

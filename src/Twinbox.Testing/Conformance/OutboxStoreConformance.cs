@@ -29,6 +29,7 @@ public static class OutboxStoreConformance
         new("Purge removes expired sent messages only", PurgeRemovesExpiredSent),
         new("Statistics count pending and dead messages", StatisticsCountMessages),
         new("Payload, headers and metadata round-trip", RoundTripsFields),
+        new("Name identifies the store", HasName),
     ];
 
     private static async Task ClaimLeasesDueMessages(IOutboxStore store)
@@ -189,6 +190,12 @@ public static class OutboxStoreConformance
         Expect(stats.PendingCount == 2, $"expected 2 pending, got {stats.PendingCount}");
         Expect(stats.DeadCount == 1, $"expected 1 dead, got {stats.DeadCount}");
         Expect(stats.OldestPendingAvailableAt == pending.AvailableAt, $"expected oldest pending due at {pending.AvailableAt}, got {stats.OldestPendingAvailableAt}");
+    }
+
+    private static Task HasName(IOutboxStore store)
+    {
+        Expect(!string.IsNullOrWhiteSpace(store.Name), "Name must be set; features that write to one store are pointed at it by name");
+        return Task.CompletedTask;
     }
 
     private static async Task RoundTripsFields(IOutboxStore store)
