@@ -19,3 +19,6 @@ patch's prerelease (for example `1.0.1-alpha.0.3`) and are never published.
 - **Major** (`v2.0.0`): anything that removes or changes public API or breaks existing behaviour.
 
 On release, move the lines from each `PublicAPI.Unshipped.txt` into `PublicAPI.Shipped.txt`.
+
+`dotnet pack` compares every package with its 1.0.0 release and fails on breaking changes. After a major release, raise
+`PackageValidationBaselineVersion` in `src/Directory.Build.props` to the new major version.

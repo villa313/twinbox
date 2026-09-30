@@ -9,6 +9,8 @@
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <IsAotCompatible>true</IsAotCompatible>
     <EnablePackageValidation>true</EnablePackageValidation>
+    <!-- Fails the pack when the public API breaks compared to this release; bump it after each major version. -->
+    <PackageValidationBaselineVersion>1.0.0</PackageValidationBaselineVersion>
     <!-- The version comes from the latest vX.Y.Z tag; commits after it build as the next patch's alpha. -->
     <MinVerTagPrefix>v</MinVerTagPrefix>
   </PropertyGroup>
