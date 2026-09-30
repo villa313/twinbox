@@ -88,6 +88,8 @@ Twinbox.RetryOptions.MaxAttempts.get -> int
 Twinbox.RetryOptions.MaxAttempts.set -> void
 Twinbox.RetryOptions.MaxDelay.get -> System.TimeSpan
 Twinbox.RetryOptions.MaxDelay.set -> void
+Twinbox.RetryOptions.MaxRetryAfter.get -> System.TimeSpan
+Twinbox.RetryOptions.MaxRetryAfter.set -> void
 Twinbox.RetryOptions.RetryOptions() -> void
 Twinbox.RouteBuilder<TMessage>
 Twinbox.RouteBuilder<TMessage>.To(string! destination, string? transport = null) -> Twinbox.TwinboxBuilder!

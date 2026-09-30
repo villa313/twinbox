@@ -134,6 +134,18 @@ public sealed class DispatcherTests
     }
 
     [Fact]
+    public async Task RetryAfter_IsCapped()
+    {
+        await using var host = TestHost.Create(b => b.Route<OrderPlaced>().To("orders"));
+        host.Harness.Transport.OnSend = _ => throw new RetryAfterException("come back next week", TimeSpan.FromDays(7));
+
+        await host.SendAsync(o => o.Send(new OrderPlaced(1)));
+        await host.Services.GetRequiredService<IOutboxDispatcher>().DispatchBatchAsync(default);
+
+        Assert.Equal(host.Time.GetUtcNow().AddHours(1), Assert.Single(host.Harness.Store.Snapshot()).AvailableAt);
+    }
+
+    [Fact]
     public async Task UnknownTransport_DeadLetters()
     {
         await using var host = TestHost.Create(b => b.Route<OrderPlaced>().To("orders", transport: "missing"));

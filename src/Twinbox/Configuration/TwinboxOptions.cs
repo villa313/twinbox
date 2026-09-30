@@ -51,6 +51,9 @@ public sealed class RetryOptions
     public TimeSpan InitialDelay { get; set; } = TimeSpan.FromSeconds(1);
 
     public TimeSpan MaxDelay { get; set; } = TimeSpan.FromMinutes(5);
+
+    /// <summary>Upper bound on a destination's own Retry-After hint, so a misbehaving endpoint can't park messages for days.</summary>
+    public TimeSpan MaxRetryAfter { get; set; } = TimeSpan.FromHours(1);
 }
 
 public sealed class CircuitBreakerOptions

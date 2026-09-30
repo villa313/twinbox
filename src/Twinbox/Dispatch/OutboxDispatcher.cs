@@ -192,7 +192,7 @@ internal sealed partial class OutboxDispatcher(
         var delay = RetrySchedule.GetDelay(retry, attempts, Random.Shared);
         if (error is RetryAfterException { RetryAfter: var retryAfter } && retryAfter > delay)
         {
-            delay = retryAfter;
+            delay = retryAfter < retry.MaxRetryAfter ? retryAfter : retry.MaxRetryAfter;
         }
 
         var availableAt = now + delay;
