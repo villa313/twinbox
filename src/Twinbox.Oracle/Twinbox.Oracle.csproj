@@ -2,6 +2,8 @@
   <PropertyGroup>
     <Description>Oracle Database storage for Twinbox with plain ADO.NET or Dapper: save outbox messages in your own OracleTransaction.</Description>
     <PackageTags>$(PackageTags);oracle;odp-net;dapper;ado-net</PackageTags>
+    <!-- Oracle.ManagedDataAccess relies on reflection and assembly paths, so this package makes no AOT promise. -->
+    <IsAotCompatible>false</IsAotCompatible>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Twinbox/Twinbox.csproj" />

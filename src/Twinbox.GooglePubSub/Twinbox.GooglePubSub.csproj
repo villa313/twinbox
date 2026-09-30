@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Description>Google Cloud Pub/Sub transport for Twinbox: publishes to topics with optional ordering keys, and acknowledges each subscription message only after the inbox has handled it.</Description>
+    <!-- Google.Api.Gax and its Newtonsoft.Json-based auth use runtime generics and reflection, so this package makes no AOT promise. -->
+    <IsAotCompatible>false</IsAotCompatible>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Twinbox/Twinbox.csproj" />

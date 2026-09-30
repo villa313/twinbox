@@ -2,6 +2,8 @@
   <PropertyGroup>
     <Description>MongoDB storage for Twinbox: save outbox messages in your own MongoDB transaction and handle inbound messages exactly once.</Description>
     <PackageTags>$(PackageTags);mongodb</PackageTags>
+    <!-- MongoDB.Bson builds class maps and serializers by reflection, so this package makes no AOT promise. -->
+    <IsAotCompatible>false</IsAotCompatible>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Twinbox/Twinbox.csproj" />
