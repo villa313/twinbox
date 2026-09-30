@@ -51,7 +51,7 @@ create yourself, call `context.EnlistOutbox(outbox)`.
 ```csharp
 builder.Services.AddTwinbox(twinbox => twinbox
     .UseSqlServer(connectionString)        // or .UsePostgreSql / .UseMySql / .UseOracle
-    .UseRabbitMQ(o => o.ConnectionUri = new Uri(rabbitUri))
+    .UseRabbitMQ(rabbitUri)
     .Route<OrderPlaced>().To("orders"));
 ```
 
