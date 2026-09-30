@@ -11,7 +11,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="../../src/Twinbox.InMemory/Twinbox.InMemory.csproj" />
+    <ProjectReference Include="../../src/Twinbox/Twinbox.csproj" />
     <ProjectReference Include="../../src/Twinbox.Http/Twinbox.Http.csproj" />
     <ProjectReference Include="../../src/Twinbox.SourceGenerators/Twinbox.SourceGenerators.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
   </ItemGroup>

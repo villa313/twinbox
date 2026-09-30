@@ -3,6 +3,8 @@
     <Description>Test harness and provider conformance suite for Twinbox. Works with any test framework.</Description>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../Twinbox/Twinbox.csproj" />
+    <!-- Only type forwarders now; kept so assemblies built against Testing 1.0, which brought it in, still load. -->
     <ProjectReference Include="../Twinbox.InMemory/Twinbox.InMemory.csproj" />
   </ItemGroup>
 </Project>

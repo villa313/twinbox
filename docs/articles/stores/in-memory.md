@@ -1,7 +1,11 @@
 # In-memory
 
-`Twinbox.InMemory` keeps the outbox and inbox in process memory and adds a loopback transport that delivers messages
-to the app's own handlers. Nothing survives a restart, so use it for tests, demos and local development only.
+The in-memory store keeps the outbox and inbox in process memory, and its loopback transport delivers messages to the
+app's own handlers. Nothing survives a restart, so use it for tests, demos and local development only.
+
+It's built into the `Twinbox` package: there's nothing extra to install. The separate `Twinbox.InMemory` package is
+kept only so apps built against 1.0 keep working; its types now live in `Twinbox` under the same names and namespaces.
+You can remove the reference; if you keep it, upgrade it together with `Twinbox`.
 
 ```csharp
 builder.Services.AddTwinbox(twinbox => twinbox
@@ -13,7 +17,7 @@ builder.Services.AddTwinbox(twinbox => twinbox
 `UseInMemory(configure)` is `UseInMemoryStore()` plus `UseInMemoryTransport(configure)`; use them separately to pair
 the in-memory store with a real broker, or a real store with the in-memory transport.
 
-For tests, prefer [`UseTestHarness()`](../testing.md), which builds on this package and makes delivery deterministic.
+For tests, prefer [`UseTestHarness()`](../testing.md), which builds on it and makes delivery deterministic.
 
 ## Saving messages
 

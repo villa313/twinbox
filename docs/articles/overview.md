@@ -26,12 +26,12 @@ You keep your own `DbContext`, `DbConnection` or `IClientSessionHandle`. Twinbox
 
 | Package | What it adds |
 |---|---|
-| `Twinbox` | The core: `AddTwinbox`, dispatcher, inbox pipeline, retries, routing, tenancy, health checks. |
+| `Twinbox` | The core: `AddTwinbox`, dispatcher, inbox pipeline, retries, routing, tenancy, health checks, and the [in-memory store and loopback transport](stores/in-memory.md) for tests and local development. |
 | `Twinbox.Abstractions` | `IOutbox`, `IHandle<T>`, `IHandleBatch<T>`, `MessageContext`, `SendOptions`, filters. No dependencies, for message and handler libraries. |
 | `Twinbox.EntityFrameworkCore` | Store in your `DbContext` (SQL Server, PostgreSQL, MySQL, Oracle, SQLite). |
 | `Twinbox.SqlServer`, `Twinbox.PostgreSql`, `Twinbox.MySql`, `Twinbox.Oracle` | Stores for Dapper and plain ADO.NET. |
 | `Twinbox.MongoDB` | Store for MongoDB (replica set required for transactions). |
-| `Twinbox.InMemory` | In-memory store and loopback transport, for tests and local development. |
+| `Twinbox.InMemory` | Compatibility only: the in-memory store and transport are now part of `Twinbox`. |
 | `Twinbox.AzureServiceBus`, `Twinbox.EventHubs`, `Twinbox.AmazonSqs`, `Twinbox.GooglePubSub`, `Twinbox.RabbitMQ`, `Twinbox.Kafka`, `Twinbox.Nats`, `Twinbox.RedisStreams`, `Twinbox.Pulsar` | Broker transports. |
 | `Twinbox.Http` | Sends messages as HTTP requests: vendor API calls and outgoing webhooks. |
 | `Twinbox.Webhooks` | Signed webhook ingress: verify, store, answer 200, handle later. |
