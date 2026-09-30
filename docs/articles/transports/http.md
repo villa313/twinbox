@@ -69,7 +69,7 @@ well formed, and header names and values sendable.
 | `WebhookSecret` | `null` | A `whsec_` base64 secret. Adds Standard Webhooks signature headers. |
 | `ConfigureHttpClient` | `null` | Customizes the named `HttpClient`, e.g. with an auth handler. Code only. |
 | `TreatAsSuccess(codes)` | | Status codes that count as delivered. |
-| `TreatAsTransient(codes)` | | Status codes to retry, on top of 408, 429 and 5xx. |
+| `TreatAsTransient(codes)` | | Status codes to retry, on top of 401, 403, 408, 429 and 5xx. |
 
 ## The request
 
@@ -93,7 +93,7 @@ placeholder is dead-lettered, since retrying can't produce one.
 | Response | Result |
 |---|---|
 | 2xx, or a `TreatAsSuccess` code | Delivered. |
-| 408, 429, 5xx, or a `TreatAsTransient` code | Retried with backoff; a `Retry-After` header is honoured up to `Twinbox:Retry:MaxRetryAfter`. |
+| 401, 403, 408, 429, 5xx, or a `TreatAsTransient` code | Retried with backoff; a `Retry-After` header is honoured up to `Twinbox:Retry:MaxRetryAfter`. 401 and 403 are retried like the other transports' access errors, so rotating a key or fixing a permission releases the backlog. |
 | Timeout or network error | Retried. The request may have landed; the idempotency key covers that. |
 | Any other status | Dead-lettered, with the status and the first 500 characters of the body in `LastError`. |
 | No endpoint with that name | Dead-lettered. |

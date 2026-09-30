@@ -28,10 +28,11 @@ internal static class HttpResponses
             return HttpOutcome.Transient;
         }
 
+        // 401 and 403 stay transient: a rotated key or fixed permission should release the backlog, not find it dead-lettered.
         return statusCode switch
         {
             >= 200 and < 300 => HttpOutcome.Delivered,
-            408 or 429 or >= 500 => HttpOutcome.Transient,
+            401 or 403 or 408 or 429 or >= 500 => HttpOutcome.Transient,
             _ => HttpOutcome.Permanent,
         };
     }
