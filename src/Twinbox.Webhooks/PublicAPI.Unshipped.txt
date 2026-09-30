@@ -1,0 +1,88 @@
+#nullable enable
+Microsoft.AspNetCore.Builder.WebhookEndpointRouteBuilderExtensions
+Twinbox.Webhooks.HmacSignatureOptions
+Twinbox.Webhooks.HmacSignatureOptions.Algorithm.get -> Twinbox.Webhooks.WebhookHmacAlgorithm
+Twinbox.Webhooks.HmacSignatureOptions.Algorithm.set -> void
+Twinbox.Webhooks.HmacSignatureOptions.Encoding.get -> Twinbox.Webhooks.SignatureEncoding
+Twinbox.Webhooks.HmacSignatureOptions.Encoding.set -> void
+Twinbox.Webhooks.HmacSignatureOptions.EventIdHeader.get -> string?
+Twinbox.Webhooks.HmacSignatureOptions.EventIdHeader.set -> void
+Twinbox.Webhooks.HmacSignatureOptions.EventTypeHeader.get -> string?
+Twinbox.Webhooks.HmacSignatureOptions.EventTypeHeader.set -> void
+Twinbox.Webhooks.HmacSignatureOptions.HmacSignatureOptions() -> void
+Twinbox.Webhooks.HmacSignatureOptions.Prefix.get -> string?
+Twinbox.Webhooks.HmacSignatureOptions.Prefix.set -> void
+Twinbox.Webhooks.HmacSignatureOptions.SignatureHeader.get -> string!
+Twinbox.Webhooks.HmacSignatureOptions.SignatureHeader.set -> void
+Twinbox.Webhooks.IWebhookVerifier
+Twinbox.Webhooks.IWebhookVerifier.DefaultProvider.get -> string!
+Twinbox.Webhooks.IWebhookVerifier.Verify(Twinbox.Webhooks.WebhookRequest! request) -> Twinbox.Webhooks.WebhookVerification!
+Twinbox.Webhooks.SignatureEncoding
+Twinbox.Webhooks.SignatureEncoding.Base64 = 1 -> Twinbox.Webhooks.SignatureEncoding
+Twinbox.Webhooks.SignatureEncoding.Hex = 0 -> Twinbox.Webhooks.SignatureEncoding
+Twinbox.Webhooks.WebhookHmacAlgorithm
+Twinbox.Webhooks.WebhookHmacAlgorithm.Sha256 = 0 -> Twinbox.Webhooks.WebhookHmacAlgorithm
+Twinbox.Webhooks.WebhookHmacAlgorithm.Sha512 = 1 -> Twinbox.Webhooks.WebhookHmacAlgorithm
+Twinbox.Webhooks.WebhookInboxBuilder
+Twinbox.Webhooks.WebhookInboxBuilder.ForwardHeaders(params string![]! names) -> Twinbox.Webhooks.WebhookInboxBuilder!
+Twinbox.Webhooks.WebhookInboxBuilder.Verify(Twinbox.Webhooks.IWebhookVerifier! verifier) -> Twinbox.Webhooks.WebhookInboxBuilder!
+Twinbox.Webhooks.WebhookInboxBuilder.VerifyGitHub(Twinbox.Webhooks.WebhookSecrets! secrets) -> Twinbox.Webhooks.WebhookInboxBuilder!
+Twinbox.Webhooks.WebhookInboxBuilder.VerifyHmac(Twinbox.Webhooks.WebhookSecrets! secrets, System.Action<Twinbox.Webhooks.HmacSignatureOptions!>! configure) -> Twinbox.Webhooks.WebhookInboxBuilder!
+Twinbox.Webhooks.WebhookInboxBuilder.VerifyShopify(Twinbox.Webhooks.WebhookSecrets! secrets) -> Twinbox.Webhooks.WebhookInboxBuilder!
+Twinbox.Webhooks.WebhookInboxBuilder.VerifyStandardWebhooks(Twinbox.Webhooks.WebhookSecrets! secrets, System.TimeSpan? tolerance = null) -> Twinbox.Webhooks.WebhookInboxBuilder!
+Twinbox.Webhooks.WebhookInboxBuilder.VerifyStripe(Twinbox.Webhooks.WebhookSecrets! secrets, System.TimeSpan? tolerance = null) -> Twinbox.Webhooks.WebhookInboxBuilder!
+Twinbox.Webhooks.WebhookInboxBuilder.WithMaxBodySize(long bytes) -> Twinbox.Webhooks.WebhookInboxBuilder!
+Twinbox.Webhooks.WebhookInboxBuilder.WithProvider(string! provider) -> Twinbox.Webhooks.WebhookInboxBuilder!
+Twinbox.Webhooks.WebhookReceived
+Twinbox.Webhooks.WebhookReceived.Body.get -> string!
+Twinbox.Webhooks.WebhookReceived.Body.init -> void
+Twinbox.Webhooks.WebhookReceived.ContentType.get -> string?
+Twinbox.Webhooks.WebhookReceived.ContentType.init -> void
+Twinbox.Webhooks.WebhookReceived.EventId.get -> string!
+Twinbox.Webhooks.WebhookReceived.EventId.init -> void
+Twinbox.Webhooks.WebhookReceived.EventType.get -> string?
+Twinbox.Webhooks.WebhookReceived.EventType.init -> void
+Twinbox.Webhooks.WebhookReceived.Headers.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Twinbox.Webhooks.WebhookReceived.Headers.init -> void
+Twinbox.Webhooks.WebhookReceived.Provider.get -> string!
+Twinbox.Webhooks.WebhookReceived.Provider.init -> void
+Twinbox.Webhooks.WebhookReceived.ReceivedAt.get -> System.DateTimeOffset
+Twinbox.Webhooks.WebhookReceived.ReceivedAt.init -> void
+Twinbox.Webhooks.WebhookReceived.WebhookReceived() -> void
+Twinbox.Webhooks.WebhookReceived.WebhookReceived(Twinbox.Webhooks.WebhookReceived! original) -> void
+Twinbox.Webhooks.WebhookRequest
+Twinbox.Webhooks.WebhookRequest.Body.get -> System.ReadOnlyMemory<byte>
+Twinbox.Webhooks.WebhookRequest.Body.init -> void
+Twinbox.Webhooks.WebhookRequest.Headers.get -> Microsoft.AspNetCore.Http.IHeaderDictionary!
+Twinbox.Webhooks.WebhookRequest.Headers.init -> void
+Twinbox.Webhooks.WebhookRequest.ReceivedAt.get -> System.DateTimeOffset
+Twinbox.Webhooks.WebhookRequest.ReceivedAt.init -> void
+Twinbox.Webhooks.WebhookRequest.Services.get -> System.IServiceProvider!
+Twinbox.Webhooks.WebhookRequest.Services.init -> void
+Twinbox.Webhooks.WebhookRequest.WebhookRequest() -> void
+Twinbox.Webhooks.WebhookSecrets
+Twinbox.Webhooks.WebhookSecrets.Resolve(System.IServiceProvider! services) -> System.Collections.Generic.IReadOnlyList<string!>!
+Twinbox.Webhooks.WebhookVerification
+Twinbox.Webhooks.WebhookVerification.EventId.get -> string?
+Twinbox.Webhooks.WebhookVerification.EventType.get -> string?
+Twinbox.Webhooks.WebhookVerification.Reason.get -> string?
+Twinbox.Webhooks.WebhookVerification.StatusCode.get -> int
+Twinbox.Webhooks.WebhookVerification.Succeeded.get -> bool
+Twinbox.WebhooksTwinboxBuilderExtensions
+override Twinbox.Webhooks.WebhookReceived.Equals(object? obj) -> bool
+override Twinbox.Webhooks.WebhookReceived.GetHashCode() -> int
+override Twinbox.Webhooks.WebhookReceived.ToString() -> string!
+static Microsoft.AspNetCore.Builder.WebhookEndpointRouteBuilderExtensions.MapWebhookInbox(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! pattern, System.Action<Twinbox.Webhooks.WebhookInboxBuilder!>! configure) -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
+static Microsoft.AspNetCore.Builder.WebhookEndpointRouteBuilderExtensions.MapWebhookInbox<TWebhook>(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! pattern, System.Action<Twinbox.Webhooks.WebhookInboxBuilder!>! configure) -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
+static Twinbox.Webhooks.WebhookReceived.operator !=(Twinbox.Webhooks.WebhookReceived? left, Twinbox.Webhooks.WebhookReceived? right) -> bool
+static Twinbox.Webhooks.WebhookReceived.operator ==(Twinbox.Webhooks.WebhookReceived? left, Twinbox.Webhooks.WebhookReceived? right) -> bool
+static Twinbox.Webhooks.WebhookSecrets.FromConfiguration(string! key) -> Twinbox.Webhooks.WebhookSecrets!
+static Twinbox.Webhooks.WebhookSecrets.Of(params string![]! secrets) -> Twinbox.Webhooks.WebhookSecrets!
+static Twinbox.Webhooks.WebhookVerification.Malformed(string! reason) -> Twinbox.Webhooks.WebhookVerification!
+static Twinbox.Webhooks.WebhookVerification.Unauthorized(string! reason) -> Twinbox.Webhooks.WebhookVerification!
+static Twinbox.Webhooks.WebhookVerification.Verified(string! eventId, string? eventType = null) -> Twinbox.Webhooks.WebhookVerification!
+static Twinbox.WebhooksTwinboxBuilderExtensions.AddWebhooks(this Twinbox.TwinboxBuilder! builder) -> Twinbox.TwinboxBuilder!
+virtual Twinbox.Webhooks.WebhookReceived.<Clone>$() -> Twinbox.Webhooks.WebhookReceived!
+virtual Twinbox.Webhooks.WebhookReceived.EqualityContract.get -> System.Type!
+virtual Twinbox.Webhooks.WebhookReceived.Equals(Twinbox.Webhooks.WebhookReceived? other) -> bool
+virtual Twinbox.Webhooks.WebhookReceived.PrintMembers(System.Text.StringBuilder! builder) -> bool

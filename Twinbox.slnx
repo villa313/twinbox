@@ -21,6 +21,7 @@
     <Project Path="src/Twinbox.SourceGenerators/Twinbox.SourceGenerators.csproj" />
     <Project Path="src/Twinbox.Testing/Twinbox.Testing.csproj" />
     <Project Path="src/Twinbox/Twinbox.csproj" />
+    <Project Path="src/Twinbox.Webhooks/Twinbox.Webhooks.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Twinbox.EntityFrameworkCore.IntegrationTests/Twinbox.EntityFrameworkCore.IntegrationTests.csproj" />
@@ -35,5 +36,6 @@
     <Project Path="tests/Twinbox.Relational.IntegrationTests/Twinbox.Relational.IntegrationTests.csproj" />
     <Project Path="tests/Twinbox.SourceGenerators.Tests/Twinbox.SourceGenerators.Tests.csproj" />
     <Project Path="tests/Twinbox.UnitTests/Twinbox.UnitTests.csproj" />
+    <Project Path="tests/Twinbox.Webhooks.Tests/Twinbox.Webhooks.Tests.csproj" />
   </Folder>
 </Solution>
