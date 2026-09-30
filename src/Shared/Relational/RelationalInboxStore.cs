@@ -1,5 +1,6 @@
 using System.Data;
 using Microsoft.Extensions.DependencyInjection;
+using Twinbox.Sql;
 using Twinbox.Storage;
 
 namespace Twinbox.Relational;
@@ -51,7 +52,7 @@ internal sealed class RelationalInboxStore(RelationalDialect dialect, Relational
         await using var lease = await store.OpenAsync(cancellationToken).ConfigureAwait(false);
         await using var transaction = await lease.Connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
         var fresh = new List<int>();
-        for (var i = 0; i < entries.Count; i++)
+        foreach (var i in InboxLockOrder.Of(entries))
         {
             await using var insert = lease.Connection.Command(dialect.Sql.InsertInbox(), transaction)
                 .With("@messageId", entries[i].MessageId, DbType.String)
@@ -69,6 +70,8 @@ internal sealed class RelationalInboxStore(RelationalDialect dialect, Relational
             await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
             return 0;
         }
+
+        fresh.Sort();
 
         handlerTransaction.Attach(lease.Connection, transaction);
         try

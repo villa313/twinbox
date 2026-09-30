@@ -141,12 +141,19 @@ internal sealed partial class TwinboxSql
         return _provider switch
         {
             SqlProvider.Oracle => OracleInsertInbox(columns),
+            // A HOLDLOCK existence check range-locks the gap after the newest key, serializing all new messages; a plain insert
+            // blocks only true duplicates. XACT_ABORT is off around it so a caught duplicate-key error can't doom the transaction.
             SqlProvider.SqlServer => $"""
-                INSERT INTO {_inbox} ({columns})
-                SELECT @messageId, @consumer, @source, @processedAt
-                WHERE NOT EXISTS (
-                    SELECT 1 FROM {_inbox} WITH (UPDLOCK, HOLDLOCK)
-                    WHERE {_i("MessageId")} = @messageId AND {_i("Consumer")} = @consumer);
+                DECLARE @xactAbort int = @@OPTIONS & 16384;
+                SET XACT_ABORT OFF;
+                BEGIN TRY
+                    INSERT INTO {_inbox} ({columns}) VALUES (@messageId, @consumer, @source, @processedAt);
+                END TRY
+                BEGIN CATCH
+                    IF @xactAbort <> 0 SET XACT_ABORT ON;
+                    IF ERROR_NUMBER() NOT IN (2601, 2627) THROW;
+                END CATCH;
+                IF @xactAbort <> 0 SET XACT_ABORT ON;
                 """,
             SqlProvider.Sqlite => $"INSERT OR IGNORE INTO {_inbox} ({columns}) VALUES (@messageId, @consumer, @source, @processedAt);",
 
