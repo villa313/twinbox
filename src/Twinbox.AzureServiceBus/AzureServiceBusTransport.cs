@@ -10,14 +10,14 @@ public sealed class AzureServiceBusTransport : ITransport, IAsyncDisposable, IDi
     public const string TransportName = "azureservicebus";
 
     private readonly ConcurrentDictionary<string, ServiceBusSender> _senders = new(StringComparer.Ordinal);
-    private readonly bool _useSessions;
+    private readonly bool _sendSessionIds;
 
     internal AzureServiceBusTransport(ServiceBusClient client, AzureServiceBusOptions options)
     {
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(options);
         Client = client;
-        _useSessions = options.UseSessions;
+        _sendSessionIds = options.SendSessionIds;
     }
 
     public string Name => TransportName;
@@ -30,7 +30,7 @@ public sealed class AzureServiceBusTransport : ITransport, IAsyncDisposable, IDi
         var sender = _senders.GetOrAdd(message.Destination, static (destination, client) => client.CreateSender(destination), Client);
         try
         {
-            await sender.SendMessageAsync(AzureServiceBusMapping.ToServiceBusMessage(message, _useSessions), cancellationToken)
+            await sender.SendMessageAsync(AzureServiceBusMapping.ToServiceBusMessage(message, _sendSessionIds), cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (Exception ex) when (AzureServiceBusMapping.IsPermanentSendFailure(ex))

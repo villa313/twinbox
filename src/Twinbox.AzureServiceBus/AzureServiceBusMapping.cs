@@ -8,7 +8,7 @@ internal static class AzureServiceBusMapping
 {
     private const string FallbackContentType = "application/octet-stream";
 
-    public static ServiceBusMessage ToServiceBusMessage(TransportMessage message, bool useSessions)
+    public static ServiceBusMessage ToServiceBusMessage(TransportMessage message, bool sendSessionIds)
     {
         ArgumentNullException.ThrowIfNull(message);
         var result = new ServiceBusMessage(message.Body)
@@ -26,10 +26,12 @@ internal static class AzureServiceBusMapping
         if (message.PartitionKey is { } partitionKey)
         {
             result.ApplicationProperties[TransportHeaders.PartitionKey] = partitionKey;
-            if (useSessions)
-            {
-                result.SessionId = partitionKey;
-            }
+        }
+
+        if (sendSessionIds)
+        {
+            // Session-enabled entities reject messages without one; the message id gives an unkeyed message a session of its own.
+            result.SessionId = message.PartitionKey ?? message.MessageId;
         }
 
         return result;
@@ -59,16 +61,19 @@ internal static class AzureServiceBusMapping
             string.IsNullOrEmpty(message.ContentType) ? FallbackContentType : message.ContentType,
             headers,
             message.DeliveryCount,
-            headers.GetValueOrDefault(TransportHeaders.PartitionKey) ?? message.SessionId);
+            headers.GetValueOrDefault(TransportHeaders.PartitionKey) ?? PartitionKeyFromSession(message));
     }
 
-    /// <summary>True for failures a retry cannot fix, so the outbox dead-letters instead of backing off.</summary>
-    public static bool IsPermanentSendFailure(Exception exception) => exception switch
-    {
-        ServiceBusException { Reason: ServiceBusFailureReason.MessagingEntityNotFound or ServiceBusFailureReason.MessageSizeExceeded } => true,
-        UnauthorizedAccessException => true,
-        _ => false,
-    };
+    /// <summary>
+    /// True for failures a retry cannot fix, so the outbox dead-letters instead of backing off. Access errors stay
+    /// transient: an RBAC or key fix should release the backlog rather than find it dead-lettered.
+    /// </summary>
+    public static bool IsPermanentSendFailure(Exception exception) =>
+        exception is ServiceBusException { Reason: ServiceBusFailureReason.MessagingEntityNotFound or ServiceBusFailureReason.MessageSizeExceeded };
+
+    // A session id equal to the message id is the fallback given to unkeyed messages, not a partition key.
+    private static string? PartitionKeyFromSession(ServiceBusReceivedMessage message) =>
+        string.IsNullOrEmpty(message.SessionId) || message.SessionId == message.MessageId ? null : message.SessionId;
 
     private static string? ToHeaderValue(object? value) => value switch
     {

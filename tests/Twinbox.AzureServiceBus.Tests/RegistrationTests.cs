@@ -48,6 +48,31 @@ public sealed class RegistrationTests
     }
 
     [Theory]
+    [InlineData(0, 30)]
+    [InlineData(10, 5)]
+    [InlineData(1, 301)]
+    public async Task InvalidRetryDelays_FailValidation(int retryDelaySeconds, int maxRetryDelaySeconds)
+    {
+        await using var services = new ServiceCollection()
+            .AddTwinbox(b => b.UseInMemoryStore().UseAzureServiceBus(_ => new FakeServiceBusClient(), o =>
+            {
+                o.RetryDelay = TimeSpan.FromSeconds(retryDelaySeconds);
+                o.MaxRetryDelay = TimeSpan.FromSeconds(maxRetryDelaySeconds);
+            }))
+            .BuildServiceProvider();
+
+        Assert.Throws<OptionsValidationException>(() => services.GetRequiredService<IOptions<AzureServiceBusOptions>>().Value);
+    }
+
+    [Fact]
+    public void Listen_ChoosesSessionsPerEntity()
+    {
+        var options = new AzureServiceBusOptions().Listen("orders").Listen("payments", sessions: true).Listen("billing", "invoices", sessions: true);
+
+        Assert.Equal([false, true, true], options.Listeners.Select(l => l.Sessions));
+    }
+
+    [Theory]
     [InlineData("")]
     [InlineData(" ")]
     public void Listen_RejectsBlankNames(string name)

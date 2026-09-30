@@ -5,7 +5,8 @@ namespace Twinbox.AzureServiceBus.Tests.Integration;
 
 public sealed class ServiceBusEmulatorFixture : IAsyncLifetime
 {
-    private static readonly string[] Queues = ["orders", "poison"];
+    // Session queues can't be peeked without a session, so readiness is checked on the plain ones.
+    private static readonly string[] Queues = ["orders", "poison", "retries"];
     private static readonly TimeSpan ReadinessTimeout = TimeSpan.FromMinutes(2);
 
     private readonly ServiceBusContainer _container = new ServiceBusBuilder("mcr.microsoft.com/azure-messaging/servicebus-emulator:latest")

@@ -10,7 +10,7 @@ public sealed class MappingTests
     [Fact]
     public void ToServiceBusMessage_MapsIdentityAndHeaders()
     {
-        var mapped = AzureServiceBusMapping.ToServiceBusMessage(Outgoing(partitionKey: null), useSessions: false);
+        var mapped = AzureServiceBusMapping.ToServiceBusMessage(Outgoing(partitionKey: null), sendSessionIds: false);
 
         Assert.Equal("msg-1", mapped.MessageId);
         Assert.Equal("OrderPlaced", mapped.Subject);
@@ -25,16 +25,33 @@ public sealed class MappingTests
     [Fact]
     public void ToServiceBusMessage_WithoutSessions_CarriesPartitionKeyAsHeaderOnly()
     {
-        var mapped = AzureServiceBusMapping.ToServiceBusMessage(Outgoing(partitionKey: "order-1"), useSessions: false);
+        var mapped = AzureServiceBusMapping.ToServiceBusMessage(Outgoing(partitionKey: "order-1"), sendSessionIds: false);
 
         Assert.Equal("order-1", mapped.ApplicationProperties[TransportHeaders.PartitionKey]);
         Assert.Null(mapped.SessionId);
     }
 
     [Fact]
+    public void ToServiceBusMessage_WithSessionIdsButNoPartitionKey_UsesTheMessageId()
+    {
+        var mapped = AzureServiceBusMapping.ToServiceBusMessage(Outgoing(partitionKey: null), sendSessionIds: true);
+
+        Assert.Equal("msg-1", mapped.SessionId);
+        Assert.False(mapped.ApplicationProperties.ContainsKey(TransportHeaders.PartitionKey));
+    }
+
+    [Fact]
+    public void ToIncomingMessage_WithFallbackSessionId_HasNoPartitionKey()
+    {
+        var received = ServiceBusModelFactory.ServiceBusReceivedMessage(messageId: "msg-7", sessionId: "msg-7", deliveryCount: 1);
+
+        Assert.Null(AzureServiceBusMapping.ToIncomingMessage(received, "orders").PartitionKey);
+    }
+
+    [Fact]
     public void ToServiceBusMessage_WithSessions_UsesPartitionKeyAsSessionId()
     {
-        var mapped = AzureServiceBusMapping.ToServiceBusMessage(Outgoing(partitionKey: "order-1"), useSessions: true);
+        var mapped = AzureServiceBusMapping.ToServiceBusMessage(Outgoing(partitionKey: "order-1"), sendSessionIds: true);
 
         Assert.Equal("order-1", mapped.ApplicationProperties[TransportHeaders.PartitionKey]);
         Assert.Equal("order-1", mapped.SessionId);
@@ -121,7 +138,7 @@ public sealed class MappingTests
     public void SentMessage_RoundTripsToTheSameIncomingMessage()
     {
         var outgoing = Outgoing(partitionKey: "order-1");
-        var sent = AzureServiceBusMapping.ToServiceBusMessage(outgoing, useSessions: true);
+        var sent = AzureServiceBusMapping.ToServiceBusMessage(outgoing, sendSessionIds: true);
         var received = ServiceBusModelFactory.ServiceBusReceivedMessage(
             body: sent.Body,
             messageId: sent.MessageId,

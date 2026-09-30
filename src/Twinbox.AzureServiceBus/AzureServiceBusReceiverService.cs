@@ -55,7 +55,7 @@ internal sealed partial class AzureServiceBusReceiverService(
         var settings = options.Value;
         foreach (var listener in settings.Listeners)
         {
-            var processor = settings.UseSessions ? CreateSessionProcessor(listener, settings) : CreateProcessor(listener, settings);
+            var processor = listener.Sessions ? CreateSessionProcessor(listener, settings) : CreateProcessor(listener, settings);
             _processors.Add(processor);
             await processor.StartAsync(stoppingToken).ConfigureAwait(false);
             LogListening(listener.EntityPath);
@@ -82,7 +82,8 @@ internal sealed partial class AzureServiceBusReceiverService(
                 settlement,
                 () => args.CompleteMessageAsync(args.Message, CancellationToken.None),
                 (reason, description) => args.DeadLetterMessageAsync(args.Message, reason, description, CancellationToken.None),
-                () => args.AbandonMessageAsync(args.Message, cancellationToken: CancellationToken.None)).ConfigureAwait(false);
+                () => args.AbandonMessageAsync(args.Message, cancellationToken: CancellationToken.None),
+                args.CancellationToken).ConfigureAwait(false);
         };
         processor.ProcessErrorAsync += OnErrorAsync;
         return new RunningProcessor(source, processor.StartProcessingAsync, processor.StopProcessingAsync, processor);
@@ -109,20 +110,53 @@ internal sealed partial class AzureServiceBusReceiverService(
                 settlement,
                 () => args.CompleteMessageAsync(args.Message, CancellationToken.None),
                 (reason, description) => args.DeadLetterMessageAsync(args.Message, reason, description, CancellationToken.None),
-                () => args.AbandonMessageAsync(args.Message, cancellationToken: CancellationToken.None)).ConfigureAwait(false);
+                () => args.AbandonMessageAsync(args.Message, cancellationToken: CancellationToken.None),
+                args.CancellationToken).ConfigureAwait(false);
         };
         processor.ProcessErrorAsync += OnErrorAsync;
         return new RunningProcessor(source, processor.StartProcessingAsync, processor.StopProcessingAsync, processor);
     }
 
     // Settlement ignores the processor's token: a message handled during shutdown should still be settled, not left locked.
-    private static Task SettleAsync(Settlement settlement, Func<Task> complete, Func<string?, string?, Task> deadLetter, Func<Task> abandon) =>
-        settlement.Action switch
+    // The processor keeps renewing the lock while an abandon waits out its delay; stopping cuts the wait short.
+    private static async Task SettleAsync(
+        Settlement settlement,
+        Func<Task> complete,
+        Func<string?, string?, Task> deadLetter,
+        Func<Task> abandon,
+        CancellationToken stopping)
+    {
+        switch (settlement.Action)
         {
-            SettlementAction.Complete => complete(),
-            SettlementAction.DeadLetter => deadLetter(settlement.Reason, settlement.Description),
-            _ => abandon(),
-        };
+            case SettlementAction.Complete:
+                await complete().ConfigureAwait(false);
+                break;
+            case SettlementAction.DeadLetter:
+                await deadLetter(settlement.Reason, settlement.Description).ConfigureAwait(false);
+                break;
+            default:
+                await WaitAsync(settlement.Delay, stopping).ConfigureAwait(false);
+                await abandon().ConfigureAwait(false);
+                break;
+        }
+    }
+
+    private static async Task WaitAsync(TimeSpan delay, CancellationToken stopping)
+    {
+        if (delay <= TimeSpan.Zero)
+        {
+            return;
+        }
+
+        try
+        {
+            await Task.Delay(delay, stopping).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // Stopping: hand it back now so another instance can take it.
+        }
+    }
 
     private Task OnErrorAsync(ProcessErrorEventArgs args)
     {
