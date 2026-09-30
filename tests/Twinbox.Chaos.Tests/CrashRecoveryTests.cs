@@ -11,7 +11,7 @@ public abstract class CrashRecoveryTests(ChaosDatabase database)
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(60);
 
     [Fact]
-    public async Task DispatcherKilledMidSend_LeaseExpires_AndSurvivorsDeliverEverything()
+    public async Task DispatcherStoppedMidSend_RecordsWhatItSent_AndSurvivorsDeliverTheRestOnce()
     {
         var schema = ChaosDatabase.NewSchema();
         var log = new DeliveryLog();
@@ -41,12 +41,12 @@ public abstract class CrashRecoveryTests(ChaosDatabase database)
         await stalled.Task.WaitAsync(Timeout);
         await victim.StopAsync();
 
-        var orphaned = (await database.OutboxAsync(schema)).Where(r => r.Status == (int)OutboxMessageStatus.Processing).ToArray();
-        Assert.NotEmpty(orphaned);
-        Assert.All(orphaned, r => Assert.Equal("victim", r.LeaseOwner));
-        var leases = await database.LeasesAsync(schema);
+        // A graceful stop records the sends that finished and releases the rest instead of leaving them leased.
+        var rows = await database.OutboxAsync(schema);
+        Assert.DoesNotContain(rows, r => r.Status == (int)OutboxMessageStatus.Processing);
         var sentByVictim = log.Deliveries.Select(d => d.MessageId).ToHashSet();
         Assert.Equal(DeliveredBeforeCrash, sentByVictim.Count);
+        Assert.Equal(DeliveredBeforeCrash, rows.Count(r => r.Status == (int)OutboxMessageStatus.Sent));
 
         for (var i = 0; i < 2; i++)
         {
@@ -57,12 +57,7 @@ public abstract class CrashRecoveryTests(ChaosDatabase database)
 
         Assert.Equal(messages.Count, log.DistinctDelivered);
         var survivorDeliveries = log.Deliveries.Where(d => d.Instance != "victim").ToArray();
-        Assert.All(
-            survivorDeliveries.Where(d => leases.ContainsKey(d.MessageId)),
-            d => Assert.True(d.At > leases[d.MessageId], $"{d.MessageId} was taken over at {d.At:O}, before its lease ran out at {leases[d.MessageId]:O}"));
-
-        // The victim never recorded those sends, so they go out again: at least once, never lost.
-        Assert.Subset(survivorDeliveries.Select(d => d.MessageId).ToHashSet(), sentByVictim);
+        Assert.DoesNotContain(survivorDeliveries, d => sentByVictim.Contains(d.MessageId));
         log.AssertStreamOrder();
     }
 
