@@ -1,0 +1,196 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Twinbox contributors",
+  "classifications": ["Web", "Messaging", "Outbox"],
+  "identity": "Twinbox.Templates.WebApp",
+  "groupIdentity": "Twinbox.Templates.WebApp",
+  "name": "Twinbox web app",
+  "description": "An ASP.NET Core app that saves messages with its data through the Twinbox outbox and handles them through the inbox.",
+  "shortName": "twinbox",
+  "sourceName": "TwinboxApp",
+  "preferNameDirectory": true,
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  },
+  "guids": [
+    "5B0E2B6C-4C1E-4E8F-9D8A-1F2A3B4C5D6E",
+    "8C1F3D7E-2A4B-4C6D-8E9F-0A1B2C3D4E5F"
+  ],
+  "symbols": {
+    "Framework": {
+      "type": "parameter",
+      "description": "The target framework.",
+      "datatype": "choice",
+      "choices": [
+        { "choice": "net10.0", "description": ".NET 10" },
+        { "choice": "net8.0", "description": ".NET 8" }
+      ],
+      "defaultValue": "net10.0",
+      "replaces": "net10.0"
+    },
+    "store": {
+      "type": "parameter",
+      "description": "Where the outbox and inbox are stored: your database.",
+      "datatype": "choice",
+      "choices": [
+        { "choice": "efcore-sqlserver", "description": "EF Core with SQL Server (Twinbox.EntityFrameworkCore)" },
+        { "choice": "efcore-postgres", "description": "EF Core with PostgreSQL (Twinbox.EntityFrameworkCore)" },
+        { "choice": "efcore-mysql", "description": "EF Core with MySQL (Twinbox.EntityFrameworkCore)" },
+        { "choice": "efcore-sqlite", "description": "EF Core with SQLite (Twinbox.EntityFrameworkCore)" },
+        { "choice": "sqlserver", "description": "SQL Server with ADO.NET or Dapper (Twinbox.SqlServer)" },
+        { "choice": "postgres", "description": "PostgreSQL with ADO.NET or Dapper (Twinbox.PostgreSql)" },
+        { "choice": "mysql", "description": "MySQL with ADO.NET or Dapper (Twinbox.MySql)" },
+        { "choice": "mongodb", "description": "MongoDB (Twinbox.MongoDB)" },
+        { "choice": "inmemory", "description": "In memory, for demos and local development only" }
+      ],
+      "defaultValue": "efcore-postgres"
+    },
+    "transport": {
+      "type": "parameter",
+      "description": "The broker messages are delivered through.",
+      "datatype": "choice",
+      "choices": [
+        { "choice": "azure-service-bus", "description": "Azure Service Bus (Twinbox.AzureServiceBus)" },
+        { "choice": "rabbitmq", "description": "RabbitMQ (Twinbox.RabbitMQ)" },
+        { "choice": "kafka", "description": "Apache Kafka (Twinbox.Kafka)" },
+        { "choice": "amazon-sqs", "description": "Amazon SQS and SNS (Twinbox.AmazonSqs)" },
+        { "choice": "nats", "description": "NATS JetStream (Twinbox.Nats)" },
+        { "choice": "redis", "description": "Redis Streams (Twinbox.RedisStreams)" },
+        { "choice": "local", "description": "No broker: deliver to this app's own handlers" }
+      ],
+      "defaultValue": "rabbitmq"
+    },
+    "dashboard": {
+      "type": "parameter",
+      "description": "Map the Twinbox operations dashboard at /twinbox (Twinbox.Dashboard).",
+      "datatype": "bool",
+      "defaultValue": "false"
+    },
+    "webhooks": {
+      "type": "parameter",
+      "description": "Receive signed webhooks through the inbox (Twinbox.Webhooks).",
+      "datatype": "bool",
+      "defaultValue": "false"
+    },
+    "tests": {
+      "type": "parameter",
+      "description": "Add an xUnit test project that uses the Twinbox test harness (Twinbox.Testing).",
+      "datatype": "bool",
+      "defaultValue": "false"
+    },
+    "TwinboxVersion": {
+      "type": "generated",
+      "generator": "constant",
+      "parameters": {
+        "value": "@TWINBOX_VERSION@"
+      },
+      "replaces": "TWINBOX_VERSION"
+    },
+    "Net8": { "type": "computed", "value": "(Framework == 'net8.0')" },
+    "EfSqlServer": { "type": "computed", "value": "(store == 'efcore-sqlserver')" },
+    "EfPostgres": { "type": "computed", "value": "(store == 'efcore-postgres')" },
+    "EfMySql": { "type": "computed", "value": "(store == 'efcore-mysql')" },
+    "EfSqlite": { "type": "computed", "value": "(store == 'efcore-sqlite')" },
+    "EfCore": { "type": "computed", "value": "(store == 'efcore-sqlserver' || store == 'efcore-postgres' || store == 'efcore-mysql' || store == 'efcore-sqlite')" },
+    "AdoSqlServer": { "type": "computed", "value": "(store == 'sqlserver')" },
+    "AdoPostgres": { "type": "computed", "value": "(store == 'postgres')" },
+    "AdoMySql": { "type": "computed", "value": "(store == 'mysql')" },
+    "AdoNet": { "type": "computed", "value": "(store == 'sqlserver' || store == 'postgres' || store == 'mysql')" },
+    "MongoDB": { "type": "computed", "value": "(store == 'mongodb')" },
+    "InMemoryStore": { "type": "computed", "value": "(store == 'inmemory')" },
+    "AzureServiceBus": { "type": "computed", "value": "(transport == 'azure-service-bus')" },
+    "RabbitMQ": { "type": "computed", "value": "(transport == 'rabbitmq')" },
+    "Kafka": { "type": "computed", "value": "(transport == 'kafka')" },
+    "AmazonSqs": { "type": "computed", "value": "(transport == 'amazon-sqs')" },
+    "Nats": { "type": "computed", "value": "(transport == 'nats')" },
+    "Redis": { "type": "computed", "value": "(transport == 'redis')" },
+    "LocalDelivery": { "type": "computed", "value": "(transport == 'local')" },
+    "HasDatabase": { "type": "computed", "value": "(store != 'inmemory')" },
+    "HasBroker": { "type": "computed", "value": "(transport != 'local' && transport != 'amazon-sqs')" },
+    "DatabaseConnectionString": {
+      "type": "generated",
+      "generator": "switch",
+      "replaces": "DATABASE_CONNECTION_STRING",
+      "parameters": {
+        "evaluator": "C++",
+        "datatype": "string",
+        "cases": [
+          { "condition": "(store == 'efcore-sqlserver' || store == 'sqlserver')", "value": "Server=localhost;Database=app;User Id=sa;Password=<your-password>;TrustServerCertificate=true" },
+          { "condition": "(store == 'efcore-postgres' || store == 'postgres')", "value": "Host=localhost;Database=app;Username=postgres;Password=<your-password>" },
+          { "condition": "(store == 'efcore-mysql' || store == 'mysql')", "value": "Server=localhost;Database=app;User=root;Password=<your-password>" },
+          { "condition": "(store == 'efcore-sqlite')", "value": "Data Source=app.db" },
+          { "condition": "(store == 'mongodb')", "value": "mongodb://localhost:27017/?replicaSet=rs0" },
+          { "condition": "", "value": "" }
+        ]
+      }
+    },
+    "BrokerConnectionName": {
+      "type": "generated",
+      "generator": "switch",
+      "replaces": "BROKER_CONNECTION_NAME",
+      "parameters": {
+        "evaluator": "C++",
+        "datatype": "string",
+        "cases": [
+          { "condition": "(transport == 'azure-service-bus')", "value": "ServiceBus" },
+          { "condition": "(transport == 'rabbitmq')", "value": "RabbitMQ" },
+          { "condition": "(transport == 'kafka')", "value": "Kafka" },
+          { "condition": "(transport == 'nats')", "value": "Nats" },
+          { "condition": "(transport == 'redis')", "value": "Redis" },
+          { "condition": "", "value": "" }
+        ]
+      }
+    },
+    "BrokerConnectionString": {
+      "type": "generated",
+      "generator": "switch",
+      "replaces": "BROKER_CONNECTION_STRING",
+      "parameters": {
+        "evaluator": "C++",
+        "datatype": "string",
+        "cases": [
+          { "condition": "(transport == 'azure-service-bus')", "value": "Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;" },
+          { "condition": "(transport == 'rabbitmq')", "value": "amqp://guest:guest@localhost:5672" },
+          { "condition": "(transport == 'kafka')", "value": "localhost:9092" },
+          { "condition": "(transport == 'nats')", "value": "nats://localhost:4222" },
+          { "condition": "(transport == 'redis')", "value": "localhost:6379" },
+          { "condition": "", "value": "" }
+        ]
+      }
+    },
+    "TransportName": {
+      "type": "generated",
+      "generator": "switch",
+      "replaces": "TRANSPORT_NAME",
+      "parameters": {
+        "evaluator": "C++",
+        "datatype": "string",
+        "cases": [
+          { "condition": "(transport == 'azure-service-bus')", "value": "azureservicebus" },
+          { "condition": "(transport == 'rabbitmq')", "value": "rabbitmq" },
+          { "condition": "(transport == 'kafka')", "value": "kafka" },
+          { "condition": "(transport == 'amazon-sqs')", "value": "amazonsqs" },
+          { "condition": "(transport == 'nats')", "value": "nats" },
+          { "condition": "(transport == 'redis')", "value": "redisstreams" },
+          { "condition": "", "value": "local" }
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "modifiers": [
+        { "condition": "(!EfCore)", "exclude": ["TwinboxApp/Data/AppDbContext.cs"] },
+        { "condition": "(!AdoNet)", "exclude": ["TwinboxApp/Data/OrderDatabase.cs"] },
+        { "condition": "(!webhooks)", "exclude": ["TwinboxApp/PaymentWebhook.cs"] },
+        { "condition": "(!tests)", "exclude": ["TwinboxApp.Tests/**", "TwinboxApp.WithTests.sln", "global.json"] },
+        { "condition": "(tests)", "exclude": ["TwinboxApp.sln"], "rename": { "TwinboxApp.WithTests.sln": "TwinboxApp.sln" } }
+      ]
+    }
+  ],
+  "primaryOutputs": [
+    { "path": "TwinboxApp/TwinboxApp.csproj" },
+    { "condition": "(tests)", "path": "TwinboxApp.Tests/TwinboxApp.Tests.csproj" }
+  ]
+}

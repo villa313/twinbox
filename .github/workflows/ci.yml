@@ -23,6 +23,22 @@ jobs:
           name: packages
           path: artifacts/*.nupkg
 
+  templates:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+          global-json-file: global.json
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages
+          path: artifacts
+      # Generates an app for every store and transport from the packages just built, and builds each with warnings as errors.
+      - run: eng/test-templates.sh artifacts
+
   test:
     runs-on: ubuntu-latest
     strategy:

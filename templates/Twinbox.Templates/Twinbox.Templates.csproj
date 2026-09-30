@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>Twinbox.Templates</PackageId>
+    <PackageType>Template</PackageType>
+    <Description>dotnet new template for an ASP.NET Core app wired with Twinbox: pick a store and a transport with dotnet new twinbox --store ... --transport ...</Description>
+    <PackageTags>$(PackageTags);dotnet-new;templates</PackageTags>
+    <IsPackable>true</IsPackable>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <IncludeContentInPack>true</IncludeContentInPack>
+    <IncludeSymbols>false</IncludeSymbols>
+    <ContentTargetFolders>content</ContentTargetFolders>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <!-- A new package: there is no released version to validate against yet. -->
+    <EnablePackageValidation>false</EnablePackageValidation>
+    <!-- Template packages have no lib folder, so no dependency group can match one. -->
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <TemplateVersionToken>@TWINBOX_VERSION@</TemplateVersionToken>
+    <TemplateConfigPath>twinbox/.template.config/template.json</TemplateConfigPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MinVer" PrivateAssets="all" />
+    <Content Include="twinbox/**/*" Exclude="twinbox/**/bin/**;twinbox/**/obj/**;$(TemplateConfigPath)" />
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <!-- Generated projects reference the Twinbox packages this template shipped with, so the version is stamped at pack time.
+       Keep backslashes out of template.json: WriteLinesToFile turns them into slashes on Linux and macOS. -->
+  <Target Name="StampTemplateVersion" BeforeTargets="_GetPackageFiles" DependsOnTargets="MinVer">
+    <PropertyGroup>
+      <_StampedTemplateConfig>$(IntermediateOutputPath)template/template.json</_StampedTemplateConfig>
+      <_TemplateConfigText>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)/$(TemplateConfigPath)').Replace('$(TemplateVersionToken)', '$(PackageVersion)'))</_TemplateConfigText>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_StampedTemplateConfig)" Lines="$([MSBuild]::Escape('$(_TemplateConfigText)'))" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <None Include="$(_StampedTemplateConfig)" Pack="true" PackagePath="content/$(TemplateConfigPath)" />
+    </ItemGroup>
+  </Target>
+</Project>
