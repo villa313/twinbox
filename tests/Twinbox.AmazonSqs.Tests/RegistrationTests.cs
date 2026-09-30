@@ -18,7 +18,7 @@ public sealed class RegistrationTests
     {
         await using var services = new ServiceCollection()
             .AddLogging()
-            .AddTwinbox(b => b.UseInMemoryStore().UseAmazonSqs(o => o.ListenToQueue("orders").Subscribe("billing", "sns:payments")))
+            .AddTwinbox(b => b.UseInMemoryStore().UseAmazonSqs(o => o.Listen("orders").Listen("billing", "sns:payments")))
             .BuildServiceProvider();
 
         var transport = Assert.Single(services.GetServices<ITransport>());
@@ -28,6 +28,19 @@ public sealed class RegistrationTests
         Assert.Equal(
             [new AmazonSqsListener("orders", null), new AmazonSqsListener("billing", "payments")],
             services.GetRequiredService<IOptions<AmazonSqsOptions>>().Value.Listeners);
+    }
+
+    [Fact]
+    public async Task RegionOverload_CanStillRegisterListeners()
+    {
+        await using var services = new ServiceCollection()
+            .AddLogging()
+            .AddTwinbox(b => b.UseInMemoryStore().UseAmazonSqs("eu-west-1", o => o.Listen("orders")))
+            .BuildServiceProvider();
+
+        var options = services.GetRequiredService<IOptions<AmazonSqsOptions>>().Value;
+        Assert.Equal("eu-west-1", options.Region);
+        Assert.Equal([new AmazonSqsListener("orders", null)], options.Listeners);
     }
 
     [Fact]
@@ -81,9 +94,9 @@ public sealed class RegistrationTests
     {
         var options = new AmazonSqsOptions();
 
-        Assert.ThrowsAny<ArgumentException>(() => options.ListenToQueue(name));
-        Assert.ThrowsAny<ArgumentException>(() => options.Subscribe(name, "topic"));
-        Assert.ThrowsAny<ArgumentException>(() => options.Subscribe("queue", name));
+        Assert.ThrowsAny<ArgumentException>(() => options.Listen(name));
+        Assert.ThrowsAny<ArgumentException>(() => options.Listen(name, "topic"));
+        Assert.ThrowsAny<ArgumentException>(() => options.Listen("queue", name));
     }
 
     [Fact]

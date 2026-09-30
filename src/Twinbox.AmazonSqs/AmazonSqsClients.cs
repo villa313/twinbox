@@ -16,6 +16,8 @@ namespace Twinbox.AmazonSqs;
 /// <summary>Owns the SQS and SNS clients and caches queue URLs and topic ARNs, creating them when asked to.</summary>
 internal sealed partial class AmazonSqsClients : IDisposable
 {
+    private const string RedrivePolicyAttribute = "RedrivePolicy";
+
     private readonly ILogger _logger;
     private readonly Lazy<IAmazonSQS> _sqs;
     private readonly Lazy<IAmazonSimpleNotificationService> _sns;
@@ -67,6 +69,23 @@ internal sealed partial class AmazonSqsClients : IDisposable
     }
 
     public void ForgetQueue(string queue) => _queueUrls.TryRemove(queue, out _);
+
+    /// <summary>Whether the queue forwards failing messages to a dead-letter queue of its own; assumed so when that can't be read.</summary>
+    public async Task<bool> HasRedrivePolicyAsync(string queueUrl, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var attributes = await Sqs.GetQueueAttributesAsync(
+                new GetQueueAttributesRequest { QueueUrl = queueUrl, AttributeNames = [RedrivePolicyAttribute] },
+                cancellationToken).ConfigureAwait(false);
+            return attributes.Attributes?.ContainsKey(RedrivePolicyAttribute) == true;
+        }
+        catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            LogRedrivePolicyUnknown(ex, queueUrl);
+            return true;
+        }
+    }
 
     public async Task<string> GetTopicArnAsync(string topic, CancellationToken cancellationToken)
     {
@@ -265,6 +284,9 @@ internal sealed partial class AmazonSqsClients : IDisposable
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Ensured SNS topic {Topic} ({TopicArn}).")]
     private partial void LogTopicEnsured(string topic, string topicArn);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Could not read the redrive policy of {QueueUrl}; assuming it has one, so poison messages are left to it.")]
+    private partial void LogRedrivePolicyUnknown(Exception error, string queueUrl);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Subscribed SQS queue {QueueArn} to SNS topic {TopicArn}.")]
     private partial void LogSubscribed(string queueArn, string topicArn);
