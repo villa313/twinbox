@@ -106,10 +106,12 @@ internal sealed partial class TwinboxSql
         return _provider switch
         {
             SqlProvider.Oracle => OracleComplete(rows),
+            // Seeking by Status would lock other dispatchers' in-flight rows and deadlock, so each row is found by its id.
             SqlProvider.SqlServer => $"""
                 UPDATE t SET {CompleteAssignments("t.")}
-                FROM {_outbox} AS t JOIN {rows} ON t.{_o("Id")} = v.id
-                WHERE {where};
+                FROM {rows} JOIN {_outbox} AS t WITH (FORCESEEK, ROWLOCK) ON t.{_o("Id")} = v.id
+                WHERE {where}
+                OPTION (LOOP JOIN, FORCE ORDER);
                 """,
             SqlProvider.MySql => $"""
                 UPDATE {_outbox} AS t JOIN {rows} ON t.{_o("Id")} = v.id
