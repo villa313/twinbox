@@ -4,6 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Twinbox/Twinbox.csproj" />
+    <Compile Include="../Shared/Transport/*.cs" LinkBase="Shared/Transport" />
     <PackageReference Include="Azure.Messaging.EventHubs" />
     <PackageReference Include="Azure.Messaging.EventHubs.Processor" />
   </ItemGroup>
