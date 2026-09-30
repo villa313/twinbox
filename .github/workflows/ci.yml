@@ -16,15 +16,46 @@ jobs:
         with:
           dotnet-version: 8.0.x
           global-json-file: global.json
-      - run: dotnet restore Twinbox.slnx
-      - run: dotnet build Twinbox.slnx -c Release --no-restore
-      # Integration tests start database and broker containers; capping modules keeps runners from running out of memory.
-      - run: dotnet test --solution Twinbox.slnx -c Release --no-build --max-parallel-test-modules 3
+      - run: dotnet build Twinbox.slnx -c Release
       - run: dotnet pack Twinbox.slnx -c Release --no-build -o artifacts
       - uses: actions/upload-artifact@v4
         with:
           name: packages
           path: artifacts/*.nupkg
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      # One runner can't hold every database and broker image, so each group pulls only its own.
+      matrix:
+        include:
+          - group: core
+            projects: UnitTests SourceGenerators.Tests Webhooks.Tests Http.Tests Dashboard.Tests AzureFunctions.Tests Aspire.Tests
+          - group: databases
+            projects: Relational.IntegrationTests EntityFrameworkCore.IntegrationTests MongoDB.IntegrationTests
+          - group: azure-aws-google
+            projects: AzureServiceBus.Tests EventHubs.Tests AmazonSqs.Tests GooglePubSub.Tests
+          - group: brokers
+            projects: Kafka.Tests Pulsar.Tests RabbitMQ.Tests Nats.Tests RedisStreams.Tests
+          - group: chaos
+            projects: Chaos.Tests
+    name: test (${{ matrix.group }})
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space for container images
+        run: sudo rm -rf /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/share/swift && df -h /
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+          global-json-file: global.json
+      - name: Test
+        run: |
+          failed=0
+          for project in ${{ matrix.projects }}; do
+            dotnet test --project "tests/Twinbox.$project" -c Release || failed=1
+          done
+          exit $failed
 
   native-aot:
     runs-on: ubuntu-latest

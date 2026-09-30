@@ -27,7 +27,11 @@ public sealed class RegistrationTests
 
         var background = await StartTwinboxServicesAsync(host.Services);
         Assert.NotEmpty(background);
-        Assert.All(background, s => Assert.True(s.ExecuteTask?.IsCompletedSuccessfully));
+        foreach (var service in background)
+        {
+            // Disabled services return straight away, but on a busy machine not necessarily before StartAsync does.
+            await Assert.IsAssignableFrom<Task>(service.ExecuteTask).WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        }
     }
 
     [Fact]

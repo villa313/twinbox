@@ -7,8 +7,11 @@ public sealed class Ledger
     private readonly ConcurrentDictionary<(string Kind, int Id), int> _handled = new();
     private readonly ConcurrentDictionary<string, ConcurrentBag<string>> _messageIds = new();
     private int _filterCalls;
+    private int _batchFilterItems;
 
     public int FilterCalls => Volatile.Read(ref _filterCalls);
+
+    public int BatchFilterItems => Volatile.Read(ref _batchFilterItems);
 
     public void Record(string kind, int id, string messageId)
     {
@@ -17,6 +20,8 @@ public sealed class Ledger
     }
 
     public void RecordFilter() => Interlocked.Increment(ref _filterCalls);
+
+    public void RecordBatchFilter(int items) => Interlocked.Add(ref _batchFilterItems, items);
 
     public IReadOnlyList<string> HandledMessageIds(string kind) =>
         _messageIds.TryGetValue(kind, out var ids) ? [.. ids] : [];

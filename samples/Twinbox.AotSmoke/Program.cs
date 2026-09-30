@@ -32,6 +32,7 @@ builder.Services.AddTwinbox(twinbox => twinbox
     .Route<InvoiceRequested>().To("invoices", LocalTransport.TransportName)
     .Route<OrderShipped>().To("shipping-webhook", "http")
     .AddFilter<CountingFilter>()
+    .AddBatchFilter<CountingBatchFilter>()
     .AddHandlersFromTwinboxAotSmoke());
 
 using var host = builder.Build();
@@ -81,10 +82,15 @@ await host.StopAsync();
 failures.AddRange(ledger.Verify(expected));
 failures.AddRange(WebhookReceiver.Errors);
 
-// Batch handler calls through IBatchInboxStore bypass filters, so only the dispatched messages count here.
-if (ledger.FilterCalls != Orders + Invoices)
+// Message filters wrap IHandle calls and batch filters wrap IHandleBatch calls; replayed duplicates reach neither.
+if (ledger.FilterCalls != Orders)
 {
-    failures.Add($"filter ran {ledger.FilterCalls} times, expected {Orders + Invoices}");
+    failures.Add($"filter ran {ledger.FilterCalls} times, expected {Orders}");
+}
+
+if (ledger.BatchFilterItems != Invoices + 3)
+{
+    failures.Add($"batch filter saw {ledger.BatchFilterItems} messages, expected {Invoices + 3}");
 }
 
 if (failures.Count > 0)

@@ -35,3 +35,12 @@ public sealed class CountingFilter(Ledger ledger) : IMessageFilter
         ledger.RecordFilter();
     }
 }
+
+public sealed class CountingBatchFilter(Ledger ledger) : IBatchMessageFilter
+{
+    public async Task InvokeAsync(IReadOnlyList<BatchItem<object>> batch, Func<Task> continuation, CancellationToken cancellationToken)
+    {
+        await continuation().ConfigureAwait(false);
+        ledger.RecordBatchFilter(batch.Count);
+    }
+}
