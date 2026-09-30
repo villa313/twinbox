@@ -26,6 +26,19 @@ public sealed partial class DashboardTests
     }
 
     [Fact]
+    public async Task Map_WithoutStore_NamesThePackagesToInstall()
+    {
+        var builder = WebApplication.CreateSlimBuilder();
+        builder.Services.AddTwinbox(twinbox => twinbox.UseLocalDelivery());
+        await using var app = builder.Build();
+
+        var error = Assert.Throws<InvalidOperationException>(() => app.MapTwinboxDashboard());
+
+        Assert.StartsWith("MapTwinboxDashboard needs an outbox store, but none is registered.", error.Message, StringComparison.Ordinal);
+        Assert.Contains("Twinbox.PostgreSql (UsePostgreSql(...))", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Request_WithExplicitAllowAnonymous_IsRefusedWithoutTheOption()
     {
         await using var host = await DashboardHost.StartAsync(e => e.AllowAnonymous());

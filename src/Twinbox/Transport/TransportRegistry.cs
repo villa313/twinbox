@@ -20,12 +20,14 @@ internal sealed class TransportRegistry
         _onlyTransport = _transports.Count == 1 ? _transports.Keys.First() : null;
     }
 
+    public IEnumerable<string> Names => _transports.Keys;
+
     public bool TryGet(string name, out ITransport transport) =>
         _transports.TryGetValue(name, out transport!);
 
     public string ResolveDefaultName() => _onlyTransport ?? _transports.Count switch
     {
-        0 => throw new InvalidOperationException("No Twinbox transport is registered. Add one of the transport packages (e.g. UseRabbitMQ(...)) or UseLocalDelivery() for in-process delivery."),
+        0 => throw new InvalidOperationException(SetupMessages.NoTransport),
         _ => throw new InvalidOperationException(
             $"Several transports are registered ({string.Join(", ", _transports.Keys)}), so routes must name one: Route<T>().To(\"destination\", transport: \"...\")."),
     };

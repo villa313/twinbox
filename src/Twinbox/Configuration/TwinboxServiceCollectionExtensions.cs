@@ -53,6 +53,8 @@ public static class TwinboxServiceCollectionExtensions
         services.TryAddScoped<IOutbox>(sp => sp.GetRequiredService<OutboxBuffer>());
         services.TryAddScoped<IOutboxSession>(sp => sp.GetRequiredService<OutboxBuffer>());
 
+        // Ahead of the dispatcher, so a missing store or transport stops the host before anything is dispatched.
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, SetupCheck>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, OutboxDispatcherService>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, RetentionService>());
 

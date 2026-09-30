@@ -4,6 +4,9 @@
     <PackageTags>$(PackageTags);dashboard;aspnetcore</PackageTags>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../Shared/Setup/*.cs" LinkBase="Shared/Setup" />
+  </ItemGroup>
+  <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="../Twinbox/Twinbox.csproj" />
     <EmbeddedResource Include="Assets/index.html" LogicalName="Twinbox.Dashboard.index.html" />

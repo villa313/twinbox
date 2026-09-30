@@ -33,8 +33,7 @@ public static class EntityFrameworkCoreTwinboxBuilderExtensions
         where TContext : DbContext
     {
         var registration = services.LastOrDefault(d => d.ServiceType == typeof(TContext) && !d.IsKeyedService)
-            ?? throw new InvalidOperationException(
-                $"Call AddDbContext<{typeof(TContext).Name}>() before UseEntityFrameworkCore<{typeof(TContext).Name}>().");
+            ?? throw new InvalidOperationException(NotRegistered<TContext>());
 
         services.Add(new ServiceDescriptor(
             typeof(TContext),
@@ -46,6 +45,10 @@ public static class EntityFrameworkCoreTwinboxBuilderExtensions
             },
             registration.Lifetime));
     }
+
+    private static string NotRegistered<TContext>() =>
+        $"{typeof(TContext).Name} isn't registered with the service collection. Call services.AddDbContext<{typeof(TContext).Name}>(...) "
+        + $"or AddDbContextPool<{typeof(TContext).Name}>(...) before UseEntityFrameworkCore<{typeof(TContext).Name}>().";
 
     private static object Create(ServiceDescriptor registration, IServiceProvider services) =>
         registration.ImplementationInstance
@@ -62,8 +65,7 @@ public static class EntityFrameworkCoreTwinboxBuilderExtensions
     {
         // EF Core 8 has no ConfigureDbContext, so decorate the options registration AddDbContext made.
         var registration = services.LastOrDefault(d => d.ServiceType == typeof(DbContextOptions<TContext>))
-            ?? throw new InvalidOperationException(
-                $"Call AddDbContext<{typeof(TContext).Name}>() before UseEntityFrameworkCore<{typeof(TContext).Name}>().");
+            ?? throw new InvalidOperationException(NotRegistered<TContext>());
 
         services.Add(new ServiceDescriptor(
             typeof(DbContextOptions<TContext>),

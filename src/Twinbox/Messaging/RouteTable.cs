@@ -6,6 +6,9 @@ internal sealed class RouteTable
 {
     private readonly Dictionary<Type, List<Route>> _routes = [];
 
+    public IEnumerable<(Type MessageType, Route Route)> All =>
+        _routes.SelectMany(entry => entry.Value.Select(route => (entry.Key, route)));
+
     public void Add(Type messageType, Route route)
     {
         if (!_routes.TryGetValue(messageType, out var routes))

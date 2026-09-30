@@ -26,7 +26,8 @@ public static class TwinboxHealthChecksBuilderExtensions
             name,
             sp => new TwinboxHealthCheck(
                 sp.GetServices<IOutboxStore>(),
-                sp.GetRequiredService<TenantDirectory>(),
+                sp.GetService<TenantDirectory>() ?? throw new InvalidOperationException(
+                    "The Twinbox health check needs Twinbox itself: call services.AddTwinbox(twinbox => ...) with a store, e.g. UseEntityFrameworkCore<TContext>()."),
                 sp.GetRequiredService<TimeProvider>(),
                 maxPendingAge ?? TimeSpan.FromMinutes(5),
                 maxDeadMessages,

@@ -258,6 +258,20 @@ public sealed class IngressTests
     }
 
     [Fact]
+    public async Task NoStore_IsRefusedWithThePackagesToInstall()
+    {
+        var builder = WebApplication.CreateSlimBuilder();
+        builder.Services.AddTwinbox(twinbox => twinbox.AddWebhooks());
+        await using var app = builder.Build();
+
+        var error = Assert.Throws<InvalidOperationException>(
+            () => app.MapWebhookInbox("/stripe", w => w.VerifyStripe(WebhookSecrets.Of(Secret))));
+
+        Assert.StartsWith("The webhook endpoint '/stripe' needs an outbox store, but none is registered.", error.Message, StringComparison.Ordinal);
+        Assert.Contains("Twinbox.EntityFrameworkCore (UseEntityFrameworkCore<TContext>())", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task TenancyWithoutATenantResolver_IsRefusedAtStartup()
     {
         var error = await Assert.ThrowsAsync<InvalidOperationException>(() => WebhookHost.StartAsync(

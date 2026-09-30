@@ -20,7 +20,10 @@ public static class TransactionalOutboxExtensions
 
         var writer = buffer.Services.GetService<IOutboxTransactionWriter>()
             ?? throw new InvalidOperationException(
-                "Saving outbox messages through a DbTransaction needs an ADO.NET store: call UseSqlServer(...), UsePostgreSql(...), UseMySql(...) or UseOracle(...). With EF Core, save through the DbContext instead.");
+                "Saving outbox messages through a DbTransaction needs an ADO.NET store, and none is registered. Install Twinbox.SqlServer, "
+                + "Twinbox.PostgreSql, Twinbox.MySql or Twinbox.Oracle and call UseSqlServer(...), UsePostgreSql(...), UseMySql(...) or UseOracle(...) "
+                + "inside AddTwinbox. With Twinbox.EntityFrameworkCore, save through the DbContext (SaveChanges) instead; with Twinbox.MongoDB, "
+                + "use outbox.CommitAsync(session).");
         await writer.WriteAsync(transaction, pending, cancellationToken).ConfigureAwait(false);
     }
 
