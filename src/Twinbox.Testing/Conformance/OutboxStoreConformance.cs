@@ -25,6 +25,7 @@ public static class OutboxStoreConformance
         new("Complete marks sent messages and releases the lease", CompleteMarksSent),
         new("Complete reschedules retried messages", CompleteReschedules),
         new("Complete ignores messages leased to another owner", CompleteIgnoresOtherOwners),
+        new("Complete applies each outcome of a mixed batch", CompleteAppliesMixedOutcomes),
         new("A dead message does not block its partition", DeadMessageUnblocksPartition),
         new("Purge removes expired sent messages only", PurgeRemovesExpiredSent),
         new("Statistics count pending and dead messages", StatisticsCountMessages),
@@ -143,6 +144,33 @@ public static class OutboxStoreConformance
 
         var stats = await store.GetStatisticsAsync(default);
         Expect(stats.PendingCount == 1, "an owner that lost its lease was able to complete the message");
+    }
+
+    private static async Task CompleteAppliesMixedOutcomes(IOutboxStore store)
+    {
+        var sent = NewMessage();
+        var retried = NewMessage();
+        var dead = NewMessage();
+        await store.AppendAsync([sent, retried, dead], default);
+        await ClaimAsync(store, Owner, T0);
+
+        var retryAt = T0.AddMinutes(5);
+        await store.CompleteAsync(
+            Owner,
+            [
+                Sent(sent),
+                new DispatchOutcome(retried.Id, OutboxMessageStatus.Pending, 2, AvailableAt: retryAt, Error: "boom"),
+                new DispatchOutcome(dead.Id, OutboxMessageStatus.Dead, 3, Error: "gave up"),
+            ],
+            default);
+
+        var stats = await store.GetStatisticsAsync(default);
+        Expect(stats.PendingCount == 1, $"expected 1 pending, got {stats.PendingCount}");
+        Expect(stats.DeadCount == 1, $"expected 1 dead, got {stats.DeadCount}");
+        Expect((await ClaimAsync(store, OtherOwner, retryAt.AddSeconds(-1))).Count == 0, "a message was claimed before it was due");
+        var next = await ClaimAsync(store, OtherOwner, retryAt);
+        Expect(next.Count == 1 && next[0].Id == retried.Id, "expected only the rescheduled message to be claimed at its retry time");
+        Expect(next[0].Attempts == 2 && next[0].LastError == "boom", $"expected 2 attempts and 'boom', got {next[0].Attempts} and '{next[0].LastError}'");
     }
 
     private static async Task DeadMessageUnblocksPartition(IOutboxStore store)

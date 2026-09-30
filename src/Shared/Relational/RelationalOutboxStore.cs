@@ -55,9 +55,10 @@ internal sealed class RelationalOutboxStore(
         }
 
         await using var lease = await OpenAsync(cancellationToken).ConfigureAwait(false);
-        foreach (var chunk in outcomes.Chunk(OutcomesPerCommand))
+        // Oracle's MERGE rejects duplicate ids; keeping the first matches when each outcome was its own statement.
+        foreach (var chunk in outcomes.DistinctBy(o => o.MessageId).Chunk(OutcomesPerCommand))
         {
-            await using var command = lease.Connection.Command(dialect.Sql.Batch(string.Join('\n', chunk.Select((_, i) => dialect.Sql.Complete(i)))))
+            await using var command = lease.Connection.Command(dialect.Sql.Complete(chunk.Length))
                 .With("@owner", owner, DbType.String);
             for (var i = 0; i < chunk.Length; i++)
             {

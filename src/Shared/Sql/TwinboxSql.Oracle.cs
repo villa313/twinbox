@@ -30,17 +30,12 @@ internal sealed partial class TwinboxSql
         END;
         """;
 
-    /// <summary>String binds arrive as VARCHAR2, which COALESCE won't mix with the NVARCHAR2 column without TO_NCHAR.</summary>
-    private string OracleComplete(int index) => ToOracle($"""
-        UPDATE {_outbox} SET
-            {_o("Status")} = @status{index},
-            {_o("Attempts")} = @attempts{index},
-            {_o("AvailableAt")} = COALESCE(@availableAt{index}, {_o("AvailableAt")}),
-            {_o("SentAt")} = @sentAt{index},
-            {_o("LastError")} = COALESCE(TO_NCHAR(@error{index}), {_o("LastError")}),
-            {_o("LeaseOwner")} = NULL,
-            {_o("LeaseUntil")} = NULL
-        WHERE {_o("Id")} = @id{index} AND {_o("LeaseOwner")} = @owner AND {_o("Status")} = {Processing};
+    /// <summary>MERGE can't update columns its ON clause reads, so the lease check sits in the UPDATE's WHERE. String binds
+    /// arrive as VARCHAR2, which COALESCE won't mix with the NVARCHAR2 column without TO_NCHAR.</summary>
+    private string OracleComplete(string rows) => ToOracle($"""
+        MERGE INTO {_outbox} t USING {rows} ON (t.{_o("Id")} = v.id)
+        WHEN MATCHED THEN UPDATE SET {CompleteAssignments("t.", "TO_NCHAR(v.error)")}
+        WHERE t.{_o("LeaseOwner")} = @owner AND t.{_o("Status")} = {Processing}
         """);
 
     private string OraclePurgeOutbox(string expired) => $"""
@@ -58,8 +53,6 @@ internal sealed partial class TwinboxSql
         DELETE FROM {_inbox} WHERE ROWID IN (
             SELECT ROWID FROM {_inbox} WHERE {_i("ProcessedAt")} < :before AND ROWNUM <= :batch)
         """;
-
-    private static string OracleBlock(string statements) => $"BEGIN\n{statements}\nEND;";
 
     private static string ToOracle(string sql) => AtParameter().Replace(sql, ":");
 

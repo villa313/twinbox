@@ -76,17 +76,16 @@ internal sealed class EntityFrameworkOutboxStore<TContext>(TwinboxScopeFactory s
         {
             var context = scope.ServiceProvider.GetRequiredService<TContext>();
             var sql = EntityFrameworkSql.For(context);
-            foreach (var chunk in outcomes.Chunk(OutcomesPerCommand))
+            // Oracle's MERGE rejects duplicate ids; keeping the first matches when each outcome was its own statement.
+            foreach (var chunk in outcomes.DistinctBy(o => o.MessageId).Chunk(OutcomesPerCommand))
             {
                 var parameters = new List<DbParameter> { Parameters.Create(context, "@owner", owner, DbType.String) };
-                var statements = new System.Text.StringBuilder();
                 for (var i = 0; i < chunk.Length; i++)
                 {
-                    statements.AppendLine(sql.Complete(i));
                     parameters.AddRange(OutcomeParameters(context, chunk[i], i));
                 }
 
-                await context.Database.ExecuteSqlRawAsync(sql.Batch(statements.ToString()), parameters, cancellationToken).ConfigureAwait(false);
+                await context.Database.ExecuteSqlRawAsync(sql.Complete(chunk.Length), parameters, cancellationToken).ConfigureAwait(false);
             }
         }
     }

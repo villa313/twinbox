@@ -186,7 +186,7 @@ Milliseconds per message, one message at a time, with a handler that inserts one
 - **In-process overhead is negligible next to I/O.** `Send` costs well under a microsecond plus serialization, and the inbound pipeline under a microsecond per message. A single database round trip on the same machine costs more than a hundred of either.
 - **The outbox write is a real row with real indexes, and you pay for it.** With 8 concurrent writers on PostgreSQL, adding one outbox message roughly halves transactions per second through EF Core and costs about 30 % through ADO.NET; ten messages per transaction still move 35,000–53,000 messages/s. The cost is mostly the database's: the outbox row carries a payload and three secondary indexes, and with ADO.NET it is one extra statement per transaction. If your transactions are tiny and your write rate is at the database's limit, budget for it; if they already do real work, the relative cost shrinks.
 - **ADO.NET scales better with many messages per transaction; EF Core is competitive with one.** EF Core batches the outbox rows with your own changes; ADO.NET sends them as one multi-row insert. On emulated SQL Server, EF Core with ten messages and eight writers was the worst case measured (13 % of baseline); its provider batches identity inserts into `MERGE` statements, and we have not checked whether that also holds on native hardware.
-- **Batch size is the dispatcher's main lever, up to a point.** Going from 1 to 50 messages per claim gave 3–9× everywhere. Beyond 50 there is little further gain, and sometimes a small loss: marking messages sent is one round trip but one `UPDATE` statement per message. Timing the store calls separately on PostgreSQL showed claims getting cheaper per message with larger batches while mark-sent stayed at roughly 90 µs per message regardless of batch size, so at 200 it is most of the cost. A set-based mark-sent would lift that ceiling; it is a candidate for future work.
+- **Batch size is the dispatcher's main lever.** Going from 1 to 50 messages per claim gave 3–9× everywhere. In the table above, from 1.1.0, there is little further gain beyond 50: marking messages sent was one `UPDATE` statement per message, about 90 µs each on PostgreSQL whatever the batch size. Mark-sent is now one set-based statement per batch, which removed that ceiling (see [Changes made because of these benchmarks](#changes-made-because-of-these-benchmarks)).
 - **Competing dispatchers scale on server databases, not on SQLite.** With batches of 50 or more, four dispatchers gave 2–4× the single-dispatcher rate on PostgreSQL and SQL Server thanks to `SKIP LOCKED`/`READPAST` claims. SQLite serializes writers, so more dispatchers only add contention; run one.
 - **The database inbox costs about one extra round trip per message.** On PostgreSQL that was +0.25 ms with ADO.NET and +0.56 ms with EF Core, whose transaction handling adds more work around the same statements. Skipping a duplicate costs less than processing a new message, since the handler never runs.
 
@@ -200,3 +200,18 @@ Milliseconds per message, one message at a time, with a handler that inserts one
 | Allocated | 576 B | 416 B |
 
 The time is unchanged within noise (the id and serializer dominate), but allocations per message dropped by 28 %. A similar change to the inbound pipeline's filter chain saved only 64 bytes per message and no time, so it was not kept.
+
+Marking a batch sent used to send one `UPDATE` per message in a single command. It is now one statement that joins the outbox to the batch's outcomes (`MERGE` on Oracle), for every relational store, through EF Core and ADO.NET alike. Dispatcher drain, same machine, median of 3 runs, before and after:
+
+| Store | Batch size | Dispatchers | Before (msg/s) | After (msg/s) |
+|---|---:|---:|---:|---:|
+| PostgreSQL, EF Core | 50 | 1 | 8,887 | 13,675 |
+| PostgreSQL, EF Core | 200 | 1 | 7,601 | 26,226 |
+| PostgreSQL, EF Core | 200 | 4 | 26,272 | 63,216 |
+| PostgreSQL, ADO.NET | 50 | 1 | 10,473 | 20,017 |
+| PostgreSQL, ADO.NET | 200 | 1 | 8,404 | 32,140 |
+| PostgreSQL, ADO.NET | 200 | 4 | 25,976 | 77,954 |
+| SQLite, EF Core | 50 | 1 | 7,208 | 20,838 |
+| SQLite, EF Core | 200 | 1 | 7,361 | 23,186 |
+
+Batch size 1 is unchanged within noise. Larger batches now pay off instead of flattening out, so 200 is worth trying when you need throughput. SQL Server was not re-measured.

@@ -11,6 +11,7 @@ internal sealed partial class TwinboxSql
     private const int Processing = (int)OutboxMessageStatus.Processing;
     private const int Sent = (int)OutboxMessageStatus.Sent;
     private const int Dead = (int)OutboxMessageStatus.Dead;
+    private static readonly string[] OutcomeColumns = ["id", "status", "attempts", "available_at", "sent_at", "error"];
 
     private readonly SqlProvider _provider;
     private readonly string _outbox;
@@ -97,21 +98,31 @@ internal sealed partial class TwinboxSql
     public string SelectLeased(IEnumerable<long> sequences) =>
         $"SELECT * FROM {_outbox} WHERE {Sequence} IN ({KeyList(sequences)}) ORDER BY {Sequence}";
 
-    /// <summary>One statement per outcome; <paramref name="index"/> keeps parameter names unique within a batch.</summary>
-    public string Complete(int index) => _provider == SqlProvider.Oracle ? OracleComplete(index) : $"""
-        UPDATE {_outbox} SET
-            {_o("Status")} = @status{index},
-            {_o("Attempts")} = @attempts{index},
-            {_o("AvailableAt")} = COALESCE(@availableAt{index}, {_o("AvailableAt")}),
-            {_o("SentAt")} = @sentAt{index},
-            {_o("LastError")} = COALESCE(@error{index}, {_o("LastError")}),
-            {_o("LeaseOwner")} = NULL,
-            {_o("LeaseUntil")} = NULL
-        WHERE {_o("Id")} = @id{index} AND {_o("LeaseOwner")} = @owner AND {_o("Status")} = {Processing};
-        """;
-
-    /// <summary>Joins <see cref="Complete"/> statements into one command text.</summary>
-    public string Batch(string statements) => _provider == SqlProvider.Oracle ? OracleBlock(statements) : statements;
+    /// <summary>One set-based UPDATE for <paramref name="count"/> outcomes, bound as @id0, @status0 and so on.</summary>
+    public string Complete(int count)
+    {
+        var rows = OutcomeRows(count);
+        var where = $"t.{_o("LeaseOwner")} = @owner AND t.{_o("Status")} = {Processing}";
+        return _provider switch
+        {
+            SqlProvider.Oracle => OracleComplete(rows),
+            SqlProvider.SqlServer => $"""
+                UPDATE t SET {CompleteAssignments("t.")}
+                FROM {_outbox} AS t JOIN {rows} ON t.{_o("Id")} = v.id
+                WHERE {where};
+                """,
+            SqlProvider.MySql => $"""
+                UPDATE {_outbox} AS t JOIN {rows} ON t.{_o("Id")} = v.id
+                SET {CompleteAssignments("t.")}
+                WHERE {where};
+                """,
+            _ => $"""
+                UPDATE {_outbox} AS t SET {CompleteAssignments(string.Empty)}
+                FROM {rows}
+                WHERE t.{_o("Id")} = v.id AND {where};
+                """,
+        };
+    }
 
     public string PurgeOutbox(bool includeDead)
     {
@@ -185,6 +196,42 @@ internal sealed partial class TwinboxSql
                 WHERE {_i("ProcessedAt")} < @before LIMIT @batch FOR UPDATE SKIP LOCKED);
             """,
     };
+
+    /// <summary>A derived table named v whose columns are <see cref="OutcomeColumns"/>.</summary>
+    private string OutcomeRows(int count)
+    {
+        var rows = Enumerable.Range(0, count).Select(OutcomeParameters).ToArray();
+        var values = string.Join(", ", rows.Select(r => $"({string.Join(", ", r)})"));
+        return _provider switch
+        {
+            // SQLite has no column alias list and names VALUES columns column1..columnN.
+            SqlProvider.Sqlite =>
+                $"(SELECT {string.Join(", ", OutcomeColumns.Select((c, i) => $"column{i + 1} AS {c}"))} FROM (VALUES {values})) AS v",
+            SqlProvider.MySql => $"({UnionRows(rows, string.Empty)}) AS v",
+            SqlProvider.Oracle => $"({UnionRows(rows, " FROM dual")}) v",
+            _ => $"(VALUES {values}) AS v({string.Join(", ", OutcomeColumns)})",
+        };
+    }
+
+    private static string[] OutcomeParameters(int index) =>
+        [$"@id{index}", $"@status{index}", $"@attempts{index}", $"@availableAt{index}", $"@sentAt{index}", $"@error{index}"];
+
+    private static string UnionRows(string[][] rows, string from)
+    {
+        var head = $"SELECT {string.Join(", ", rows[0].Select((p, i) => $"{p} AS {OutcomeColumns[i]}"))}{from}";
+        return string.Join("\nUNION ALL ", rows.Skip(1).Select(r => $"SELECT {string.Join(", ", r)}{from}").Prepend(head));
+    }
+
+    /// <summary>Lease columns are cleared too; <paramref name="target"/> qualifies the assigned columns where the dialect needs it.</summary>
+    private string CompleteAssignments(string target, string error = "v.error") => $"""
+        {target}{_o("Status")} = v.status,
+            {target}{_o("Attempts")} = v.attempts,
+            {target}{_o("AvailableAt")} = COALESCE(v.available_at, t.{_o("AvailableAt")}),
+            {target}{_o("SentAt")} = v.sent_at,
+            {target}{_o("LastError")} = COALESCE({error}, t.{_o("LastError")}),
+            {target}{_o("LeaseOwner")} = NULL,
+            {target}{_o("LeaseUntil")} = NULL
+        """;
 
     private static string KeyList(IEnumerable<long> sequences) =>
         string.Join(", ", sequences.Select(s => s.ToString(CultureInfo.InvariantCulture)));
