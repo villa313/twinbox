@@ -57,14 +57,51 @@ internal sealed partial class OutboxDispatcher(
 
         var outcomes = new ConcurrentBag<DispatchOutcome>();
         var groups = claimed.GroupBy(m => (m.Transport, m.Destination)).ToArray();
-        await Parallel.ForEachAsync(
-            groups,
-            new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, settings.Dispatcher.MaxDegreeOfParallelism), CancellationToken = cancellationToken },
-            async (group, ct) => await DispatchGroupAsync(group.Key, [.. group], settings, outcomes, ct).ConfigureAwait(false))
-            .ConfigureAwait(false);
+        try
+        {
+            await Parallel.ForEachAsync(
+                groups,
+                new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, settings.Dispatcher.MaxDegreeOfParallelism), CancellationToken = cancellationToken },
+                async (group, ct) => await DispatchGroupAsync(group.Key, [.. group], settings, outcomes, ct).ConfigureAwait(false))
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            await ReleaseInterruptedBatchAsync(store, owner, claimed, [.. outcomes], ex).ConfigureAwait(false);
+            throw;
+        }
 
         await store.CompleteAsync(owner, [.. outcomes], cancellationToken).ConfigureAwait(false);
         return claimed.Count;
+    }
+
+    /// <summary>Records what an interrupted batch (usually shutdown) already sent and releases the rest as due now,
+    /// so the sent part isn't resent when the lease expires.</summary>
+    private async Task ReleaseInterruptedBatchAsync(
+        IOutboxStore store,
+        string owner,
+        IReadOnlyList<OutboxMessage> claimed,
+        DispatchOutcome[] known,
+        Exception interruption)
+    {
+        var now = time.GetUtcNow();
+        var finished = known.Select(o => o.MessageId).ToHashSet();
+        DispatchOutcome[] outcomes =
+        [
+            .. known,
+            .. claimed.Where(m => !finished.Contains(m.Id)).Select(m => new DispatchOutcome(m.Id, OutboxMessageStatus.Pending, m.Attempts, AvailableAt: now)),
+        ];
+
+        try
+        {
+            // The dispatch token is usually the cancelled one, and these outcomes must still be written.
+            await store.CompleteAsync(owner, outcomes, CancellationToken.None).ConfigureAwait(false);
+            LogBatchInterrupted(interruption, known.Length, outcomes.Length - known.Length);
+        }
+        catch (Exception ex)
+        {
+            LogReleaseFailed(ex, outcomes.Length);
+        }
     }
 
     private async Task DispatchGroupAsync(
@@ -238,6 +275,12 @@ internal sealed partial class OutboxDispatcher(
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Message {MessageId} to {Destination} was dead-lettered after {Attempts} attempt(s).")]
     private partial void LogDeadLettered(Exception error, Guid messageId, string destination, int attempts);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Outbox batch interrupted; recorded {Recorded} outcome(s) and released {Released} unsent message(s).")]
+    private partial void LogBatchInterrupted(Exception interruption, int recorded, int released);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Couldn't record {Count} outcome(s) of an interrupted outbox batch; its messages are retried once their leases expire.")]
+    private partial void LogReleaseFailed(Exception error, int count);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Dead-letter observer {Observer} failed for message {MessageId}.")]
     private partial void LogObserverFailed(Exception error, string observer, Guid messageId);
