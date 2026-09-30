@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>.NET Aspire AppHost integration for Twinbox: links a resource's Twinbox dashboard and adds a command to replay dead letters.</Description>
+    <PackageTags>$(PackageTags);aspire;dashboard</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting" />
+    <PackageReference Include="MessagePack" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Twinbox.Aspire.Tests" />
+  </ItemGroup>
+</Project>

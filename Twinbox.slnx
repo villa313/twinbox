@@ -5,6 +5,8 @@
   <Folder Name="/src/">
     <Project Path="src/Twinbox.Abstractions/Twinbox.Abstractions.csproj" />
     <Project Path="src/Twinbox.AmazonSqs/Twinbox.AmazonSqs.csproj" />
+    <Project Path="src/Twinbox.Aspire/Twinbox.Aspire.csproj" />
+    <Project Path="src/Twinbox.Aspire.Hosting/Twinbox.Aspire.Hosting.csproj" />
     <Project Path="src/Twinbox.EntityFrameworkCore/Twinbox.EntityFrameworkCore.csproj" />
     <Project Path="src/Twinbox.AzureFunctions/Twinbox.AzureFunctions.csproj" />
     <Project Path="src/Twinbox.EventHubs/Twinbox.EventHubs.csproj" />
@@ -31,6 +33,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Twinbox.EntityFrameworkCore.IntegrationTests/Twinbox.EntityFrameworkCore.IntegrationTests.csproj" />
     <Project Path="tests/Twinbox.AmazonSqs.Tests/Twinbox.AmazonSqs.Tests.csproj" />
+    <Project Path="tests/Twinbox.Aspire.Tests/Twinbox.Aspire.Tests.csproj" />
     <Project Path="tests/Twinbox.RabbitMQ.Tests/Twinbox.RabbitMQ.Tests.csproj" />
     <Project Path="tests/Twinbox.AzureFunctions.Tests/Twinbox.AzureFunctions.Tests.csproj" />
     <Project Path="tests/Twinbox.AzureServiceBus.Tests/Twinbox.AzureServiceBus.Tests.csproj" />

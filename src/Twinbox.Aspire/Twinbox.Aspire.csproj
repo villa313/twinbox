@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>.NET Aspire service defaults for Twinbox: OpenTelemetry tracing and metrics plus a readiness health check in one call.</Description>
+    <PackageTags>$(PackageTags);aspire;opentelemetry</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Twinbox/Twinbox.csproj" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Twinbox.Aspire.Tests" />
+  </ItemGroup>
+</Project>
