@@ -17,13 +17,13 @@ internal static class GooglePubSubMapping
     // Pub/Sub caps attribute values at 1024 bytes; 340 chars stay under it even at 3 bytes each.
     private const int MaxErrorLength = 340;
 
-    public static TopicName ToTopicName(string topic, string projectId) =>
-        topic.StartsWith("projects/", StringComparison.Ordinal) ? TopicName.Parse(topic) : new TopicName(projectId, topic);
+    public static bool IsFullName(string name) => name.StartsWith("projects/", StringComparison.Ordinal);
 
-    public static SubscriptionName ToSubscriptionName(string subscription, string projectId) =>
-        subscription.StartsWith("projects/", StringComparison.Ordinal)
-            ? SubscriptionName.Parse(subscription)
-            : new SubscriptionName(projectId, subscription);
+    public static TopicName ToTopicName(string topic, string? projectId) =>
+        IsFullName(topic) ? TopicName.Parse(topic) : new TopicName(RequireProject(projectId, topic), topic);
+
+    public static SubscriptionName ToSubscriptionName(string subscription, string? projectId) =>
+        IsFullName(subscription) ? SubscriptionName.Parse(subscription) : new SubscriptionName(RequireProject(projectId, subscription), subscription);
 
     public static PubsubMessage ToPubsubMessage(TransportMessage message, bool ordering)
     {
@@ -86,4 +86,9 @@ internal static class GooglePubSubMapping
     }
 
     private static string? NullIfEmpty(string? value) => string.IsNullOrEmpty(value) ? null : value;
+
+    private static string RequireProject(string? projectId, string name) =>
+        string.IsNullOrWhiteSpace(projectId)
+            ? throw new ArgumentException($"'{name}' is a short name, so GooglePubSubOptions.ProjectId must be set.", nameof(projectId))
+            : projectId;
 }

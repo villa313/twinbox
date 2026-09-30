@@ -2,6 +2,7 @@ using Google.Cloud.PubSub.V1;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
+using Twinbox.Tests.Shared;
 using Twinbox.Transport;
 using Reply = Google.Cloud.PubSub.V1.SubscriberClient.Reply;
 
@@ -31,11 +32,24 @@ public sealed class SubscriberTests
     }
 
     [Fact]
-    public async Task PermanentFailureWithoutDeadLetterTopic_IsNackedForTheSubscriptionPolicy()
+    public async Task PermanentFailureOnASubscriptionWithADeadLetterPolicy_IsNackedForThePolicy()
     {
         var pipeline = new ScriptedPipeline { Failure = new PermanentDeliveryException("poison") };
+        var received = Received("m1");
+        received.Attributes["googclient_deliveryattempt"] = "2";
 
-        Assert.Equal(Reply.Nack, await Service(pipeline).HandleAsync("billing", Received("m1"), Gate(), CancellationToken.None));
+        Assert.Equal(Reply.Nack, await Service(pipeline).HandleAsync("billing", received, Gate(), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task PermanentFailureWithNowhereToDeadLetter_IsCountedAndAcknowledged()
+    {
+        var subscription = $"billing-{Guid.NewGuid():N}";
+        using var discarded = new CounterProbe("twinbox.inbox.discarded", subscription);
+        var pipeline = new ScriptedPipeline { Failure = new PermanentDeliveryException("poison") };
+
+        Assert.Equal(Reply.Ack, await Service(pipeline).HandleAsync(subscription, Received("m1"), Gate(), CancellationToken.None));
+        Assert.Equal(1, discarded.Value);
     }
 
     [Fact]

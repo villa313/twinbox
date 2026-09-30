@@ -187,8 +187,16 @@ internal sealed partial class GooglePubSubSubscriberService(
     {
         if (clients.Options.DeadLetterTopic is not { } deadLetterTopic)
         {
-            LogLeftForDeadLetterPolicy(error, incoming.MessageId, subscription);
-            return SubscriberClient.Reply.Nack;
+            // Pub/Sub reports a delivery attempt only to subscriptions with a dead-letter policy, which can forward it.
+            if (message.GetDeliveryAttempt() is not null)
+            {
+                LogLeftForDeadLetterPolicy(error, incoming.MessageId, subscription);
+                return SubscriberClient.Reply.Nack;
+            }
+
+            LogDiscarded(error, incoming.MessageId, subscription, incoming.MessageName);
+            InboundDiagnostics.RecordDiscarded(GooglePubSubTransport.TransportName, subscription);
+            return SubscriberClient.Reply.Ack;
         }
 
         try
@@ -204,6 +212,7 @@ internal sealed partial class GooglePubSubSubscriberService(
         }
 
         LogDeadLettered(error, incoming.MessageId, subscription, deadLetterTopic);
+        InboundDiagnostics.RecordDeadLettered(GooglePubSubTransport.TransportName, subscription);
         return SubscriberClient.Reply.Ack;
     }
 
@@ -221,6 +230,9 @@ internal sealed partial class GooglePubSubSubscriberService(
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Message {MessageId} from {Subscription} failed permanently and no dead-letter topic is set; leaving it to the subscription's dead-letter policy.")]
     private partial void LogLeftForDeadLetterPolicy(Exception error, string messageId, string subscription);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Message {MessageId} ('{MessageName}') from {Subscription} failed permanently and neither a dead-letter topic nor a dead-letter policy is set; acknowledging it.")]
+    private partial void LogDiscarded(Exception error, string messageId, string subscription, string messageName);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Could not copy message {MessageId} from {Subscription} to {DeadLetterTopic}; Pub/Sub will redeliver it.")]
     private partial void LogDeadLetterFailed(Exception error, string messageId, string subscription, string deadLetterTopic);

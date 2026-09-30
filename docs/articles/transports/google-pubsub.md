@@ -1,6 +1,6 @@
 # Google Cloud Pub/Sub
 
-`Twinbox.GooglePubSub` · transport name `"googlepubsub"`
+`Twinbox.GooglePubSub` · transport name `"googlepubsub"` (`GooglePubSubTransport.TransportName`)
 
 A route destination is a Pub/Sub topic: a topic id in the configured project, or a full `projects/<project>/topics/<topic>`
 name. On the receiving side Twinbox runs a streaming subscriber per subscription and acknowledges each message only after
@@ -8,12 +8,13 @@ the inbox has handled it.
 
 ## Setup
 
-With a project id (send only; credentials come from Application Default Credentials):
+With a project id, and optionally a callback for everything else (credentials come from Application Default
+Credentials):
 
 ```csharp
 builder.Services.AddTwinbox(twinbox => twinbox
     .UseEntityFrameworkCore<AppDbContext>()
-    .UseGooglePubSub("my-project")
+    .UseGooglePubSub("my-project", options => options.Listen("billing-payments", "payments"))
     .Route<OrderPlaced>().To("orders"));
 ```
 
@@ -27,7 +28,7 @@ builder.Services.AddTwinbox(twinbox => twinbox
         options.ProjectId = "my-project";
         options.Credential = GoogleCredential.FromFile("service-account.json");
         options.DeadLetterTopic = "orders-dead-letter";
-        options.Subscribe("billing-orders", "orders");
+        options.Listen("billing-orders", "orders");
     })
     .Route<OrderPlaced>().To("orders"));
 ```
@@ -37,8 +38,8 @@ environment variable is still honoured.
 
 ## Receiving
 
-`Subscribe(subscription, topic)` consumes a subscription. The topic is only used when `AutoCreate` creates the
-subscription. Both may be short ids or full names.
+`Listen(subscription, topic)` consumes a subscription. The topic is only used when `AutoCreate` creates the
+subscription. Both may be short ids or full names; short ids need `ProjectId`.
 
 The message `Source` is the subscription exactly as you passed it. `MaxOutstandingMessages` bounds how many handlers run
 at once per subscription. If a subscriber fails, it is rebuilt with backoff up to 30 seconds.
@@ -47,7 +48,7 @@ at once per subscription. If a subscriber fails, it is rebuilt with backoff up t
 
 | Option | Default | Description |
 |---|---|---|
-| `ProjectId` | `""` | Project for short topic and subscription ids. Required. |
+| `ProjectId` | `null` | Project for short topic and subscription ids. Required when a listener or `DeadLetterTopic` uses a short id; a send to a short topic id without it is dead-lettered. Cannot be blank. |
 | `EmulatorHost` | `null` | `host:port` of the emulator, reached without credentials. Cannot be blank. |
 | `Credential` | `null` | A `GoogleCredential`. `null` uses Application Default Credentials. |
 | `ConfigurePublisher` | `null` | Last say over each `PublisherClientBuilder`. |
@@ -57,7 +58,7 @@ at once per subscription. If a subscriber fails, it is rebuilt with backoff up t
 | `MaxOutstandingMessages` | `100` | Messages leased but not yet acknowledged per subscription. Must be positive. |
 | `EnableMessageOrdering` | `false` | Publish with the partition key as ordering key. Auto-created subscriptions enable ordering to match. |
 | `DeadLetterTopic` | `null` | Topic that receives copies of permanently failing messages. Cannot be blank. |
-| `MaxDeliveryAttempts` | `5` | Deliveries before an auto-created subscription forwards a message to `DeadLetterTopic`. 5 to 100. |
+| `MaxDeliveryAttempts` | `10` | Deliveries, the first included, before an auto-created subscription forwards a message to `DeadLetterTopic`. 5 to 100; only checked when `AutoCreate` and `DeadLetterTopic` are both set. |
 
 ## Message mapping
 
@@ -88,8 +89,11 @@ Receiving:
   Twinbox does not set a retry policy, so by default redelivery is immediate.
 - `PermanentDeliveryException` with `DeadLetterTopic` set: the message is published there, keeping its id and adding
   `twinbox-error` and `twinbox-origin` (the subscription), then acknowledged. If the publish fails, it is nacked.
-- `PermanentDeliveryException` without `DeadLetterTopic`: the message is nacked and left to the subscription's own
-  dead-letter policy, if any.
+- `PermanentDeliveryException` without `DeadLetterTopic`, on a subscription with its own dead-letter policy (Pub/Sub
+  then reports a delivery attempt): the message is nacked and left to that policy.
+- `PermanentDeliveryException` with neither: the message is logged at error level, counted in
+  `twinbox.inbox.discarded` and acknowledged (see
+  [the transports overview](index.md#permanent-failures-without-a-dead-letter-destination)).
 
 Subscriptions created by `AutoCreate` with a `DeadLetterTopic` also get a dead-letter policy, so Pub/Sub forwards any
 message after `MaxDeliveryAttempts` deliveries. Pub/Sub drops messages published to a topic without subscriptions, so
@@ -116,6 +120,7 @@ missing topic dead-letters outbox rows because `NotFound` is permanent.
 
 - No batch consumption: batch handlers receive batches of one. See [Batch handlers](../concepts/batch-handlers.md).
 - No backoff on nack unless you configure a retry policy on the subscription.
-- Without a dead-letter topic or subscription dead-letter policy, a failing message is redelivered forever.
+- Without a dead-letter topic or subscription dead-letter policy, a message whose handler keeps failing transiently is
+  redelivered forever.
 - Subscription settings (`AckDeadline`, ordering, `MaxDeliveryAttempts`) only apply when Twinbox creates the
   subscription.
