@@ -129,4 +129,5 @@ destination topics and the `-dlq` topics must exist beforehand. Listeners create
   passes. If the consumer closes meanwhile, the broker redelivers it at once.
 - No producer options (batching, compression, chunking) are exposed.
 - `ConsumerConcurrency` above 1 is rejected for `Exclusive` and `Failover` subscriptions.
-- The destination prefix (`Twinbox:DestinationPrefix`) applies to routed topics, not to `Listen` topic names.
+- The destination prefix (`Twinbox:DestinationPrefix`) applies to routed topics, an explicit
+  `SendOptions.Destination` and webhook destinations (never to `ReplyTo`), not to `Listen` topic names.

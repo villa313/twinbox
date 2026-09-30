@@ -164,6 +164,6 @@ own dead-letter configuration, or rejected messages are dropped by the broker.
 - Queues are always quorum queues. If a queue already exists with different arguments (for example another
   `MaxDeliveryAttempts`), the broker refuses the declaration and the listener keeps retrying with a warning.
 - Quorum queues dead-letter at most once by default; a dead-lettered message can be lost if `<queue>.dlq` rejects it.
-- The destination prefix (`Twinbox:DestinationPrefix`) applies to routed exchanges, not to `Listen` queue or exchange
-  names.
+- The destination prefix (`Twinbox:DestinationPrefix`) applies to routed exchanges, an explicit
+  `SendOptions.Destination` and webhook destinations (never to `ReplyTo`), not to `Listen` queue or exchange names.
 - Messages without an AMQP `message_id` or `twinbox-message-id` header cannot be deduplicated and are dead-lettered.

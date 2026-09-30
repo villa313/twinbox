@@ -137,4 +137,5 @@ There is no switch to turn this off.
 - `MaxLength` trimming can drop entries a group has not read yet. It is not applied to dead streams, which grow
   without bound.
 - One entry is handled at a time per listener; there is no concurrency option.
-- The destination prefix (`Twinbox:DestinationPrefix`) applies to routed streams, not to `Listen` stream names.
+- The destination prefix (`Twinbox:DestinationPrefix`) applies to routed streams, an explicit
+  `SendOptions.Destination` and webhook destinations (never to `ReplyTo`), not to `Listen` stream names.

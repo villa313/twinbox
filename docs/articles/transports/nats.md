@@ -136,5 +136,5 @@ overtake it. Instances sharing a durable consumer split its messages and do not 
 - No in-progress acks: a handler running longer than `AckWait` gets its message redelivered while it still runs.
   Prefetched messages also use up `AckWait` while they wait.
 - `DuplicateWindow` applies only to streams created by Twinbox.
-- The destination prefix (`Twinbox:DestinationPrefix`) applies to routed subjects, not to `Listen` or `AddStream`
-  names.
+- The destination prefix (`Twinbox:DestinationPrefix`) applies to routed subjects, an explicit
+  `SendOptions.Destination` and webhook destinations (never to `ReplyTo`), not to `Listen` or `AddStream` names.

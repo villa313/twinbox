@@ -123,8 +123,8 @@ builder.Services.AddHttpClient(HttpTransport.HttpClientName("partner-webhook"))
 
 ## Destination prefix
 
-With `Twinbox:DestinationPrefix`, routed destinations are prefixed, but endpoints keep their plain names: the
-transport strips the prefix when it looks an endpoint up.
+`Twinbox:DestinationPrefix` applies to routed destinations, an explicit `SendOptions.Destination` and webhook destinations (never to `ReplyTo`), but endpoints keep their plain names: the transport strips the
+prefix when it looks an endpoint up.
 
 ## Limitations
 

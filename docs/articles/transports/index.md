@@ -61,8 +61,8 @@ counters carry `transport` and `source` tags and come from the `Twinbox` meter (
 ## Choosing destination names
 
 Destinations are plain strings from your routes, plus the optional
-[destination prefix](../concepts/routing.md#destination-prefix). Listener names (queues, subscriptions, groups) are
-configured separately and are not prefixed.
+[destination prefix](../concepts/routing.md#destination-prefix), which applies to routed destinations, an explicit `SendOptions.Destination` and webhook destinations (never to `ReplyTo`).
+Listener names (queues, subscriptions, groups) are configured separately and are not prefixed.
 
 ## Writing a transport
 
