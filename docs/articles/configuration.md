@@ -39,7 +39,7 @@ builder.Services.AddTwinbox(twinbox => twinbox
 
 | Key | Default | Description |
 |---|---|---|
-| `Enabled` | `true` | Runs the background dispatcher. Turn off to call `IOutboxDispatcher` yourself. |
+| `Enabled` | `true` | Runs the background dispatcher. Turn off to dispatch with `ITwinboxMaintenance` yourself. |
 | `BatchSize` | `100` | Rows claimed per pass (per store and tenant). Must be positive. |
 | `LeaseDuration` | `00:00:30` | How long claimed rows are held before another instance may take them. |
 | `MinPollInterval` | `00:00:01` | Idle delay right after work was found. |
@@ -75,7 +75,7 @@ again.
 
 | Key | Default | Description |
 |---|---|---|
-| `Enabled` | `true` | Runs the cleanup service. |
+| `Enabled` | `true` | Runs the cleanup service. Turn off to call `ITwinboxMaintenance.RunCleanupAsync` from your own scheduler. |
 | `SentMessages` | `1.00:00:00` | Age at which sent rows are deleted. |
 | `DeadMessages` | `null` | Age at which dead rows are deleted; `null` keeps them. |
 | `InboxEntries` | `7.00:00:00` | Age at which inbox entries are deleted: the deduplication window. |

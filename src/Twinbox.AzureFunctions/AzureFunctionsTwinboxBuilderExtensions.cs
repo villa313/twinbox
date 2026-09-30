@@ -16,7 +16,6 @@ public static class AzureFunctionsTwinboxBuilderExtensions
             options.Retention.Enabled = false;
         });
         builder.Services.TryAddSingleton<TwinboxServiceBusTrigger>();
-        builder.Services.TryAddSingleton<ITwinboxMaintenance, TwinboxMaintenance>();
         return builder;
     }
 }

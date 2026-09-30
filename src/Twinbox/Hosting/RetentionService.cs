@@ -1,18 +1,14 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Twinbox.Storage;
-using Twinbox.Tenancy;
 
 namespace Twinbox.Hosting;
 
 internal sealed partial class RetentionService(
-    IEnumerable<IOutboxStore> outboxes,
-    TenantDirectory tenants,
+    ITwinboxMaintenance maintenance,
     IOptions<TwinboxOptions> options,
     TimeProvider time,
-    ILogger<RetentionService> logger,
-    IInboxStore? inbox = null) : BackgroundService
+    ILogger<RetentionService> logger) : BackgroundService
 {
     private readonly ILogger _logger = logger;
 
@@ -29,7 +25,7 @@ internal sealed partial class RetentionService(
         {
             try
             {
-                await PurgeAsync(retention, stoppingToken).ConfigureAwait(false);
+                await maintenance.RunCleanupAsync(stoppingToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
             {
@@ -37,37 +33,6 @@ internal sealed partial class RetentionService(
             }
         }
         while (await timer.WaitForNextTickAsync(stoppingToken).ConfigureAwait(false));
-    }
-
-    internal async Task PurgeAsync(RetentionOptions retention, CancellationToken cancellationToken)
-    {
-        foreach (var tenant in await tenants.GetTenantsAsync(cancellationToken).ConfigureAwait(false))
-        {
-            using var _ = TenantScope.Enter(tenant);
-            await PurgeTenantAsync(retention, cancellationToken).ConfigureAwait(false);
-        }
-    }
-
-    private async Task PurgeTenantAsync(RetentionOptions retention, CancellationToken cancellationToken)
-    {
-        var now = time.GetUtcNow();
-        var purge = new OutboxPurge(now - retention.SentMessages, now - retention.DeadMessages, retention.BatchSize);
-        foreach (var outbox in outboxes)
-        {
-            while (await outbox.PurgeAsync(purge, cancellationToken).ConfigureAwait(false) >= retention.BatchSize)
-            {
-            }
-        }
-
-        if (inbox is null)
-        {
-            return;
-        }
-
-        var processedBefore = now - retention.InboxEntries;
-        while (await inbox.PurgeAsync(processedBefore, retention.BatchSize, cancellationToken).ConfigureAwait(false) >= retention.BatchSize)
-        {
-        }
     }
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Twinbox retention cleanup failed; will retry next interval.")]

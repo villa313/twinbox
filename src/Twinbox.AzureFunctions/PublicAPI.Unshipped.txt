@@ -1,14 +1,11 @@
 #nullable enable
-Twinbox.AzureFunctions.ITwinboxMaintenance
-Twinbox.AzureFunctions.ITwinboxMaintenance.RunCleanupAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
 Twinbox.AzureFunctions.TwinboxServiceBusTrigger
 Twinbox.AzureFunctions.TwinboxServiceBusTrigger.ProcessServiceBusMessageAsync(Azure.Messaging.ServiceBus.ServiceBusReceivedMessage! message, Microsoft.Azure.Functions.Worker.ServiceBusMessageActions! messageActions, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.AzureFunctions.TwinboxServiceBusTrigger.ProcessServiceBusMessageAsync(Azure.Messaging.ServiceBus.ServiceBusReceivedMessage! message, Microsoft.Azure.Functions.Worker.ServiceBusMessageActions! messageActions, string! source, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.AzureFunctions.TwinboxServiceBusTrigger.TwinboxServiceBusTrigger(Twinbox.Transport.IInboundPipeline! pipeline, Microsoft.Extensions.Logging.ILogger<Twinbox.AzureFunctions.TwinboxServiceBusTrigger!>! logger) -> void
 Twinbox.AzureFunctionsTwinboxBuilderExtensions
-Twinbox.OutboxDispatcherExtensions
+Twinbox.TwinboxMaintenanceExtensions
 const Twinbox.AzureFunctions.TwinboxServiceBusTrigger.DefaultSource = "azureservicebus" -> string!
 static Twinbox.AzureFunctionsTwinboxBuilderExtensions.UseAzureFunctions(this Twinbox.TwinboxBuilder! builder) -> Twinbox.TwinboxBuilder!
-static Twinbox.OutboxDispatcherExtensions.DispatchPendingAsync(this Twinbox.IOutboxDispatcher! dispatcher, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
-static Twinbox.OutboxDispatcherExtensions.DispatchPendingAsync(this Twinbox.IOutboxDispatcher! dispatcher, System.TimeSpan budget, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
-static readonly Twinbox.OutboxDispatcherExtensions.DefaultDispatchBudget -> System.TimeSpan
+static Twinbox.TwinboxMaintenanceExtensions.DispatchPendingAsync(this Twinbox.ITwinboxMaintenance! maintenance, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
+static readonly Twinbox.TwinboxMaintenanceExtensions.DefaultDispatchBudget -> System.TimeSpan

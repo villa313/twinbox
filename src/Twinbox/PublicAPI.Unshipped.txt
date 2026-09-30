@@ -43,6 +43,9 @@ Twinbox.IMessageNames
 Twinbox.IMessageNames.GetName(System.Type! messageType) -> string!
 Twinbox.IOutboxDispatcher
 Twinbox.IOutboxDispatcher.DispatchBatchAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
+Twinbox.ITwinboxMaintenance
+Twinbox.ITwinboxMaintenance.DispatchPendingAsync(System.TimeSpan budget, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
+Twinbox.ITwinboxMaintenance.RunCleanupAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
 Twinbox.InboxOptions
 Twinbox.InboxOptions.Enabled.get -> bool
 Twinbox.InboxOptions.Enabled.set -> void

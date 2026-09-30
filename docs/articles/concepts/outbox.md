@@ -62,9 +62,10 @@ Each send is capped by `Dispatcher:SendTimeout` (30 s). A timeout counts as a fa
 mid-batch, its leases expire and another instance picks the rows up again, so a message can be sent twice; the
 receiving [inbox](inbox.md) absorbs that.
 
-To dispatch from somewhere other than the background service (a timer function, a test), set
-`Twinbox:Dispatcher:Enabled` to `false` and call `IOutboxDispatcher.DispatchBatchAsync` yourself. See
-[Azure Functions](../azure-functions.md).
+To dispatch from somewhere other than the background service (a timer function, a scheduled job, a test), set
+`Twinbox:Dispatcher:Enabled` to `false` and call `ITwinboxMaintenance.DispatchPendingAsync(budget, ct)`, which
+dispatches until the outbox is empty or the budget runs out, or `IOutboxDispatcher.DispatchBatchAsync` for a single
+batch. See [Azure Functions](../azure-functions.md).
 
 ## Message ids
 

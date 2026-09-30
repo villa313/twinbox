@@ -1,6 +1,5 @@
 using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Time.Testing;
 using Twinbox.Transport;
 
 namespace Twinbox.AzureFunctions.Tests;
@@ -48,17 +47,6 @@ internal sealed class RecordingPipeline(Func<IncomingMessage, Task>? onProcess =
     {
         Received.Add(message);
         return onProcess?.Invoke(message) ?? Task.CompletedTask;
-    }
-}
-
-internal sealed class ScriptedDispatcher(FakeTimeProvider time, TimeSpan batchDuration, Func<int, int> claimedOnCall) : IOutboxDispatcher
-{
-    public int Calls { get; private set; }
-
-    public Task<int> DispatchBatchAsync(CancellationToken cancellationToken)
-    {
-        time.Advance(batchDuration);
-        return Task.FromResult(claimedOnCall(Calls++));
     }
 }
 

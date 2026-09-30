@@ -5,6 +5,7 @@ using Twinbox;
 using Twinbox.Dispatch;
 using Twinbox.Hosting;
 using Twinbox.Inbox;
+using Twinbox.Maintenance;
 using Twinbox.Messaging;
 using Twinbox.Serialization;
 using Twinbox.Storage;
@@ -45,6 +46,7 @@ public static class TwinboxServiceCollectionExtensions
         services.TryAddSingleton<DispatchSignal>();
         services.TryAddSingleton<IDispatchSignal>(sp => sp.GetRequiredService<DispatchSignal>());
         services.TryAddSingleton<IOutboxDispatcher, OutboxDispatcher>();
+        services.TryAddSingleton<ITwinboxMaintenance, TwinboxMaintenance>();
 
         services.TryAddScoped<OutboxBuffer>();
         services.TryAddScoped<HandlerTransaction>();
