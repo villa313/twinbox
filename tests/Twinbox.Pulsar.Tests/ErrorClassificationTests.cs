@@ -7,7 +7,6 @@ public sealed class ErrorClassificationTests
     [Theory]
     [InlineData(nameof(TopicNotFoundException))]
     [InlineData(nameof(InvalidTopicNameException))]
-    [InlineData(nameof(AuthorizationException))]
     [InlineData(nameof(TooLargeMessageException))]
     [InlineData(nameof(TopicTerminatedException))]
     [InlineData(nameof(IncompatibleSchemaException))]
@@ -20,6 +19,7 @@ public sealed class ErrorClassificationTests
 
     [Theory]
     [InlineData(nameof(AuthenticationException))]
+    [InlineData(nameof(AuthorizationException))]
     [InlineData(nameof(ServiceNotReadyException))]
     [InlineData(nameof(TooManyRequestsException))]
     [InlineData(nameof(PersistenceException))]
@@ -29,7 +29,7 @@ public sealed class ErrorClassificationTests
     [InlineData(nameof(TimeoutException))]
     [InlineData(nameof(OperationCanceledException))]
     [InlineData(nameof(IOException))]
-    public void BrokerAndNetworkHiccups_AreTransient(string error)
+    public void BrokerHiccupsAndAccessErrors_AreTransient(string error)
     {
         Assert.False(PulsarErrors.IsPermanent(Create(error)));
         Assert.False(PulsarErrors.IsPermanent(new ProducerFaultedException(Create(error))));

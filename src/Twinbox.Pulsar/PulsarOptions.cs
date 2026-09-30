@@ -20,11 +20,14 @@ public sealed class PulsarOptions
     /// <summary>Where a subscription created by a listener starts reading.</summary>
     public SubscriptionInitialPosition InitialPosition { get; set; } = SubscriptionInitialPosition.Earliest;
 
-    /// <summary>Redeliveries of a failing message before it is moved to the dead-letter topic.</summary>
-    public int MaxRedeliveryCount { get; set; } = 10;
+    /// <summary>Deliveries of a message, the first included; the last failed one moves it to the dead-letter topic.</summary>
+    public int MaxDeliveryAttempts { get; set; } = 10;
 
-    /// <summary>Wait before a message whose handler failed is handed back to the broker for another attempt.</summary>
-    public TimeSpan NegativeAckRedeliveryDelay { get; set; } = TimeSpan.FromMinutes(1);
+    /// <summary>First wait before a message whose handler failed is handed back to the broker; doubles up to
+    /// <see cref="MaxRetryDelay"/>. The consumer holds it unacknowledged meanwhile.</summary>
+    public TimeSpan RetryDelay { get; set; } = TimeSpan.FromSeconds(1);
+
+    public TimeSpan MaxRetryDelay { get; set; } = TimeSpan.FromSeconds(30);
 
     /// <summary>Appended to a listener's topic to name its dead-letter topic.</summary>
     public string DeadLetterSuffix { get; set; } = "-dlq";

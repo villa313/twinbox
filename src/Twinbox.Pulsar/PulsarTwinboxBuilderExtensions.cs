@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using DotPulsar;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -9,11 +10,16 @@ namespace Twinbox;
 
 public static class PulsarTwinboxBuilderExtensions
 {
-    public static TwinboxBuilder UsePulsar(this TwinboxBuilder builder, string serviceUrl)
+    [SuppressMessage("ApiDesign", "RS0026", Justification = "The overloads differ by a required first parameter, so calls cannot be ambiguous.")]
+    public static TwinboxBuilder UsePulsar(this TwinboxBuilder builder, string serviceUrl, Action<PulsarOptions>? configure = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(serviceUrl);
         var uri = new Uri(serviceUrl, UriKind.Absolute);
-        return builder.UsePulsar(options => options.ServiceUrl = uri);
+        return builder.UsePulsar(options =>
+        {
+            options.ServiceUrl = uri;
+            configure?.Invoke(options);
+        });
     }
 
     /// <summary>Sends through Pulsar and consumes the topics registered with <see cref="PulsarOptions.Listen"/>.</summary>
@@ -27,8 +33,9 @@ public static class PulsarTwinboxBuilderExtensions
             .Validate(o => o.ServiceUrl is { IsAbsoluteUri: true, Scheme: "pulsar" or "pulsar+ssl" }, "Pulsar ServiceUrl must be an absolute pulsar:// or pulsar+ssl:// address.")
             .Validate(o => Enum.IsDefined(o.SubscriptionType), "Pulsar SubscriptionType is not a known subscription type.")
             .Validate(o => Enum.IsDefined(o.InitialPosition), "Pulsar InitialPosition is not a known position.")
-            .Validate(o => o.MaxRedeliveryCount >= 0, "Pulsar MaxRedeliveryCount cannot be negative.")
-            .Validate(o => IsDelay(o.NegativeAckRedeliveryDelay, allowZero: true), "Pulsar NegativeAckRedeliveryDelay must be between zero and about 24 days.")
+            .Validate(o => o.MaxDeliveryAttempts > 0, "Pulsar MaxDeliveryAttempts must be positive.")
+            .Validate(o => IsDelay(o.RetryDelay, allowZero: false), "Pulsar RetryDelay must be positive.")
+            .Validate(o => IsDelay(o.MaxRetryDelay, allowZero: false) && o.MaxRetryDelay >= o.RetryDelay, "Pulsar MaxRetryDelay must be between RetryDelay and about 24 days.")
             .Validate(o => !string.IsNullOrWhiteSpace(o.DeadLetterSuffix), "Pulsar DeadLetterSuffix is required.")
             .Validate(o => o.ConsumerConcurrency > 0, "Pulsar ConsumerConcurrency must be positive.")
             .Validate(

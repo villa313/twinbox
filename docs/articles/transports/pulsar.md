@@ -14,8 +14,8 @@ builder.Services.AddTwinbox(twinbox => twinbox
     .Route<OrderPlaced>().To("persistent://public/default/orders"));
 ```
 
-The string must be an absolute `pulsar://` or `pulsar+ssl://` address. The `Action<PulsarOptions>` overload exposes
-every option. `ConfigureClient` gets the `IPulsarClientBuilder` last, for authentication, TLS or a listener name:
+The string must be an absolute `pulsar://` or `pulsar+ssl://` address; an optional callback after it, like the
+`Action<PulsarOptions>` overload, exposes every option. `ConfigureClient` gets the `IPulsarClientBuilder` last, for authentication, TLS or a listener name:
 
 ```csharp
 twinbox.UsePulsar(pulsar =>
@@ -56,8 +56,9 @@ batches of one (see [batch handlers](../concepts/batch-handlers.md)).
 | `ConfigureClient` | `null` | `Action<IPulsarClientBuilder>` with the last say over the client. |
 | `SubscriptionType` | `Shared` | Subscription type used by listeners. |
 | `InitialPosition` | `Earliest` | Where a subscription created by a listener starts reading. |
-| `MaxRedeliveryCount` | `10` | Redeliveries of a failing message before it moves to the dead-letter topic. Cannot be negative. |
-| `NegativeAckRedeliveryDelay` | 1 min | Wait before a failed message is handed back to the broker. Zero to about 24 days. |
+| `MaxDeliveryAttempts` | `10` | Deliveries of a message, the first included; a failure on the last one moves it to the dead-letter topic. Must be positive. |
+| `RetryDelay` | 1 s | Wait before a failed message is handed back to the broker; doubles per attempt. Must be positive. |
+| `MaxRetryDelay` | 30 s | Cap on `RetryDelay` doubling, at most about 24 days. |
 | `DeadLetterSuffix` | `"-dlq"` | Appended to a listener's topic to name its dead-letter topic. Required. |
 | `ConsumerConcurrency` | `1` | Consumers per listener. Above 1 needs a `Shared` or `KeyShared` subscription. |
 | `SendTimeout` | 30 s | Time a send may wait for the broker's confirmation, reconnects included. Must be positive. |
@@ -85,17 +86,17 @@ message key. `MessageContext.DeliveryAttempt` is the broker's redelivery count p
 
 ## Failures, retries and dead letters
 
-**Sending.** Topic not found, invalid topic name, authorization failure, message too large, terminated topic,
-incompatible schema and "not allowed" errors are permanent: the outbox row is dead-lettered. A timeout
-(`SendTimeout`) or a faulted producer is retried by the outbox; a faulted producer is replaced. See
+**Sending.** Topic not found, invalid topic name, message too large, terminated topic, incompatible schema and "not
+allowed" errors are permanent: the outbox row is dead-lettered. Authorization failures, a timeout (`SendTimeout`) or a
+faulted producer are retried by the outbox; a faulted producer is replaced. See
 [retries and dead letters](../concepts/retries-and-dead-letters.md).
 
 **Receiving.**
 
 - Handler succeeds: the message is acknowledged.
-- Any other exception: the message stays unacknowledged for `NegativeAckRedeliveryDelay`, then is handed back to the
-  broker for redelivery. The consumer moves on to other messages meanwhile.
-- Handler throws `PermanentDeliveryException`, or fails on attempt `MaxRedeliveryCount + 1` or later: the message is
+- Any other exception: the message stays unacknowledged for `RetryDelay` (doubling per attempt up to `MaxRetryDelay`),
+  then is handed back to the broker for redelivery. The consumer moves on to other messages meanwhile.
+- Handler throws `PermanentDeliveryException`, or fails on attempt `MaxDeliveryAttempts` or later: the message is
   dead-lettered.
 
 Dead-lettering sends a copy to `<topic><DeadLetterSuffix>` (default `<topic>-dlq`) with the original key, payload and
@@ -124,9 +125,8 @@ destination topics and the `-dlq` topics must exist beforehand. Listeners create
 
 ## Limitations
 
-- Retries are not negative acks: a failed message stays with its consumer until `NegativeAckRedeliveryDelay` passes,
-  and the delay is fixed, with no backoff.
-- `MaxRedeliveryCount` counts redeliveries, so a failing message runs up to `MaxRedeliveryCount + 1` times.
+- Retries are not negative acks (DotPulsar has none): a failed message stays with its consumer until its `RetryDelay`
+  passes. If the consumer closes meanwhile, the broker redelivers it at once.
 - No producer options (batching, compression, chunking) are exposed.
 - `ConsumerConcurrency` above 1 is rejected for `Exclusive` and `Failover` subscriptions.
 - The destination prefix (`Twinbox:DestinationPrefix`) applies to routed topics, not to `Listen` topic names.

@@ -9,11 +9,13 @@ Twinbox.Pulsar.PulsarOptions.DeadLetterSuffix.set -> void
 Twinbox.Pulsar.PulsarOptions.InitialPosition.get -> DotPulsar.SubscriptionInitialPosition
 Twinbox.Pulsar.PulsarOptions.InitialPosition.set -> void
 Twinbox.Pulsar.PulsarOptions.Listen(string! topic, string! subscription) -> Twinbox.Pulsar.PulsarOptions!
-Twinbox.Pulsar.PulsarOptions.MaxRedeliveryCount.get -> int
-Twinbox.Pulsar.PulsarOptions.MaxRedeliveryCount.set -> void
-Twinbox.Pulsar.PulsarOptions.NegativeAckRedeliveryDelay.get -> System.TimeSpan
-Twinbox.Pulsar.PulsarOptions.NegativeAckRedeliveryDelay.set -> void
+Twinbox.Pulsar.PulsarOptions.MaxDeliveryAttempts.get -> int
+Twinbox.Pulsar.PulsarOptions.MaxDeliveryAttempts.set -> void
+Twinbox.Pulsar.PulsarOptions.MaxRetryDelay.get -> System.TimeSpan
+Twinbox.Pulsar.PulsarOptions.MaxRetryDelay.set -> void
 Twinbox.Pulsar.PulsarOptions.PulsarOptions() -> void
+Twinbox.Pulsar.PulsarOptions.RetryDelay.get -> System.TimeSpan
+Twinbox.Pulsar.PulsarOptions.RetryDelay.set -> void
 Twinbox.Pulsar.PulsarOptions.SendTimeout.get -> System.TimeSpan
 Twinbox.Pulsar.PulsarOptions.SendTimeout.set -> void
 Twinbox.Pulsar.PulsarOptions.ServiceUrl.get -> System.Uri?
@@ -26,4 +28,4 @@ Twinbox.Pulsar.PulsarTransport.SendAsync(Twinbox.Transport.TransportMessage! mes
 Twinbox.PulsarTwinboxBuilderExtensions
 const Twinbox.Pulsar.PulsarTransport.TransportName = "pulsar" -> string!
 static Twinbox.PulsarTwinboxBuilderExtensions.UsePulsar(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.Pulsar.PulsarOptions!>! configure) -> Twinbox.TwinboxBuilder!
-static Twinbox.PulsarTwinboxBuilderExtensions.UsePulsar(this Twinbox.TwinboxBuilder! builder, string! serviceUrl) -> Twinbox.TwinboxBuilder!
+static Twinbox.PulsarTwinboxBuilderExtensions.UsePulsar(this Twinbox.TwinboxBuilder! builder, string! serviceUrl, System.Action<Twinbox.Pulsar.PulsarOptions!>? configure = null) -> Twinbox.TwinboxBuilder!
