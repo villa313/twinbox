@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Azure Event Hubs transport for Twinbox: keyed sends and partition processors that checkpoint only after the inbox has handled an event.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Twinbox/Twinbox.csproj" />
+    <PackageReference Include="Azure.Messaging.EventHubs" />
+    <PackageReference Include="Azure.Messaging.EventHubs.Processor" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Twinbox.EventHubs.Tests" />
+  </ItemGroup>
+</Project>

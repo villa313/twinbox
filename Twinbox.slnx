@@ -6,6 +6,7 @@
     <Project Path="src/Twinbox.Abstractions/Twinbox.Abstractions.csproj" />
     <Project Path="src/Twinbox.AmazonSqs/Twinbox.AmazonSqs.csproj" />
     <Project Path="src/Twinbox.EntityFrameworkCore/Twinbox.EntityFrameworkCore.csproj" />
+    <Project Path="src/Twinbox.EventHubs/Twinbox.EventHubs.csproj" />
     <Project Path="src/Twinbox.AzureServiceBus/Twinbox.AzureServiceBus.csproj" />
     <Project Path="src/Twinbox.InMemory/Twinbox.InMemory.csproj" />
     <Project Path="src/Twinbox.Kafka/Twinbox.Kafka.csproj" />
@@ -27,6 +28,7 @@
     <Project Path="tests/Twinbox.AmazonSqs.Tests/Twinbox.AmazonSqs.Tests.csproj" />
     <Project Path="tests/Twinbox.RabbitMQ.Tests/Twinbox.RabbitMQ.Tests.csproj" />
     <Project Path="tests/Twinbox.AzureServiceBus.Tests/Twinbox.AzureServiceBus.Tests.csproj" />
+    <Project Path="tests/Twinbox.EventHubs.Tests/Twinbox.EventHubs.Tests.csproj" />
     <Project Path="tests/Twinbox.Kafka.Tests/Twinbox.Kafka.Tests.csproj" />
     <Project Path="tests/Twinbox.Pulsar.Tests/Twinbox.Pulsar.Tests.csproj" />
     <Project Path="tests/Twinbox.RedisStreams.Tests/Twinbox.RedisStreams.Tests.csproj" />

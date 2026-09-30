@@ -20,7 +20,7 @@
     <PackageProjectUrl>https://github.com/twinbox-dotnet/twinbox</PackageProjectUrl>
     <RepositoryUrl>https://github.com/twinbox-dotnet/twinbox</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>outbox;inbox;transactional-outbox;messaging;idempotency;efcore;azure-service-bus;rabbitmq;kafka;nats;jetstream;redis;amazon-sqs;amazon-sns;pulsar</PackageTags>
+    <PackageTags>outbox;inbox;transactional-outbox;messaging;idempotency;efcore;azure-service-bus;azure-event-hubs;rabbitmq;kafka;nats;jetstream;redis;amazon-sqs;amazon-sns;pulsar</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>

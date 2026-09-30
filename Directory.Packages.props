@@ -67,10 +67,15 @@
     <PackageVersion Include="Testcontainers.Oracle" Version="4.15.0" />
     <PackageVersion Include="Testcontainers.Pulsar" Version="4.15.0" />
     <PackageVersion Include="Testcontainers.MySql" Version="4.15.0" />
+    <PackageVersion Include="Testcontainers.EventHubs" Version="4.15.0" />
+    <PackageVersion Include="Testcontainers.Azurite" Version="4.15.0" />
     <!-- Oracle's provider: Pomelo has no EF Core 10 release. Its net8.0 build targets EF Core 8. -->
     <PackageVersion Include="MySql.EntityFrameworkCore" Version="10.0.9" />
     <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.21.0" />
     <PackageVersion Include="RabbitMQ.Client" Version="7.2.2" />
+    <!-- The first releases with a net8.0 build; no advisories are published against them. -->
+    <PackageVersion Include="Azure.Messaging.EventHubs" Version="5.12.0" />
+    <PackageVersion Include="Azure.Messaging.EventHubs.Processor" Version="5.12.0" />
     <!-- The first release with a net8.0 build; no advisories are published against it. -->
     <PackageVersion Include="Confluent.Kafka" Version="2.6.0" />
     <!-- The first release with a net8.0 build; no advisories are published against it. -->
