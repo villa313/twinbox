@@ -343,6 +343,7 @@ Twinbox.Transport.RetryAfterException.RetryAfterException() -> void
 Twinbox.Transport.RetryAfterException.RetryAfterException(string! message) -> void
 Twinbox.Transport.RetryAfterException.RetryAfterException(string! message, System.Exception! innerException) -> void
 Twinbox.Transport.RetryAfterException.RetryAfterException(string! message, System.TimeSpan retryAfter) -> void
+Twinbox.Transport.RetryAfterException.RetryAfterException(string! message, System.TimeSpan retryAfter, System.Exception! innerException) -> void
 Twinbox.Transport.TransportHeaders
 Twinbox.Transport.TransportMessage
 Twinbox.Transport.TransportMessage.<Clone>$() -> Twinbox.Transport.TransportMessage!

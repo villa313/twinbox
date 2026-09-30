@@ -23,5 +23,11 @@ public sealed class RetryAfterException : Exception
         RetryAfter = retryAfter;
     }
 
+    public RetryAfterException(string message, TimeSpan retryAfter, Exception innerException)
+        : base(message, innerException)
+    {
+        RetryAfter = retryAfter;
+    }
+
     public TimeSpan RetryAfter { get; }
 }
