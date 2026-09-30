@@ -72,13 +72,13 @@ public sealed class EmulatorTests(ServiceBusEmulatorFixture emulator) : IClassFi
             default);
 
         await using var receiver = transport.Client.CreateReceiver("poison", new ServiceBusReceiverOptions { SubQueue = SubQueue.DeadLetter });
+        // Not completed afterwards: the emulator sometimes drops dead-letter locks, and the container is thrown away anyway.
         var deadLettered = await receiver.ReceiveMessageAsync(Timeout, TestContext.Current.CancellationToken);
 
         Assert.NotNull(deadLettered);
         Assert.Equal("poison-1", deadLettered.MessageId);
         Assert.Equal(AzureServiceBusMessageHandler.PermanentFailureReason, deadLettered.DeadLetterReason);
         Assert.Contains("nobody-handles-this", deadLettered.DeadLetterErrorDescription, StringComparison.Ordinal);
-        await receiver.CompleteMessageAsync(deadLettered, TestContext.Current.CancellationToken);
         Assert.Empty(journal.Entries);
         await host.StopAsync(TestContext.Current.CancellationToken);
     }
@@ -87,6 +87,9 @@ public sealed class EmulatorTests(ServiceBusEmulatorFixture emulator) : IClassFi
     {
         var builder = Host.CreateEmptyApplicationBuilder(new HostApplicationBuilderSettings());
         builder.Services.AddLogging();
+
+        // The emulator sometimes hangs closing links; a short timeout keeps a slow shutdown from stalling the run.
+        builder.Services.Configure<HostOptions>(o => o.ShutdownTimeout = TimeSpan.FromSeconds(5));
         builder.Services.AddSingleton(journal);
         builder.Services.AddTwinbox(b => configure(b.UseInMemoryStore()));
         return builder.Build();

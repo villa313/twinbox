@@ -17,7 +17,15 @@ internal sealed partial class AzureServiceBusReceiverService(
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
         // Waits for ExecuteAsync first, so the processor list is no longer being filled.
-        await base.StopAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await base.StopAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Shutdown timed out; still release the processors below rather than failing the host's shutdown.
+        }
+
         foreach (var processor in _processors)
         {
             try
@@ -28,9 +36,14 @@ internal sealed partial class AzureServiceBusReceiverService(
             {
                 LogStopFailed(ex, processor.EntityPath);
             }
-            finally
+
+            try
             {
                 await processor.DisposeAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                LogStopFailed(ex, processor.EntityPath);
             }
         }
 
