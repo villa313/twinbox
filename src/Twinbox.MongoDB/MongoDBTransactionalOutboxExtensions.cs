@@ -19,7 +19,8 @@ public static class MongoDBTransactionalOutboxExtensions
         }
 
         var store = buffer.Services.GetService<MongoOutboxStore>()
-            ?? throw new InvalidOperationException("Saving outbox messages through a MongoDB session needs the MongoDB store: call UseMongoDB(...).");
+            ?? throw new InvalidOperationException("Saving outbox messages through a MongoDB session needs the MongoDB store, and it isn't registered. "
+                + "Call UseMongoDB(...) from Twinbox.MongoDB inside AddTwinbox.");
         await store.SaveAsync(session, buffer.Services, pending, cancellationToken).ConfigureAwait(false);
     }
 

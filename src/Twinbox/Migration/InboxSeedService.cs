@@ -9,27 +9,30 @@ namespace Twinbox.Migration;
 /// <summary>Runs once at startup; entries already present are left alone, so restarting is harmless.</summary>
 internal sealed partial class InboxSeedService(
     InboxSeedOptions options,
-    IInboxStore inbox,
     TenantDirectory tenants,
     TwinboxScopeFactory scopes,
     TimeProvider time,
-    ILogger<InboxSeedService> logger) : IHostedService
+    ILogger<InboxSeedService> logger,
+    IInboxStore? inbox = null) : IHostedService
 {
+    public const string NoInboxStore = "SeedInboxFromExisting needs an inbox store, but none is registered. " + SetupMessages.InstallStore;
+
     private readonly ILogger _logger = logger;
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        var store = inbox ?? throw new InvalidOperationException(NoInboxStore);
         foreach (var tenant in await tenants.GetTenantsAsync(cancellationToken).ConfigureAwait(false))
         {
             using var _ = TenantScope.Enter(tenant);
-            var seeded = await SeedTenantAsync(cancellationToken).ConfigureAwait(false);
+            var seeded = await SeedTenantAsync(store, cancellationToken).ConfigureAwait(false);
             LogSeeded(seeded, tenant);
         }
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-    private async Task<int> SeedTenantAsync(CancellationToken cancellationToken)
+    private async Task<int> SeedTenantAsync(IInboxStore store, CancellationToken cancellationToken)
     {
         var scope = scopes.CreateAsyncScope();
         await using (scope.ConfigureAwait(false))
@@ -61,7 +64,7 @@ internal sealed partial class InboxSeedService(
                 var entryScope = scopes.CreateAsyncScope();
                 await using (entryScope.ConfigureAwait(false))
                 {
-                    if (await inbox.TryProcessAsync(entry, entryScope.ServiceProvider, _ => Task.CompletedTask, cancellationToken).ConfigureAwait(false))
+                    if (await store.TryProcessAsync(entry, entryScope.ServiceProvider, _ => Task.CompletedTask, cancellationToken).ConfigureAwait(false))
                     {
                         seeded++;
                     }

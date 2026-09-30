@@ -14,6 +14,5 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Twinbox.Dashboard/Twinbox.Dashboard.csproj" />
-    <ProjectReference Include="../../src/Twinbox.InMemory/Twinbox.InMemory.csproj" />
   </ItemGroup>
 </Project>

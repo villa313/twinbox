@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Twinbox;
 using Twinbox.Dashboard;
+using Twinbox.Storage;
 
 namespace Microsoft.AspNetCore.Builder;
 
@@ -28,6 +30,11 @@ public static class TwinboxDashboardEndpointRouteBuilderExtensions
         prefix = prefix.TrimEnd('/');
 
         var services = endpoints.ServiceProvider;
+        if (services.GetService<IServiceProviderIsService>()?.IsService(typeof(IOutboxStore)) == false)
+        {
+            throw new InvalidOperationException(SetupMessages.NoOutboxStoreFor("MapTwinboxDashboard"));
+        }
+
         var logger = services.GetService<ILoggerFactory>()?.CreateLogger("Twinbox.Dashboard") ?? NullLogger.Instance;
         var dashboard = new DashboardEndpoints(
             logger,

@@ -4,6 +4,9 @@
     <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../Shared/Setup/*.cs" LinkBase="Shared/Setup" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="../Twinbox.Abstractions/Twinbox.Abstractions.csproj" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />

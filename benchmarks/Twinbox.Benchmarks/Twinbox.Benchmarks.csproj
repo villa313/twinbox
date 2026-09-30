@@ -15,7 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Twinbox/Twinbox.csproj" />
-    <ProjectReference Include="../../src/Twinbox.InMemory/Twinbox.InMemory.csproj" />
     <ProjectReference Include="../../src/Twinbox.EntityFrameworkCore/Twinbox.EntityFrameworkCore.csproj" />
     <ProjectReference Include="../../src/Twinbox.PostgreSql/Twinbox.PostgreSql.csproj" />
     <ProjectReference Include="../../src/Twinbox.SqlServer/Twinbox.SqlServer.csproj" />

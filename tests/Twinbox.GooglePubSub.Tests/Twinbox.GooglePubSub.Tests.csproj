@@ -14,7 +14,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Twinbox.GooglePubSub/Twinbox.GooglePubSub.csproj" />
-    <ProjectReference Include="../../src/Twinbox.InMemory/Twinbox.InMemory.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="../Shared/CounterProbe.cs" LinkBase="Shared" />

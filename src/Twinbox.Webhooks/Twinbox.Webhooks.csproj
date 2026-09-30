@@ -3,6 +3,9 @@
     <Description>Signed webhook ingress for Twinbox: verify, store durably and acknowledge fast, then handle with retries and deduplication.</Description>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../Shared/Setup/*.cs" LinkBase="Shared/Setup" />
+  </ItemGroup>
+  <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="../Twinbox/Twinbox.csproj" />
   </ItemGroup>

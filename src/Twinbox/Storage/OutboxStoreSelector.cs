@@ -12,7 +12,7 @@ internal static class OutboxStoreSelector
             return all.Length switch
             {
                 1 => all[0],
-                0 => throw new InvalidOperationException($"{feature} needs an outbox store, but none is registered."),
+                0 => throw new InvalidOperationException(SetupMessages.NoOutboxStoreFor(feature)),
                 _ => throw new InvalidOperationException(
                     $"Several outbox stores are registered ({names}); set the Store option of {feature} to the one it should write to."),
             };

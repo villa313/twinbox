@@ -117,7 +117,7 @@ internal sealed partial class OutboxDispatcher(
 
         if (!transports.TryGet(key.Transport, out var transport))
         {
-            var error = new PermanentDeliveryException($"No transport named '{key.Transport}' is registered.");
+            var error = new PermanentDeliveryException(SetupMessages.UnknownTransport(key.Transport, transports.Names));
             foreach (var message in messages)
             {
                 outcomes.Add(await DeadLetterAsync(message, message.Attempts + 1, error, cancellationToken).ConfigureAwait(false));

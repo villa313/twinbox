@@ -35,7 +35,8 @@ public static class WebhookEndpointRouteBuilderExtensions
 
         var services = endpoints.ServiceProvider;
         var ingress = services.GetService<WebhookIngress>()
-            ?? throw new InvalidOperationException("Webhooks aren't enabled. Call AddTwinbox(twinbox => twinbox.AddWebhooks()).");
+            ?? throw new InvalidOperationException(
+                "Webhooks aren't enabled. Call AddWebhooks() inside AddTwinbox: services.AddTwinbox(twinbox => twinbox.AddWebhooks()), along with a store such as UseEntityFrameworkCore<TContext>().");
 
         if (options.TenantResolver is null && services.GetService<TenancyOptions>() is not null)
         {
@@ -69,7 +70,12 @@ public static class WebhookEndpointRouteBuilderExtensions
             return matches[0];
         }
 
-        var registered = all.Length == 0 ? "none" : string.Join(", ", all.Select(s => s.Name));
+        if (all.Length == 0)
+        {
+            throw new InvalidOperationException(SetupMessages.NoOutboxStoreFor($"The webhook endpoint '{pattern}'"));
+        }
+
+        var registered = string.Join(", ", all.Select(s => s.Name));
         throw new InvalidOperationException(name is null
             ? $"The webhook endpoint '{pattern}' needs exactly one outbox store to write to (registered: {registered}). Call WithStore(name) to pick one."
             : $"The webhook endpoint '{pattern}' is set to write to the outbox store '{name}', which doesn't match exactly one registered store (registered: {registered}).");

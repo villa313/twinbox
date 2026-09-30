@@ -13,6 +13,5 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Twinbox.RedisStreams/Twinbox.RedisStreams.csproj" />
-    <ProjectReference Include="../../src/Twinbox.InMemory/Twinbox.InMemory.csproj" />
   </ItemGroup>
 </Project>
