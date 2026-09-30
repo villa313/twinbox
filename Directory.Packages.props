@@ -70,6 +70,8 @@
     <!-- Oracle's provider: Pomelo has no EF Core 10 release. Its net8.0 build targets EF Core 8. -->
     <PackageVersion Include="MySql.EntityFrameworkCore" Version="10.0.9" />
     <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.21.0" />
+    <!-- The first release whose Azure.Identity (1.11.4) carries no advisories; needing only Worker.Core 1.x keeps Worker 1.x and 2.x apps working. -->
+    <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.ServiceBus" Version="5.20.0" />
     <PackageVersion Include="RabbitMQ.Client" Version="7.2.2" />
     <!-- The first release with a net8.0 build; no advisories are published against it. -->
     <PackageVersion Include="Confluent.Kafka" Version="2.6.0" />

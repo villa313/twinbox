@@ -1,12 +1,5 @@
 #nullable enable
-const Twinbox.AzureServiceBus.AzureServiceBusTransport.TransportName = "azureservicebus" -> string!
-override Twinbox.AzureServiceBus.AzureServiceBusListener.Equals(object? obj) -> bool
-override Twinbox.AzureServiceBus.AzureServiceBusListener.GetHashCode() -> int
-override Twinbox.AzureServiceBus.AzureServiceBusListener.ToString() -> string!
-static Twinbox.AzureServiceBus.AzureServiceBusListener.operator !=(Twinbox.AzureServiceBus.AzureServiceBusListener? left, Twinbox.AzureServiceBus.AzureServiceBusListener? right) -> bool
-static Twinbox.AzureServiceBus.AzureServiceBusListener.operator ==(Twinbox.AzureServiceBus.AzureServiceBusListener? left, Twinbox.AzureServiceBus.AzureServiceBusListener? right) -> bool
-static Twinbox.AzureServiceBusTwinboxBuilderExtensions.UseAzureServiceBus(this Twinbox.TwinboxBuilder! builder, string! connectionString, System.Action<Twinbox.AzureServiceBus.AzureServiceBusOptions!>? configure = null) -> Twinbox.TwinboxBuilder!
-static Twinbox.AzureServiceBusTwinboxBuilderExtensions.UseAzureServiceBus(this Twinbox.TwinboxBuilder! builder, System.Func<System.IServiceProvider!, Azure.Messaging.ServiceBus.ServiceBusClient!>! clientFactory, System.Action<Twinbox.AzureServiceBus.AzureServiceBusOptions!>? configure = null) -> Twinbox.TwinboxBuilder!
+Twinbox.AzureServiceBus.AzureServiceBusInbound
 Twinbox.AzureServiceBus.AzureServiceBusListener
 Twinbox.AzureServiceBus.AzureServiceBusListener.<Clone>$() -> Twinbox.AzureServiceBus.AzureServiceBusListener!
 Twinbox.AzureServiceBus.AzureServiceBusListener.AzureServiceBusListener(string! EntityName, string? SubscriptionName) -> void
@@ -34,3 +27,13 @@ Twinbox.AzureServiceBus.AzureServiceBusTransport.DisposeAsync() -> System.Thread
 Twinbox.AzureServiceBus.AzureServiceBusTransport.Name.get -> string!
 Twinbox.AzureServiceBus.AzureServiceBusTransport.SendAsync(Twinbox.Transport.TransportMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Twinbox.AzureServiceBusTwinboxBuilderExtensions
+const Twinbox.AzureServiceBus.AzureServiceBusInbound.PermanentFailureReason = "PermanentDeliveryFailure" -> string!
+const Twinbox.AzureServiceBus.AzureServiceBusTransport.TransportName = "azureservicebus" -> string!
+override Twinbox.AzureServiceBus.AzureServiceBusListener.Equals(object? obj) -> bool
+override Twinbox.AzureServiceBus.AzureServiceBusListener.GetHashCode() -> int
+override Twinbox.AzureServiceBus.AzureServiceBusListener.ToString() -> string!
+static Twinbox.AzureServiceBus.AzureServiceBusInbound.ToIncomingMessage(Azure.Messaging.ServiceBus.ServiceBusReceivedMessage! message, string! source) -> Twinbox.Transport.IncomingMessage!
+static Twinbox.AzureServiceBus.AzureServiceBusListener.operator !=(Twinbox.AzureServiceBus.AzureServiceBusListener? left, Twinbox.AzureServiceBus.AzureServiceBusListener? right) -> bool
+static Twinbox.AzureServiceBus.AzureServiceBusListener.operator ==(Twinbox.AzureServiceBus.AzureServiceBusListener? left, Twinbox.AzureServiceBus.AzureServiceBusListener? right) -> bool
+static Twinbox.AzureServiceBusTwinboxBuilderExtensions.UseAzureServiceBus(this Twinbox.TwinboxBuilder! builder, System.Func<System.IServiceProvider!, Azure.Messaging.ServiceBus.ServiceBusClient!>! clientFactory, System.Action<Twinbox.AzureServiceBus.AzureServiceBusOptions!>? configure = null) -> Twinbox.TwinboxBuilder!
+static Twinbox.AzureServiceBusTwinboxBuilderExtensions.UseAzureServiceBus(this Twinbox.TwinboxBuilder! builder, string! connectionString, System.Action<Twinbox.AzureServiceBus.AzureServiceBusOptions!>? configure = null) -> Twinbox.TwinboxBuilder!

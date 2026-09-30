@@ -21,7 +21,7 @@ internal readonly record struct Settlement(SettlementAction Action, string? Reas
 /// <summary>Runs a received message through the inbound pipeline and decides how the broker should settle it.</summary>
 internal sealed partial class AzureServiceBusMessageHandler(IInboundPipeline pipeline, ILogger<AzureServiceBusMessageHandler> logger)
 {
-    public const string PermanentFailureReason = "PermanentDeliveryFailure";
+    public const string PermanentFailureReason = AzureServiceBusInbound.PermanentFailureReason;
 
     private readonly ILogger _logger = logger;
 

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Azure Functions (isolated worker) support for Twinbox: dispatch the outbox from a timer and feed Service Bus triggers through the inbox.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Twinbox.AzureServiceBus/Twinbox.AzureServiceBus.csproj" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.ServiceBus" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Twinbox.AzureFunctions.Tests" />
+  </ItemGroup>
+</Project>

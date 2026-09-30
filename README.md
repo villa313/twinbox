@@ -121,6 +121,39 @@ A route or handler registered for a base class or interface covers all of its su
 Payloads are JSON with camelCase property names (`JsonSerializerDefaults.Web`). Pass your own
 `JsonSerializerOptions` to `UseSerializer(new SystemTextJsonMessageSerializer(options))` if you need something else.
 
+## Azure Functions
+
+Functions apps (isolated worker) can't count on background services, so `Twinbox.AzureFunctions` turns them off
+and lets your own functions do the work:
+
+```csharp
+builder.Services.AddTwinbox(twinbox => twinbox
+    .UseEntityFrameworkCore<AppDbContext>()
+    .UseAzureServiceBus(serviceBusConnectionString)
+    .UseAzureFunctions()
+    .AddHandler<ShipOrderHandler, OrderPlaced>());
+
+public sealed class TwinboxFunctions(IOutboxDispatcher dispatcher, TwinboxServiceBusTrigger twinbox)
+{
+    [Function("twinbox-dispatch")]
+    public Task Dispatch([TimerTrigger("*/10 * * * * *")] TimerInfo timer, CancellationToken ct) =>
+        dispatcher.DispatchPendingAsync(ct);
+
+    [Function("orders")]
+    public Task Receive(
+        [ServiceBusTrigger("orders", Connection = "ServiceBus", AutoCompleteMessages = false)] ServiceBusReceivedMessage message,
+        ServiceBusMessageActions messageActions,
+        CancellationToken ct) =>
+        twinbox.ProcessServiceBusMessageAsync(message, messageActions, ct);
+}
+```
+
+`DispatchPendingAsync` drains the outbox until it is empty or 50 seconds have passed (pass a `TimeSpan` to change
+that). Received messages are completed on success, dead-lettered on `PermanentDeliveryException`, and abandoned on
+any other failure so Service Bus redelivers them until the entity's max delivery count. Call
+`ITwinboxMaintenance.RunCleanupAsync` from an hourly timer to apply retention. On plans with always-ready instances,
+`Twinbox:Dispatcher:Enabled = true` turns the background dispatcher back on.
+
 ## Moving over from another outbox
 
 You can switch one service at a time without a big-bang cutover:
