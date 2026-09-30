@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Operations dashboard for Twinbox: outbox statistics, message browsing, and replay or removal of dead messages, served from your ASP.NET Core app.</Description>
+    <PackageTags>$(PackageTags);dashboard;aspnetcore</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="../Twinbox/Twinbox.csproj" />
+    <EmbeddedResource Include="Assets/index.html" LogicalName="Twinbox.Dashboard.index.html" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Twinbox.Dashboard.Tests" />
+  </ItemGroup>
+</Project>
