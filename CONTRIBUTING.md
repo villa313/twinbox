@@ -18,7 +18,11 @@ patch's prerelease (for example `1.0.1-alpha.0.3`) and are never published.
 - **Minor** (`v1.1.0`): new features and additive public API; `PublicAPI.Unshipped.txt` has only additions.
 - **Major** (`v2.0.0`): anything that removes or changes public API or breaks existing behaviour.
 
-On release, move the lines from each `PublicAPI.Unshipped.txt` into `PublicAPI.Shipped.txt`.
+Before a release, move the lines from each `PublicAPI.Unshipped.txt` into `PublicAPI.Shipped.txt`.
+
+To release, run the `release` workflow on `main` from the Actions tab, or `gh workflow run release.yml -f bump=patch`
+(`minor`, `major`). It checks that CI passed on that commit and that no unshipped API is left, tags the next version and
+publishes it. Pushing a tag yourself (`git tag -a v1.2.0-rc.1 -m ...`) still works, and is how to publish a prerelease.
 
 `dotnet pack` compares every package with its 1.0.0 release and fails on breaking changes. After a major release, raise
 `PackageValidationBaselineVersion` in `src/Directory.Build.props` to the new major version.

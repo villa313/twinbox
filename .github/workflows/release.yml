@@ -3,18 +3,82 @@ name: release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Part of the version to increment
+        type: choice
+        options: [patch, minor, major]
+        default: patch
 
 permissions:
   contents: write
+  actions: read
   # Trusted Publishing: NuGet exchanges the workflow's OIDC token for a short-lived API key.
   id-token: write
 
 jobs:
-  publish:
+  # Tags pushed with GITHUB_TOKEN don't start workflows, so a manual release tags and publishes in this one run.
+  tag:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.next.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
+      - name: Check the commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "$GITHUB_REF" != refs/heads/main ]]; then
+            echo "::error::Releases are cut from main, not $GITHUB_REF_NAME."; exit 1
+          fi
+          if [[ -n "$(git tag --points-at HEAD 'v*')" ]]; then
+            echo "::error::$GITHUB_SHA is already tagged $(git tag --points-at HEAD 'v*')."; exit 1
+          fi
+          ci=$(gh run list -w ci -c "$GITHUB_SHA" -L 1 --json status,conclusion --jq '.[0] | "\(.status) \(.conclusion)"')
+          if [[ "$ci" != "completed success" ]]; then
+            echo "::error::CI on $GITHUB_SHA is '${ci:-missing}'; wait for it to pass."; exit 1
+          fi
+          unshipped=$(grep -l '^[^#]' src/*/PublicAPI.Unshipped.txt || true)
+          if [[ -n "$unshipped" ]]; then
+            echo "::error::Move these entries into PublicAPI.Shipped.txt first: $unshipped"; exit 1
+          fi
+      - name: Work out the next version
+        id: next
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          latest=$(git tag -l 'v*' --sort=-v:refname | grep -v -e - | head -1)
+          IFS=. read -r major minor patch <<< "${latest#v}"
+          case "$BUMP" in
+            major) tag="v$((major + 1)).0.0" ;;
+            minor) tag="v$major.$((minor + 1)).0" ;;
+            *) tag="v$major.$minor.$((patch + 1))" ;;
+          esac
+          echo "Releasing $tag (previous: $latest)"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Push the tag
+        env:
+          TAG: ${{ steps.next.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Twinbox ${TAG#v}"
+          git push origin "$TAG"
+
+  publish:
+    needs: tag
+    if: always() && (github.event_name == 'push' || needs.tag.result == 'success')
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ needs.tag.outputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ env.TAG }}
           fetch-depth: 0
       - uses: actions/setup-dotnet@v4
         with:
@@ -32,4 +96,4 @@ jobs:
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" artifacts/*.nupkg --generate-notes $([[ "$GITHUB_REF_NAME" == *-* ]] && echo --prerelease)
+        run: gh release create "$TAG" artifacts/*.nupkg --generate-notes $([[ "$TAG" == *-* ]] && echo --prerelease)
