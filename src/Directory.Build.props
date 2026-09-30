@@ -9,11 +9,14 @@
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <IsAotCompatible>true</IsAotCompatible>
     <EnablePackageValidation>true</EnablePackageValidation>
+    <!-- The version comes from the latest vX.Y.Z tag; commits after it build as the next patch's alpha. -->
+    <MinVerTagPrefix>v</MinVerTagPrefix>
   </PropertyGroup>
 
   <ItemGroup>
     <!-- The analyzer package already adds PublicAPI.Shipped.txt and PublicAPI.Unshipped.txt as AdditionalFiles. -->
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+    <PackageReference Include="MinVer" PrivateAssets="all" />
     <None Include="$(MSBuildThisFileDirectory)../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 </Project>
