@@ -2,7 +2,7 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
   <PropertyGroup>
-    <!-- Test names use Method_State_Expected underscores. -->
-    <NoWarn>$(NoWarn);CA1707</NoWarn>
+    <!-- Test names use Method_State_Expected underscores; benchmark methods must stay instance members. -->
+    <NoWarn>$(NoWarn);CA1707;CA1822</NoWarn>
   </PropertyGroup>
 </Project>

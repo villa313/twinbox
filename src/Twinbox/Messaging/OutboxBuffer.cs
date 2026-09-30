@@ -46,7 +46,8 @@ internal sealed partial class OutboxBuffer(
         options ??= DefaultOptions;
         // Inside a handler the inbound tenant wins; otherwise ask the app which tenant this scope belongs to.
         var tenant = TenantScope.Current ?? tenancy?.CurrentTenant?.Invoke(services);
-        var prepared = preparer.Prepare(message, options with { Headers = OutgoingHeaders(message, options) }, tenant, physicalDestination);
+        var headers = OutgoingHeaders(message, options);
+        var prepared = preparer.Prepare(message, headers is null ? options : options with { Headers = headers }, tenant, physicalDestination);
         lock (_gate)
         {
             _pending.AddRange(prepared);
@@ -77,11 +78,19 @@ internal sealed partial class OutboxBuffer(
         }
     }
 
-    private Dictionary<string, string> OutgoingHeaders(object message, SendOptions options)
+    /// <summary>Returns null when the message carries no headers, sparing a dictionary per send.</summary>
+    private Dictionary<string, string>? OutgoingHeaders(object message, SendOptions options)
     {
-        var headers = options.Headers is null ? [] : new Dictionary<string, string>(options.Headers);
         var inbound = InboundContext.Current;
-        if ((options.CorrelationId ?? inbound?.CorrelationId ?? inbound?.MessageId) is { } correlationId)
+        var correlationId = options.CorrelationId ?? inbound?.CorrelationId ?? inbound?.MessageId;
+        var filters = services.GetServices<IOutgoingMessageFilter>();
+        if (options.Headers is null && correlationId is null && options.ReplyTo is null && filters is IOutgoingMessageFilter[] { Length: 0 })
+        {
+            return null;
+        }
+
+        var headers = options.Headers is null ? [] : new Dictionary<string, string>(options.Headers);
+        if (correlationId is not null)
         {
             headers[TransportHeaders.CorrelationId] = correlationId;
         }
@@ -91,7 +100,7 @@ internal sealed partial class OutboxBuffer(
             headers[TransportHeaders.ReplyTo] = options.ReplyTo;
         }
 
-        foreach (var filter in services.GetServices<IOutgoingMessageFilter>())
+        foreach (var filter in filters)
         {
             filter.OnSending(message, headers);
         }
