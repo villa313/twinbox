@@ -2,6 +2,7 @@ using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Twinbox.EntityFrameworkCore.Sql;
+using Twinbox.Sql;
 using Twinbox.Storage;
 using Twinbox.Tenancy;
 
@@ -73,7 +74,7 @@ internal sealed class EntityFrameworkInboxStore<TContext>(TwinboxScopeFactory sc
                 await using (transaction.ConfigureAwait(false))
                 {
                     var fresh = new List<int>();
-                    for (var i = 0; i < entries.Count; i++)
+                    foreach (var i in InboxLockOrder.Of(entries))
                     {
                         if (await TryInsertAsync(context, entries[i], ct).ConfigureAwait(false))
                         {
@@ -86,6 +87,8 @@ internal sealed class EntityFrameworkInboxStore<TContext>(TwinboxScopeFactory sc
                         await transaction.RollbackAsync(ct).ConfigureAwait(false);
                         return 0;
                     }
+
+                    fresh.Sort();
 
                     await handler(fresh, ct).ConfigureAwait(false);
                     await context.SaveChangesAsync(ct).ConfigureAwait(false);
