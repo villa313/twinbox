@@ -22,7 +22,7 @@ internal sealed class TransportRegistry
     public string ResolveDefaultName() => _transports.Count switch
     {
         1 => _transports.Keys.First(),
-        0 => throw new InvalidOperationException("No Twinbox transport is registered. Add one of the transport packages (e.g. UseRabbitMq(...)) or UseLocalDelivery() for in-process delivery."),
+        0 => throw new InvalidOperationException("No Twinbox transport is registered. Add one of the transport packages (e.g. UseRabbitMQ(...)) or UseLocalDelivery() for in-process delivery."),
         _ => throw new InvalidOperationException(
             $"Several transports are registered ({string.Join(", ", _transports.Keys)}), so routes must name one: Route<T>().To(\"destination\", transport: \"...\")."),
     };

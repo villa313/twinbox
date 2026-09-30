@@ -10,7 +10,7 @@ public sealed class MessageMapperTests
     [Fact]
     public void ToProperties_MapsIdentityAndPersistence()
     {
-        var properties = RabbitMqMessageMapper.ToProperties(Outgoing(partitionKey: null));
+        var properties = RabbitMQMessageMapper.ToProperties(Outgoing(partitionKey: null));
 
         Assert.Equal("msg-1", properties.MessageId);
         Assert.Equal("order-placed", properties.Type);
@@ -21,7 +21,7 @@ public sealed class MessageMapperTests
     [Fact]
     public void ToProperties_CopiesHeadersAndAddsPartitionKey()
     {
-        var properties = RabbitMqMessageMapper.ToProperties(Outgoing(partitionKey: "customer-7"));
+        var properties = RabbitMQMessageMapper.ToProperties(Outgoing(partitionKey: "customer-7"));
 
         Assert.NotNull(properties.Headers);
         Assert.Equal("00-abc-def-01", properties.Headers[TransportHeaders.TraceParent]);
@@ -31,7 +31,7 @@ public sealed class MessageMapperTests
     [Fact]
     public void ToProperties_OmitsPartitionKeyWhenUnset()
     {
-        var properties = RabbitMqMessageMapper.ToProperties(Outgoing(partitionKey: null));
+        var properties = RabbitMQMessageMapper.ToProperties(Outgoing(partitionKey: null));
 
         Assert.NotNull(properties.Headers);
         Assert.False(properties.Headers.ContainsKey(TransportHeaders.PartitionKey));
@@ -54,7 +54,7 @@ public sealed class MessageMapperTests
             },
         };
 
-        var incoming = RabbitMqMessageMapper.ToIncoming("orders", properties, Encoding.UTF8.GetBytes("{}"), redelivered: false);
+        var incoming = RabbitMQMessageMapper.ToIncoming("orders", properties, Encoding.UTF8.GetBytes("{}"), redelivered: false);
 
         Assert.Equal("msg-2", incoming.MessageId);
         Assert.Equal("order-placed", incoming.MessageName);
@@ -80,7 +80,7 @@ public sealed class MessageMapperTests
             },
         };
 
-        var incoming = RabbitMqMessageMapper.ToIncoming("orders", properties, ReadOnlyMemory<byte>.Empty, redelivered: false);
+        var incoming = RabbitMQMessageMapper.ToIncoming("orders", properties, ReadOnlyMemory<byte>.Empty, redelivered: false);
 
         Assert.Equal("msg-3", incoming.MessageId);
         Assert.Equal("order-shipped", incoming.MessageName);
@@ -95,10 +95,10 @@ public sealed class MessageMapperTests
         var properties = new BasicProperties
         {
             MessageId = "msg-4",
-            Headers = new Dictionary<string, object?> { [RabbitMqMessageMapper.DeliveryCountHeader] = deliveryCount },
+            Headers = new Dictionary<string, object?> { [RabbitMQMessageMapper.DeliveryCountHeader] = deliveryCount },
         };
 
-        var incoming = RabbitMqMessageMapper.ToIncoming("orders", properties, ReadOnlyMemory<byte>.Empty, redelivered);
+        var incoming = RabbitMQMessageMapper.ToIncoming("orders", properties, ReadOnlyMemory<byte>.Empty, redelivered);
 
         Assert.Equal(expected, incoming.DeliveryAttempt);
     }
@@ -108,7 +108,7 @@ public sealed class MessageMapperTests
     [InlineData(true, 2)]
     public void ToIncoming_WithoutDeliveryCount_UsesRedeliveredFlag(bool redelivered, int expected)
     {
-        var incoming = RabbitMqMessageMapper.ToIncoming("orders", new BasicProperties { MessageId = "msg-5" }, ReadOnlyMemory<byte>.Empty, redelivered);
+        var incoming = RabbitMQMessageMapper.ToIncoming("orders", new BasicProperties { MessageId = "msg-5" }, ReadOnlyMemory<byte>.Empty, redelivered);
 
         Assert.Equal(expected, incoming.DeliveryAttempt);
     }
@@ -116,7 +116,7 @@ public sealed class MessageMapperTests
     [Fact]
     public void ToIncoming_WithoutMessageId_LeavesItForHeaderProfiles()
     {
-        var incoming = RabbitMqMessageMapper.ToIncoming("orders", new BasicProperties { Type = "order-placed" }, ReadOnlyMemory<byte>.Empty, false);
+        var incoming = RabbitMQMessageMapper.ToIncoming("orders", new BasicProperties { Type = "order-placed" }, ReadOnlyMemory<byte>.Empty, false);
 
         Assert.Equal(string.Empty, incoming.MessageId);
     }
@@ -124,7 +124,7 @@ public sealed class MessageMapperTests
     [Fact]
     public void QueueArguments_DeclareQuorumQueueWithDeadLettering()
     {
-        var arguments = RabbitMqTopology.QueueArguments("orders", deliveryLimit: 7);
+        var arguments = RabbitMQTopology.QueueArguments("orders", deliveryLimit: 7);
 
         Assert.Equal("quorum", arguments["x-queue-type"]);
         Assert.Equal(7, arguments["x-delivery-limit"]);

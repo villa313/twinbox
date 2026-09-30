@@ -6,7 +6,7 @@ using RabbitMQ.Client.Events;
 namespace Twinbox.RabbitMQ;
 
 /// <summary>The one long-lived connection shared by publishing and consuming; opened on first use.</summary>
-internal sealed partial class RabbitMqConnection(IOptions<RabbitMqOptions> options, ILogger<RabbitMqConnection> logger) : IAsyncDisposable
+internal sealed partial class RabbitMQConnection(IOptions<RabbitMQOptions> options, ILogger<RabbitMQConnection> logger) : IAsyncDisposable
 {
     private static readonly TimeSpan InitialRetryDelay = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan MaxRetryDelay = TimeSpan.FromSeconds(30);
@@ -97,7 +97,7 @@ internal sealed partial class RabbitMqConnection(IOptions<RabbitMqOptions> optio
         }
     }
 
-    internal static ConnectionFactory CreateFactory(RabbitMqOptions settings)
+    internal static ConnectionFactory CreateFactory(RabbitMQOptions settings)
     {
         var factory = new ConnectionFactory
         {

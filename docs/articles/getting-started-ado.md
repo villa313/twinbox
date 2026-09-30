@@ -16,7 +16,7 @@ dotnet add package Twinbox.RabbitMQ
 ```csharp
 builder.Services.AddTwinbox(twinbox => twinbox
     .UsePostgreSql(connectionString)
-    .UseRabbitMq(o => o.ConnectionUri = new Uri(rabbitUri))
+    .UseRabbitMQ(o => o.ConnectionUri = new Uri(rabbitUri))
     .Route<OrderPlaced>().To("orders"));
 ```
 
@@ -74,7 +74,7 @@ public class ShipOrder(HandlerTransaction tx, IOutbox outbox) : IHandle<OrderPla
 ```csharp
 builder.Services.AddTwinbox(twinbox => twinbox
     .UsePostgreSql(connectionString)
-    .UseRabbitMq(o =>
+    .UseRabbitMQ(o =>
     {
         o.ConnectionUri = new Uri(rabbitUri);
         o.Listen(queue: "shipping", exchange: "orders");

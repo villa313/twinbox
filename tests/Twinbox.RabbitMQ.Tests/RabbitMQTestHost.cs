@@ -6,28 +6,28 @@ using Twinbox.Transport;
 
 namespace Twinbox.RabbitMQ.Tests;
 
-internal sealed class RabbitMqTestHost : IAsyncDisposable
+internal sealed class RabbitMQTestHost : IAsyncDisposable
 {
     private static readonly TimeSpan StartupTimeout = TimeSpan.FromSeconds(30);
 
     private readonly IHost _host;
 
-    private RabbitMqTestHost(IHost host)
+    private RabbitMQTestHost(IHost host)
     {
         _host = host;
     }
 
     public IServiceProvider Services => _host.Services;
 
-    public ITransport Transport => Services.GetServices<ITransport>().Single(t => t.Name == RabbitMqTransport.DefaultName);
+    public ITransport Transport => Services.GetServices<ITransport>().Single(t => t.Name == RabbitMQTransport.TransportName);
 
     public InMemoryOutboxStore Outbox => Services.GetRequiredService<InMemoryOutboxStore>();
 
-    public static async Task<RabbitMqTestHost> StartAsync(
+    public static async Task<RabbitMQTestHost> StartAsync(
         Uri connectionUri,
         Journal journal,
         Action<TwinboxBuilder> configure,
-        Action<RabbitMqOptions>? rabbit = null)
+        Action<RabbitMQOptions>? rabbit = null)
     {
         var builder = Host.CreateApplicationBuilder();
         builder.Logging.ClearProviders();
@@ -36,7 +36,7 @@ internal sealed class RabbitMqTestHost : IAsyncDisposable
         {
             twinbox
                 .UseInMemoryStore()
-                .UseRabbitMq(options =>
+                .UseRabbitMQ(options =>
                 {
                     options.ConnectionUri = connectionUri;
                     options.ClientProvidedName = "twinbox-tests";
@@ -48,9 +48,9 @@ internal sealed class RabbitMqTestHost : IAsyncDisposable
 
         var host = builder.Build();
         await host.StartAsync();
-        var consumers = host.Services.GetServices<IHostedService>().OfType<RabbitMqConsumerService>().Single();
+        var consumers = host.Services.GetServices<IHostedService>().OfType<RabbitMQConsumerService>().Single();
         await consumers.Ready.WaitAsync(StartupTimeout);
-        return new RabbitMqTestHost(host);
+        return new RabbitMQTestHost(host);
     }
 
     /// <summary>Sends inside a scope and commits it, like a request that saves its unit of work.</summary>

@@ -2,7 +2,7 @@ using RabbitMQ.Client;
 
 namespace Twinbox.RabbitMQ;
 
-internal static class RabbitMqTopology
+internal static class RabbitMQTopology
 {
     public const string DeadLetterExchange = "twinbox.dead-letter";
 
@@ -27,7 +27,7 @@ internal static class RabbitMqTopology
         return channel.ExchangeDeclareAsync(exchange, ExchangeType.Topic, durable: true, autoDelete: false, cancellationToken: cancellationToken);
     }
 
-    public static async Task DeclareListenerAsync(IChannel channel, RabbitMqListener listener, int deliveryLimit, CancellationToken cancellationToken)
+    public static async Task DeclareListenerAsync(IChannel channel, RabbitMQListener listener, int deliveryLimit, CancellationToken cancellationToken)
     {
         var deadLetterQueue = DeadLetterQueue(listener.Queue);
         await channel.ExchangeDeclareAsync(DeadLetterExchange, ExchangeType.Direct, durable: true, autoDelete: false, cancellationToken: cancellationToken)

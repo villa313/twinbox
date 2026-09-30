@@ -4,7 +4,7 @@ using Twinbox.Storage;
 namespace Twinbox.Chaos.Tests;
 
 [Trait("Category", "Chaos")]
-public sealed class BrokerOutageTests(PostgreSqlDatabase database, RabbitMqBroker broker) : IClassFixture<RabbitMqBroker>
+public sealed class BrokerOutageTests(PostgreSqlDatabase database, RabbitMQBroker broker) : IClassFixture<RabbitMQBroker>
 {
     private static readonly TimeSpan Timeout = TimeSpan.FromMinutes(2);
 
@@ -20,7 +20,7 @@ public sealed class BrokerOutageTests(PostgreSqlDatabase database, RabbitMqBroke
             b =>
             {
                 database.UseStore(b, schema);
-                b.UseRabbitMq(o =>
+                b.UseRabbitMQ(o =>
                     {
                         o.ConnectionUri = broker.ConnectionUri;
                         o.PublishTimeout = TimeSpan.FromSeconds(2);

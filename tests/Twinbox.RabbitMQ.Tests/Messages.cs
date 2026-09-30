@@ -53,6 +53,15 @@ public sealed class RejectingHandler : IHandle<OrderPlaced>
         throw new PermanentDeliveryException($"Order {message.OrderId} can never be handled.");
 }
 
+public sealed class AlwaysFailingHandler(Journal journal) : IHandle<OrderPlaced>
+{
+    public Task HandleAsync(OrderPlaced message, MessageContext context, CancellationToken cancellationToken)
+    {
+        journal.Add(context.DeliveryAttempt);
+        throw new InvalidOperationException($"Order {message.OrderId} keeps failing.");
+    }
+}
+
 public sealed class FailFirstAttemptHandler(Journal journal) : IHandle<OrderPlaced>
 {
     public Task HandleAsync(OrderPlaced message, MessageContext context, CancellationToken cancellationToken)

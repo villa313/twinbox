@@ -12,7 +12,7 @@ This guide moves a system from an existing outbox (hand-rolled tables, or your c
 ```csharp
 builder.Services.AddTwinbox(twinbox => twinbox
     .UseSqlServer(connectionString)
-    .UseRabbitMq(ConfigureRabbit)
+    .UseRabbitMQ(ConfigureRabbit)
     // Write and read the old system's header names too.
     .UseHeaderProfile(HeaderProfile.Prefixed("legacy"))          // legacy-msg-id, legacy-msg-name
     // Keep draining messages the old outbox never sent.

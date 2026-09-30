@@ -18,7 +18,7 @@ With a broker registered as well, name the transport on local routes:
 
 ```csharp
 twinbox
-    .UseRabbitMq(ConfigureRabbit)
+    .UseRabbitMQ(ConfigureRabbit)
     .UseLocalDelivery()
     .Route<IDomainEvent>().To("domain-events", transport: "local")
     .Route<OrderPlaced>().To("orders", transport: "rabbitmq");
