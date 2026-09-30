@@ -23,6 +23,8 @@ internal sealed class KafkaTestHost : IAsyncDisposable
 
     public InMemoryOutboxStore Outbox => Services.GetRequiredService<InMemoryOutboxStore>();
 
+    public BatchLog BatchLog => Services.GetRequiredService<BatchLog>();
+
     public static async Task<KafkaTestHost> StartAsync(
         string bootstrapServers,
         Journal journal,
@@ -34,6 +36,7 @@ internal sealed class KafkaTestHost : IAsyncDisposable
         builder.Logging.ClearProviders();
         builder.Services.AddSingleton(journal);
         builder.Services.AddSingleton(gate);
+        builder.Services.AddSingleton<BatchLog>();
         builder.Services.AddTwinbox(twinbox =>
         {
             twinbox

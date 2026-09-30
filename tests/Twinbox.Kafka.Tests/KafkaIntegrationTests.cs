@@ -146,6 +146,94 @@ public sealed class KafkaIntegrationTests(KafkaFixture broker) : IClassFixture<K
     }
 
     [Fact]
+    public async Task TransientHandlerFailure_PausesOnlyItsPartition()
+    {
+        var (topic, group) = Names();
+        await broker.CreateTopicAsync(topic, 2);
+        var journal = new Journal();
+        var gate = new FailureGate();
+        gate.Hold(1);
+        await using var host = await KafkaTestHost.StartAsync(
+            broker.BootstrapServers,
+            journal,
+            gate,
+            b => b.AddHandler<RecordingHandler, OrderPlaced>(),
+            o =>
+            {
+                // Far longer than the other partition needs, so it can only finish while partition 0 waits.
+                o.RetryDelay = TimeSpan.FromSeconds(10);
+                o.MaxRetryDelay = TimeSpan.FromSeconds(10);
+                o.Listen(topic, group);
+            });
+
+        await broker.ProduceAsync(topic, 0, Records(topic, 1, 2, 3));
+        await gate.WaitForFailuresAsync(1, Timeout);
+        await broker.ProduceAsync(topic, 1, Records(topic, 11, 12, 13, 14, 15));
+        await journal.WaitForAsync(15, TimeSpan.FromSeconds(6));
+
+        Assert.Equal([11, 12, 13, 14, 15], journal.Handled);
+
+        gate.Release(1);
+        await journal.WaitForAsync(3, Timeout);
+
+        Assert.Equal([1, 2, 3], journal.Handled.Where(id => id < 10));
+        Assert.Equal(1, gate.Failures);
+    }
+
+    [Fact]
+    public async Task BatchHandler_ReceivesRecordsOfAPartitionTogether()
+    {
+        var (topic, group) = Names();
+        await broker.CreateTopicAsync(topic, 1);
+        await broker.ProduceAsync(topic, 0, Records(topic, [.. Enumerable.Range(1, 30)]));
+        var journal = new Journal();
+        await using var host = await KafkaTestHost.StartAsync(
+            broker.BootstrapServers,
+            journal,
+            new FailureGate(),
+            b => b.AddBatchHandler<RecordingBatchHandler, OrderPlaced>(),
+            o =>
+            {
+                o.MaxBatchSize = 10;
+                o.Listen(topic, group);
+            });
+
+        await journal.WaitForAsync(30, Timeout);
+        await WaitForCommitAsync(group, topic, 30);
+
+        Assert.Equal(Enumerable.Range(1, 30), journal.Handled);
+        Assert.Contains(host.BatchLog.Sizes, size => size > 1);
+        Assert.All(host.BatchLog.Sizes, size => Assert.InRange(size, 1, 10));
+    }
+
+    [Fact]
+    public async Task BatchWithAPermanentFailure_DeadLettersOnlyTheBadRecord()
+    {
+        var (topic, group) = Names();
+        var deadLetterTopic = $"{topic}.dlq";
+        await broker.CreateTopicAsync(topic, 1);
+        await broker.ProduceAsync(topic, 0, Records(topic, 97, 98, 99, 100, 101));
+        var journal = new Journal();
+        await using var host = await KafkaTestHost.StartAsync(
+            broker.BootstrapServers,
+            journal,
+            new FailureGate(),
+            b => b.AddBatchHandler<RecordingBatchHandler, OrderPlaced>(),
+            o =>
+            {
+                o.MaxBatchSize = 10;
+                o.DeadLetterTopic = deadLetterTopic;
+                o.Listen(topic, group);
+            });
+
+        var deadLettered = broker.ConsumeOne(deadLetterTopic, Timeout);
+        await WaitForCommitAsync(group, topic, 5);
+
+        Assert.Equal($"order-{RecordingBatchHandler.Poison}", Header(deadLettered, TransportHeaders.MessageId));
+        Assert.Equal([97, 98, 100, 101], journal.Handled);
+    }
+
+    [Fact]
     public async Task OversizedMessage_IsPermanentFailure()
     {
         var (topic, _) = Names();
@@ -173,6 +261,9 @@ public sealed class KafkaIntegrationTests(KafkaFixture broker) : IClassFixture<K
         "application/json",
         new Dictionary<string, string>(),
         partitionKey);
+
+    private static IEnumerable<Message<string?, byte[]>> Records(string topic, params int[] orderIds) =>
+        orderIds.Select(id => KafkaMapping.ToKafkaMessage(Message($"order-{id}", topic, id, $"customer-{id}")));
 
     private static string Header(ConsumeResult<string?, byte[]> record, string name) =>
         Encoding.UTF8.GetString(record.Message.Headers.GetLastBytes(name));

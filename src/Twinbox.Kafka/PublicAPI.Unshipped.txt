@@ -18,6 +18,10 @@ Twinbox.Kafka.KafkaOptions.DeadLetterTopic.get -> string?
 Twinbox.Kafka.KafkaOptions.DeadLetterTopic.set -> void
 Twinbox.Kafka.KafkaOptions.KafkaOptions() -> void
 Twinbox.Kafka.KafkaOptions.Listen(string! topic, string! groupId) -> Twinbox.Kafka.KafkaOptions!
+Twinbox.Kafka.KafkaOptions.MaxBatchSize.get -> int
+Twinbox.Kafka.KafkaOptions.MaxBatchSize.set -> void
+Twinbox.Kafka.KafkaOptions.MaxBatchWait.get -> System.TimeSpan
+Twinbox.Kafka.KafkaOptions.MaxBatchWait.set -> void
 Twinbox.Kafka.KafkaOptions.MaxRetryDelay.get -> System.TimeSpan
 Twinbox.Kafka.KafkaOptions.MaxRetryDelay.set -> void
 Twinbox.Kafka.KafkaOptions.RetryDelay.get -> System.TimeSpan

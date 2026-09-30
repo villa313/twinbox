@@ -40,8 +40,14 @@ public sealed class KafkaOptions
     /// <summary>First delay before a record whose handler failed is retried; doubles up to <see cref="MaxRetryDelay"/>.</summary>
     public TimeSpan RetryDelay { get; set; } = TimeSpan.FromSeconds(1);
 
-    /// <summary>Keep well under max.poll.interval.ms: the consumer does not poll while it waits to retry.</summary>
+    /// <summary>Longest wait before a failed record is retried; only its partition pauses meanwhile, the others keep flowing.</summary>
     public TimeSpan MaxRetryDelay { get; set; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>Most records of one partition handed to batch handlers at once; a failed batch is retried record by record.</summary>
+    public int MaxBatchSize { get; set; } = 1;
+
+    /// <summary>How long to wait for more records to fill a batch; only used when <see cref="MaxBatchSize"/> is above 1.</summary>
+    public TimeSpan MaxBatchWait { get; set; } = TimeSpan.FromMilliseconds(50);
 
     internal IReadOnlyList<KafkaListener> Listeners => _listeners;
 

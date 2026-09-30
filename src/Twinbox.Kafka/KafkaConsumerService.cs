@@ -14,6 +14,9 @@ internal sealed partial class KafkaConsumerService(
     private static readonly TimeSpan InitialRestartDelay = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan MaxRestartDelay = TimeSpan.FromSeconds(30);
 
+    // Bounds how long a poll blocks, so stopping and due resumes are noticed promptly.
+    private static readonly TimeSpan PollTimeout = TimeSpan.FromMilliseconds(100);
+
     private readonly ILogger _logger = logger;
     private readonly TaskCompletionSource _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private int _unsubscribed;
@@ -58,11 +61,12 @@ internal sealed partial class KafkaConsumerService(
             try
             {
                 EnsureTopics(listener, stoppingToken);
-                var attempts = new Dictionary<TopicPartition, RecordAttempt>();
+                var retries = new PartitionRetries();
+                var batches = new PartitionBatches(clients.Options.MaxBatchSize);
                 using var consumer = clients.CreateConsumer(
                     listener,
                     (_, partitions) => LogAssigned(listener.Topic, listener.GroupId, string.Join(", ", partitions.Select(p => p.Partition.Value))),
-                    (_, partitions) => Forget(attempts, partitions));
+                    (c, partitions) => Forget(c, retries, batches, partitions));
                 consumer.Subscribe(listener.Topic);
                 LogListening(listener.Topic, listener.GroupId);
                 if (!subscribed)
@@ -77,7 +81,7 @@ internal sealed partial class KafkaConsumerService(
                 restartDelay = InitialRestartDelay;
                 try
                 {
-                    Consume(consumer, attempts, stoppingToken);
+                    Consume(consumer, retries, batches, stoppingToken);
                 }
                 finally
                 {
@@ -102,45 +106,144 @@ internal sealed partial class KafkaConsumerService(
         }
     }
 
-    private void Consume(IConsumer<string?, byte[]> consumer, Dictionary<TopicPartition, RecordAttempt> attempts, CancellationToken stoppingToken)
+    private void Consume(IConsumer<string?, byte[]> consumer, PartitionRetries retries, PartitionBatches batches, CancellationToken stoppingToken)
     {
         while (true)
         {
-            ConsumeResult<string?, byte[]> record;
-            try
+            // Resuming throws only on a broken consumer, which the restart in Run replaces.
+            if (retries.TakeDue(Now) is { Count: > 0 } due)
             {
-                record = consumer.Consume(stoppingToken);
-            }
-            catch (ConsumeException ex) when (!ex.Error.IsFatal)
-            {
-                LogConsumeFailed(ex, ex.Error.Code);
-                continue;
+                consumer.Resume(due);
             }
 
-            if (record is null || record.IsPartitionEOF)
+            Collect(consumer, retries, batches, stoppingToken);
+            foreach (var batch in batches.TakeAll())
             {
-                continue;
-            }
-
-            var attempt = attempts.TryGetValue(record.TopicPartition, out var previous) && previous.Offset == record.Offset.Value
-                ? previous.Attempt + 1
-                : 1;
-            attempts[record.TopicPartition] = new RecordAttempt(record.Offset.Value, attempt);
-
-            if (Process(record, attempt, stoppingToken))
-            {
-                attempts.Remove(record.TopicPartition);
-                Commit(consumer, record);
-            }
-            else
-            {
-                Rewind(consumer, record, attempts);
-                if (stoppingToken.WaitHandle.WaitOne(RetryDelay(clients.Options, attempt)))
-                {
-                    throw new OperationCanceledException(stoppingToken);
-                }
+                ProcessPartition(consumer, batch, retries, stoppingToken);
             }
         }
+    }
+
+    /// <summary>Takes the next record, plus up to a batch of whatever else is already available within MaxBatchWait.</summary>
+    private void Collect(IConsumer<string?, byte[]> consumer, PartitionRetries retries, PartitionBatches batches, CancellationToken stoppingToken)
+    {
+        var first = Poll(consumer, retries, retries.UntilNextResume(Now, PollTimeout), stoppingToken);
+        if (first is null || batches.Add(first))
+        {
+            return;
+        }
+
+        var deadline = Now + (long)clients.Options.MaxBatchWait.TotalMilliseconds;
+        while (Poll(consumer, retries, TimeSpan.FromMilliseconds(Math.Max(0, deadline - Now)), stoppingToken) is { } record)
+        {
+            if (batches.Add(record))
+            {
+                return;
+            }
+        }
+    }
+
+    private ConsumeResult<string?, byte[]>? Poll(
+        IConsumer<string?, byte[]> consumer,
+        PartitionRetries retries,
+        TimeSpan timeout,
+        CancellationToken stoppingToken)
+    {
+        stoppingToken.ThrowIfCancellationRequested();
+        ConsumeResult<string?, byte[]>? record;
+        try
+        {
+            record = consumer.Consume(timeout);
+        }
+        catch (ConsumeException ex) when (!ex.Error.IsFatal)
+        {
+            LogConsumeFailed(ex, ex.Error.Code);
+            return null;
+        }
+
+        // A paused partition was sought back, so a record fetched before the pause is read again after it resumes.
+        return record is null || record.IsPartitionEOF || retries.IsPaused(record.TopicPartition) ? null : record;
+    }
+
+    private void ProcessPartition(
+        IConsumer<string?, byte[]> consumer,
+        List<ConsumeResult<string?, byte[]>> records,
+        PartitionRetries retries,
+        CancellationToken stoppingToken)
+    {
+        var start = 0;
+
+        // A record that already failed goes alone, so it can't sink the batch around it again.
+        if (records.Count > 1 && retries.AttemptOf(records[0].TopicPartitionOffset) > 1)
+        {
+            if (!ProcessOne(consumer, records[0], retries, stoppingToken))
+            {
+                return;
+            }
+
+            start = 1;
+        }
+
+        var rest = records.GetRange(start, records.Count - start);
+        if (rest.Count > 1 && ProcessBatch(consumer, rest, retries, stoppingToken))
+        {
+            return;
+        }
+
+        foreach (var record in rest)
+        {
+            if (!ProcessOne(consumer, record, retries, stoppingToken))
+            {
+                return;
+            }
+        }
+    }
+
+    /// <summary>True when the whole batch was handled and committed; false means isolate the failure record by record.</summary>
+    private bool ProcessBatch(
+        IConsumer<string?, byte[]> consumer,
+        List<ConsumeResult<string?, byte[]>> records,
+        PartitionRetries retries,
+        CancellationToken stoppingToken)
+    {
+        var messages = records.ConvertAll(r => KafkaMapping.ToIncomingMessage(r, retries.AttemptOf(r.TopicPartitionOffset)));
+        var last = records[^1];
+        try
+        {
+            pipeline.ProcessBatchAsync(messages, stoppingToken).GetAwaiter().GetResult();
+        }
+        catch (Exception) when (stoppingToken.IsCancellationRequested)
+        {
+            throw new OperationCanceledException(stoppingToken);
+        }
+        catch (Exception ex)
+        {
+            LogBatchFailed(ex, records.Count, last.Topic, last.Partition.Value, records[0].Offset.Value, last.Offset.Value);
+            return false;
+        }
+
+        retries.Succeeded(last.TopicPartition);
+        Commit(consumer, last);
+        return true;
+    }
+
+    /// <summary>True when the record is done with and committed; false when its partition now waits to retry it.</summary>
+    private bool ProcessOne(
+        IConsumer<string?, byte[]> consumer,
+        ConsumeResult<string?, byte[]> record,
+        PartitionRetries retries,
+        CancellationToken stoppingToken)
+    {
+        var attempt = retries.AttemptOf(record.TopicPartitionOffset);
+        if (Process(record, attempt, stoppingToken))
+        {
+            retries.Succeeded(record.TopicPartition);
+            Commit(consumer, record);
+            return true;
+        }
+
+        Pause(consumer, record, attempt, retries);
+        return false;
     }
 
     /// <summary>True when the record is done with (handled, dead-lettered or skipped) and its offset can be committed.</summary>
@@ -195,7 +298,7 @@ internal sealed partial class KafkaConsumerService(
         }
     }
 
-    // Committing each record synchronously bounds redelivery after a crash or rebalance to the record in flight,
+    // Committing each record or batch synchronously bounds redelivery after a crash or rebalance to what was in flight,
     // which the inbox deduplicates; it trades throughput for not having to track stored offsets across rebalances.
     private void Commit(IConsumer<string?, byte[]> consumer, ConsumeResult<string?, byte[]> record)
     {
@@ -209,30 +312,55 @@ internal sealed partial class KafkaConsumerService(
         }
     }
 
-    /// <summary>Seeks back so the next Consume returns the same record, keeping later records of the partition behind it.</summary>
-    private void Rewind(IConsumer<string?, byte[]> consumer, ConsumeResult<string?, byte[]> record, Dictionary<TopicPartition, RecordAttempt> attempts)
+    /// <summary>Pauses only the record's partition and seeks it back, so its later records wait while other partitions flow.</summary>
+    private void Pause(IConsumer<string?, byte[]> consumer, ConsumeResult<string?, byte[]> record, int attempt, PartitionRetries retries)
     {
         try
         {
+            consumer.Pause([record.TopicPartition]);
             consumer.Seek(record.TopicPartitionOffset);
         }
-        catch (KafkaException ex)
+        catch (KafkaException ex) when (!consumer.Assignment.Contains(record.TopicPartition))
         {
-            // Usually the partition was revoked meanwhile; its new owner resumes from the last committed offset.
-            attempts.Remove(record.TopicPartition);
+            // Revoked meanwhile; its new owner resumes from the last committed offset. Still assigned, the error
+            // propagates instead and the rebuilt consumer resumes from that offset, so the record is never skipped.
+            retries.Forget(record.TopicPartition);
             LogRewindFailed(ex, record.Topic, record.Partition.Value, record.Offset.Value);
+            return;
         }
+
+        retries.Failed(record.TopicPartitionOffset, attempt, Now + (long)RetryDelay(clients.Options, attempt).TotalMilliseconds);
     }
 
-    private void Forget(Dictionary<TopicPartition, RecordAttempt> attempts, List<TopicPartitionOffset> partitions)
+    private void Forget(IConsumer<string?, byte[]> consumer, PartitionRetries retries, PartitionBatches batches, List<TopicPartitionOffset> partitions)
     {
+        var paused = new List<TopicPartition>();
         foreach (var partition in partitions)
         {
-            attempts.Remove(partition.TopicPartition);
+            batches.Drop(partition.TopicPartition);
+            if (retries.Forget(partition.TopicPartition))
+            {
+                paused.Add(partition.TopicPartition);
+            }
+        }
+
+        if (paused.Count > 0)
+        {
+            try
+            {
+                // So the partition starts unpaused if it is assigned back later.
+                consumer.Resume(paused);
+            }
+            catch (KafkaException ex)
+            {
+                LogResumeFailed(ex, string.Join(", ", paused));
+            }
         }
 
         LogRevoked(string.Join(", ", partitions.Select(p => p.TopicPartition.ToString())));
     }
+
+    private static long Now => Environment.TickCount64;
 
     private void EnsureTopics(KafkaListener listener, CancellationToken stoppingToken)
     {
@@ -273,6 +401,9 @@ internal sealed partial class KafkaConsumerService(
     [LoggerMessage(Level = LogLevel.Warning, Message = "Message {MessageId} from {Topic} [{Partition}] @{Offset} failed on attempt {Attempt}; retrying it.")]
     private partial void LogProcessingFailed(Exception error, string messageId, string topic, int partition, long offset, int attempt);
 
+    [LoggerMessage(Level = LogLevel.Warning, Message = "A batch of {Count} messages from {Topic} [{Partition}] @{FirstOffset}-{LastOffset} failed; processing them one by one.")]
+    private partial void LogBatchFailed(Exception error, int count, string topic, int partition, long firstOffset, long lastOffset);
+
     [LoggerMessage(Level = LogLevel.Error, Message = "Message {MessageId} from {Topic} failed permanently; copied it to {DeadLetterTopic}.")]
     private partial void LogDeadLettered(Exception error, string messageId, string topic, string deadLetterTopic);
 
@@ -288,8 +419,9 @@ internal sealed partial class KafkaConsumerService(
     [LoggerMessage(Level = LogLevel.Debug, Message = "Could not seek back to {Topic} [{Partition}] @{Offset}.")]
     private partial void LogRewindFailed(Exception error, string topic, int partition, long offset);
 
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Could not resume revoked Kafka partitions [{Partitions}].")]
+    private partial void LogResumeFailed(Exception error, string partitions);
+
     [LoggerMessage(Level = LogLevel.Debug, Message = "Closing the Kafka consumer for {Topic} failed.")]
     private partial void LogCloseFailed(Exception error, string topic);
-
-    private readonly record struct RecordAttempt(long Offset, int Attempt);
 }
