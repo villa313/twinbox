@@ -8,7 +8,7 @@ a bus abstraction or a special transaction API.
 
 > **Status:** early development (0.1.0-alpha). APIs may still change.
 >
-> **Docs:** https://twinbox-dotnet.github.io/twinbox/
+> **Docs:** https://villa313.github.io/twinbox/
 
 ## Why
 
@@ -123,8 +123,8 @@ app.MapWebhookInbox<StripeEvent>("/webhooks/stripe",
     w => w.VerifyStripe(WebhookSecrets.FromConfiguration("Stripe:WebhookSecret")));
 ```
 
-See [HTTP transport](https://twinbox-dotnet.github.io/twinbox/articles/transports/http.html) and
-[Webhooks](https://twinbox-dotnet.github.io/twinbox/articles/webhooks.html).
+See [HTTP transport](https://villa313.github.io/twinbox/articles/transports/http.html) and
+[Webhooks](https://villa313.github.io/twinbox/articles/webhooks.html).
 
 ## Features
 
@@ -163,24 +163,24 @@ builder.Services.AddTwinbox(twinbox => twinbox
     .AddHandlersFromMyApp());
 ```
 
-`samples/Twinbox.AotSmoke` is published with Native AOT in CI. Twinbox.EntityFrameworkCore isn't AOT compatible. See [Native AOT](https://twinbox-dotnet.github.io/twinbox/articles/concepts/serialization.html).
+`samples/Twinbox.AotSmoke` is published with Native AOT in CI. Twinbox.EntityFrameworkCore isn't AOT compatible. See [Native AOT](https://villa313.github.io/twinbox/articles/concepts/serialization.html).
 
 ## Hosting and operations
 
 - **Azure Functions:** `UseAzureFunctions()` hands dispatching, cleanup and Service Bus triggers to your own functions.
-  [Guide](https://twinbox-dotnet.github.io/twinbox/articles/azure-functions.html)
+  [Guide](https://villa313.github.io/twinbox/articles/azure-functions.html)
 - **Dashboard:** `app.MapTwinboxDashboard("/twinbox").RequireAuthorization("ops")` serves stats, message browsing and
   dead-letter replay. It refuses every request until an authorization policy is attached.
-  [Guide](https://twinbox-dotnet.github.io/twinbox/articles/dashboard.html)
+  [Guide](https://villa313.github.io/twinbox/articles/dashboard.html)
 - **.NET Aspire:** `builder.AddTwinboxServiceDefaults()` in ServiceDefaults and `.WithTwinboxDashboard("/twinbox")` in
-  the AppHost. [Guide](https://twinbox-dotnet.github.io/twinbox/articles/aspire.html)
+  the AppHost. [Guide](https://villa313.github.io/twinbox/articles/aspire.html)
 
 ## Moving over from another outbox
 
 Switch one service at a time: `UseHeaderProfile(...)` keeps the wire format compatible in both directions,
 `ImportFromExistingOutbox(...)` drains messages the old outbox never sent, and `SeedInboxFromExisting(...)` stops
 redeliveries of already-processed messages from running again. See the
-[migration guide](https://twinbox-dotnet.github.io/twinbox/articles/migration.html).
+[migration guide](https://villa313.github.io/twinbox/articles/migration.html).
 
 ## Testing
 
@@ -193,12 +193,12 @@ Assert.Single(harness.Sent<OrderPlaced>());
 ```
 
 Store authors can run `OutboxStoreConformance.Cases` and `OutboxAdminConformance.Cases` from any test framework.
-[Guide](https://twinbox-dotnet.github.io/twinbox/articles/testing.html)
+[Guide](https://villa313.github.io/twinbox/articles/testing.html)
 
 ## Documentation
 
 Full documentation, one page per store and transport, and the API reference:
-**https://twinbox-dotnet.github.io/twinbox/**
+**https://villa313.github.io/twinbox/**
 
 ## License
 

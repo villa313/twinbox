@@ -17,8 +17,8 @@
     <Authors>Twinbox contributors</Authors>
     <Copyright>Copyright (c) Twinbox contributors</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/twinbox-dotnet/twinbox</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/twinbox-dotnet/twinbox</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/villa313/twinbox</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/villa313/twinbox</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>outbox;inbox;transactional-outbox;messaging;idempotency;efcore;azure-service-bus;azure-functions;rabbitmq;kafka;nats;jetstream;redis;amazon-sqs;amazon-sns;pulsar;webhooks;azure-event-hubs;google-pubsub</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>

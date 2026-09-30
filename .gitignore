@@ -493,3 +493,4 @@ docs/_site/
 docs/api/*.yml
 docs/api/.manifest
 docs/obj/
+.claude/settings.json

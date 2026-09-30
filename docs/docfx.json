@@ -25,15 +25,15 @@
     "globalMetadata": {
       "_appName": "Twinbox",
       "_appTitle": "Twinbox",
-      "_appFooter": "Twinbox is MIT licensed. <a href=\"https://github.com/twinbox-dotnet/twinbox\">Source on GitHub</a>.",
+      "_appFooter": "Twinbox is MIT licensed. <a href=\"https://github.com/villa313/twinbox\">Source on GitHub</a>.",
       "_enableSearch": true,
       "_gitContribute": {
-        "repo": "https://github.com/twinbox-dotnet/twinbox",
+        "repo": "https://github.com/villa313/twinbox",
         "branch": "main"
       }
     },
     "sitemap": {
-      "baseUrl": "https://twinbox-dotnet.github.io/twinbox/"
+      "baseUrl": "https://villa313.github.io/twinbox/"
     },
     "xref": [ "https://learn.microsoft.com/en-us/dotnet/.xrefmap.json" ]
   }

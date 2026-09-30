@@ -2,7 +2,7 @@
 
 What Twinbox costs you, measured on one developer machine. Treat the numbers as orders of magnitude and as a way to compare configurations with each other, not as a capacity plan: your database, network and hardware will dominate everything below the in-process numbers.
 
-The suite lives in [`benchmarks/Twinbox.Benchmarks`](https://github.com/twinbox-dotnet/twinbox/tree/main/benchmarks/Twinbox.Benchmarks) and has two halves:
+The suite lives in [`benchmarks/Twinbox.Benchmarks`](https://github.com/villa313/twinbox/tree/main/benchmarks/Twinbox.Benchmarks) and has two halves:
 
 - **Micro benchmarks** (BenchmarkDotNet, `[MemoryDiagnoser]`): the in-process cost of `IOutbox.Send`, the inbound pipeline, header profiles and message id generation. No I/O.
 - **Throughput runs** (`--throughput`): multi-second scenarios against real databases started with Testcontainers (PostgreSQL, SQL Server) plus a SQLite file. Each figure is the median of 5 timed runs after one warm-up run, with the min–max range in brackets.
