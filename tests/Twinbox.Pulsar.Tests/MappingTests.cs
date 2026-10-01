@@ -82,6 +82,37 @@ public sealed class MappingTests
     }
 
     [Fact]
+    public void ToIncomingMessage_RoundTripsTraceStateAndBaggage()
+    {
+        var metadata = PulsarMapping.ToMetadata(Outgoing(partitionKey: null) with
+        {
+            Headers = new Dictionary<string, string>
+            {
+                [TransportHeaders.TraceState] = "vendor=abc,other=xyz",
+                [TransportHeaders.Baggage] = "tenant=acme%20corp,plan=gold",
+            },
+        });
+        var message = new FakeMessage
+        {
+            Properties = new Dictionary<string, string>
+            {
+                [TransportHeaders.MessageId] = metadata[TransportHeaders.MessageId]!,
+                [TransportHeaders.MessageName] = metadata[TransportHeaders.MessageName]!,
+                [PulsarMapping.ContentTypeProperty] = metadata[PulsarMapping.ContentTypeProperty]!,
+                [TransportHeaders.TraceState] = metadata[TransportHeaders.TraceState]!,
+                [TransportHeaders.Baggage] = metadata[TransportHeaders.Baggage]!,
+            },
+        };
+
+        var incoming = PulsarMapping.ToIncomingMessage("orders", message);
+
+        Assert.Equal("vendor=abc,other=xyz", metadata[TransportHeaders.TraceState]);
+        Assert.Equal("tenant=acme%20corp,plan=gold", metadata[TransportHeaders.Baggage]);
+        Assert.Equal("vendor=abc,other=xyz", incoming.Headers[TransportHeaders.TraceState]);
+        Assert.Equal("tenant=acme%20corp,plan=gold", incoming.Headers[TransportHeaders.Baggage]);
+    }
+
+    [Fact]
     public void ToIncomingMessage_ForeignMessage_FallsBackToStableCoordinates()
     {
         var message = new FakeMessage { MessageId = new MessageId(12, 3, 1, -1) };

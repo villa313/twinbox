@@ -169,10 +169,16 @@ internal sealed partial class OutboxDispatcher(
 
     private static async Task SendAsync(ITransport transport, OutboxMessage message, HeaderProfiles headerProfiles, CancellationToken cancellationToken)
     {
-        using var activity = TwinboxDiagnostics.StartActivity($"{message.Destination} send", ActivityKind.Producer, message.TraceParent);
+        using var activity = TwinboxDiagnostics.StartActivity(
+            $"send {message.Destination}", ActivityKind.Producer, message.TraceParent, message.Headers.GetValueOrDefault(TransportHeaders.TraceState));
         activity?.SetTag("messaging.system", transport.Name);
+        activity?.SetTag("messaging.operation.type", "send");
+        activity?.SetTag("messaging.operation.name", "send");
         activity?.SetTag("messaging.destination.name", message.Destination);
-        activity?.SetTag("messaging.message.id", message.Id);
+        activity?.SetTag("messaging.message.id", message.Id.ToString());
+        activity?.SetTag("messaging.message.conversation_id", message.Headers.GetValueOrDefault(TransportHeaders.CorrelationId));
+        activity?.SetTag("twinbox.delivery_attempt", message.Attempts + 1);
+        W3CBaggage.Restore(activity, message.Headers);
 
         var headers = new Dictionary<string, string>(message.Headers);
         var traceParent = activity?.Id ?? message.TraceParent;
@@ -204,7 +210,7 @@ internal sealed partial class OutboxDispatcher(
         }
         catch (Exception ex)
         {
-            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            TwinboxDiagnostics.RecordError(activity, ex);
             throw;
         }
     }

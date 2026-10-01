@@ -56,6 +56,31 @@ public sealed class MappingTests
     }
 
     [Fact]
+    public void ToIncomingMessage_RoundTripsTraceStateAndBaggage()
+    {
+        var message = new TransportMessage(
+            "msg-1",
+            "order-placed",
+            "orders",
+            Encoding.UTF8.GetBytes("{}"),
+            "application/json",
+            new Dictionary<string, string>
+            {
+                [TransportHeaders.TraceState] = "vendor=abc,other=xyz",
+                [TransportHeaders.Baggage] = "tenant=acme%20corp,plan=gold",
+            },
+            "customer-1");
+
+        var data = EventHubsMapping.ToEventData(message);
+        var incoming = EventHubsMapping.ToIncomingMessage(Received(data.Properties, partitionKey: "customer-1"), "orders", "0");
+
+        Assert.Equal("vendor=abc,other=xyz", (string)data.Properties[TransportHeaders.TraceState]);
+        Assert.Equal("tenant=acme%20corp,plan=gold", (string)data.Properties[TransportHeaders.Baggage]);
+        Assert.Equal("vendor=abc,other=xyz", incoming.Headers[TransportHeaders.TraceState]);
+        Assert.Equal("tenant=acme%20corp,plan=gold", incoming.Headers[TransportHeaders.Baggage]);
+    }
+
+    [Fact]
     public void ToIncomingMessage_FallsBackToTheEventsMessageIdThenItsCoordinates()
     {
         var withMessageId = Received(new Dictionary<string, object>(), sequenceNumber: 7);

@@ -29,6 +29,37 @@ public sealed class MessageMapperTests
     }
 
     [Fact]
+    public void ToIncoming_RoundTripsTraceStateAndBaggage()
+    {
+        var outgoing = Outgoing(partitionKey: null) with
+        {
+            Headers = new Dictionary<string, string>
+            {
+                [TransportHeaders.TraceState] = "vendor=abc,other=xyz",
+                [TransportHeaders.Baggage] = "tenant=acme%20corp,plan=gold",
+            },
+        };
+        var sent = RabbitMQMessageMapper.ToProperties(outgoing);
+        Assert.NotNull(sent.Headers);
+
+        // AMQP delivers string headers back as UTF-8 byte arrays.
+        var received = new BasicProperties
+        {
+            MessageId = sent.MessageId,
+            Type = sent.Type,
+            ContentType = sent.ContentType,
+            Headers = sent.Headers.ToDictionary(h => h.Key, h => (object?)Encoding.UTF8.GetBytes((string)h.Value!)),
+        };
+
+        var incoming = RabbitMQMessageMapper.ToIncoming("orders", received, outgoing.Body, redelivered: false);
+
+        Assert.Equal("vendor=abc,other=xyz", sent.Headers[TransportHeaders.TraceState]);
+        Assert.Equal("tenant=acme%20corp,plan=gold", sent.Headers[TransportHeaders.Baggage]);
+        Assert.Equal("vendor=abc,other=xyz", incoming.Headers[TransportHeaders.TraceState]);
+        Assert.Equal("tenant=acme%20corp,plan=gold", incoming.Headers[TransportHeaders.Baggage]);
+    }
+
+    [Fact]
     public void ToProperties_OmitsPartitionKeyWhenUnset()
     {
         var properties = RabbitMQMessageMapper.ToProperties(Outgoing(partitionKey: null));

@@ -76,7 +76,8 @@ well formed, and header names and values sendable.
 - **Body:** the message payload (JSON by default) with its content type.
 - **`Idempotency-Key`:** the message id, so a retried request can be deduplicated by the receiver. Every retry of a
   message uses the same id.
-- **`traceparent`:** always sent, so the call joins the producer's trace.
+- **`traceparent`, `tracestate` and `baggage`:** always sent (the last two when present), so the call joins the
+  producer's trace and sees its baggage, as with `HttpClient`'s own propagation.
 - **Signatures:** with `WebhookSecret`, the request carries `webhook-id`, `webhook-timestamp` and `webhook-signature`
   per [Standard Webhooks](https://www.standardwebhooks.com/) (HMAC-SHA256 over `{id}.{timestamp}.{body}`), so
   receivers can verify it with any Standard Webhooks library. Twinbox's own [webhook ingress](../webhooks.md) verifies

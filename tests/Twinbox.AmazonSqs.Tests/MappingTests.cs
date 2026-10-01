@@ -76,6 +76,26 @@ public sealed class MappingTests
         Assert.False(incoming.Headers.ContainsKey(AmazonSqsMapping.HeadersAttribute));
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(12)]
+    public void ToIncoming_RestoresTraceStateAndBaggage(int extraHeaders)
+    {
+        // Names sort before baggage and tracestate, so overflow packs both into the JSON attribute.
+        var headers = Enumerable.Range(1, extraHeaders).ToDictionary(i => $"a-{i:00}", i => $"v{i}");
+        headers[TransportHeaders.TraceParent] = "00-trace-01";
+        headers[TransportHeaders.TraceState] = "vendor=abc,other=xyz";
+        headers[TransportHeaders.Baggage] = "tenant=acme%20corp,plan=gold";
+
+        var outgoing = AmazonSqsMapping.ToOutgoing(Transport(headers: headers), fifo: false);
+        var incoming = AmazonSqsMapping.ToIncoming(Received(outgoing), "orders");
+
+        Assert.True(outgoing.Attributes.Count <= AmazonSqsMapping.MaxAttributes);
+        Assert.Equal(extraHeaders > 0, outgoing.Attributes.ContainsKey(AmazonSqsMapping.HeadersAttribute));
+        Assert.Equal("vendor=abc,other=xyz", incoming.Headers[TransportHeaders.TraceState]);
+        Assert.Equal("tenant=acme%20corp,plan=gold", incoming.Headers[TransportHeaders.Baggage]);
+    }
+
     [Fact]
     public void ToOutgoing_UsesIndividualAttributesWhenEverythingFits()
     {

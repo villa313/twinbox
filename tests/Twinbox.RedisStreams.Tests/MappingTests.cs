@@ -69,6 +69,27 @@ public sealed class MappingTests
     }
 
     [Fact]
+    public void ToIncomingMessage_RoundTripsTraceStateAndBaggage()
+    {
+        var entry = new StreamEntry("1-0", RedisStreamsMapping.ToEntry(Outgoing(partitionKey: null) with
+        {
+            Headers = new Dictionary<string, string>
+            {
+                [TransportHeaders.TraceState] = "vendor=abc,other=xyz",
+                [TransportHeaders.Baggage] = "tenant=acme%20corp,plan=gold",
+            },
+        }));
+
+        var headers = Serialization.HeaderCodec.Decode(Fields(entry.Values)[RedisStreamsMapping.HeadersField]);
+        var incoming = RedisStreamsMapping.ToIncomingMessage("orders", entry, deliveryAttempt: 1);
+
+        Assert.Equal("vendor=abc,other=xyz", headers[TransportHeaders.TraceState]);
+        Assert.Equal("tenant=acme%20corp,plan=gold", headers[TransportHeaders.Baggage]);
+        Assert.Equal("vendor=abc,other=xyz", incoming.Headers[TransportHeaders.TraceState]);
+        Assert.Equal("tenant=acme%20corp,plan=gold", incoming.Headers[TransportHeaders.Baggage]);
+    }
+
+    [Fact]
     public void ToIncomingMessage_ForeignEntry_FallsBackToStableCoordinates()
     {
         var entry = new StreamEntry("1700000000000-4", [new NameValueEntry("payload", "x")]);

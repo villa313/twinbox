@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Twinbox.Diagnostics;
 using Twinbox.Serialization;
 using Twinbox.Storage;
 using Twinbox.Transport;
@@ -33,17 +34,19 @@ internal sealed class MessagePreparer(
         var payload = serializer.Serialize(message, messageType);
         var now = time.GetUtcNow();
         var availableAt = sendOptions?.Delay is { } delay ? now + delay : now;
-        var headers = sendOptions?.Headers ?? EmptyHeaders.Instance;
-        var traceParent = Activity.Current is { IdFormat: ActivityIdFormat.W3C } activity ? activity.Id : null;
+        var headers = WithTraceContext(sendOptions?.Headers ?? EmptyHeaders.Instance, Activity.Current);
 
         var prepared = new OutboxMessage[messageRoutes.Count];
         for (var i = 0; i < prepared.Length; i++)
         {
+            var id = ids.NewId(now);
+            var transport = messageRoutes[i].Transport ?? transports.ResolveDefaultName();
+            using var create = StartCreateActivity(id, transport, messageRoutes[i].Destination);
             prepared[i] = new OutboxMessage
             {
-                Id = ids.NewId(now),
+                Id = id,
                 MessageName = name,
-                Transport = messageRoutes[i].Transport ?? transports.ResolveDefaultName(),
+                Transport = transport,
                 Destination = messageRoutes[i].Destination,
                 // Empty means "none": some databases (Oracle) can't tell an empty string from NULL.
                 PartitionKey = NullIfEmpty(sendOptions?.PartitionKey),
@@ -51,7 +54,7 @@ internal sealed class MessagePreparer(
                 Payload = payload,
                 ContentType = serializer.ContentType,
                 Headers = headers,
-                TraceParent = traceParent,
+                TraceParent = (create ?? Activity.Current) is { IdFormat: ActivityIdFormat.W3C } parent ? parent.Id : null,
                 CreatedAt = now,
                 AvailableAt = availableAt,
                 Status = OutboxMessageStatus.Pending,
@@ -91,6 +94,42 @@ internal sealed class MessagePreparer(
 
     private IReadOnlyList<Route> Prefixed(IReadOnlyList<Route> routes) =>
         [.. routes.Select(r => r with { Destination = options.Value.ToPhysicalDestination(r.Destination) })];
+
+    /// <summary>The send span is a child of this one, so the request's trace shows the message being queued.</summary>
+    private static Activity? StartCreateActivity(Guid id, string transport, string destination)
+    {
+        var activity = TwinboxDiagnostics.ActivitySource.StartActivity($"create {destination}", ActivityKind.Producer);
+        activity?.SetTag("messaging.system", transport);
+        activity?.SetTag("messaging.operation.type", "create");
+        activity?.SetTag("messaging.operation.name", "create");
+        activity?.SetTag("messaging.destination.name", destination);
+        activity?.SetTag("messaging.message.id", id.ToString());
+        return activity;
+    }
+
+    /// <summary>Only traceparent has a column; tracestate and baggage ride in the headers, which every transport carries.</summary>
+    private static IReadOnlyDictionary<string, string> WithTraceContext(IReadOnlyDictionary<string, string> headers, Activity? current)
+    {
+        var traceState = current?.TraceStateString;
+        var baggage = current is null ? null : W3CBaggage.Encode(current.Baggage);
+        if (string.IsNullOrEmpty(traceState) && baggage is null)
+        {
+            return headers;
+        }
+
+        var withContext = new Dictionary<string, string>(headers);
+        if (!string.IsNullOrEmpty(traceState))
+        {
+            withContext[TransportHeaders.TraceState] = traceState;
+        }
+
+        if (baggage is not null)
+        {
+            withContext[TransportHeaders.Baggage] = baggage;
+        }
+
+        return withContext;
+    }
 
     private static string? NullIfEmpty(string? value) => string.IsNullOrEmpty(value) ? null : value;
 }

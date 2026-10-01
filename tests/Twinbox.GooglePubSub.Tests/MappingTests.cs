@@ -71,6 +71,27 @@ public sealed class MappingTests
     }
 
     [Fact]
+    public void ToIncoming_RoundTripsTraceStateAndBaggage()
+    {
+        var published = GooglePubSubMapping.ToPubsubMessage(Outgoing(partitionKey: null) with
+        {
+            Headers = new Dictionary<string, string>
+            {
+                [TransportHeaders.TraceState] = "vendor=abc,other=xyz",
+                [TransportHeaders.Baggage] = "tenant=acme%20corp,plan=gold",
+            },
+        }, ordering: false);
+        published.MessageId = "broker-1";
+
+        var incoming = GooglePubSubMapping.ToIncoming(published, "billing");
+
+        Assert.Equal("vendor=abc,other=xyz", published.Attributes[TransportHeaders.TraceState]);
+        Assert.Equal("tenant=acme%20corp,plan=gold", published.Attributes[TransportHeaders.Baggage]);
+        Assert.Equal("vendor=abc,other=xyz", incoming.Headers[TransportHeaders.TraceState]);
+        Assert.Equal("tenant=acme%20corp,plan=gold", incoming.Headers[TransportHeaders.Baggage]);
+    }
+
+    [Fact]
     public void ToIncoming_WithoutTwinboxAttributes_FallsBackToTheBrokerMessageId()
     {
         var incoming = GooglePubSubMapping.ToIncoming(new PubsubMessage { MessageId = "broker-9", Data = ByteString.CopyFrom(1, 2) }, "billing");

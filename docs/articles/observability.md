@@ -13,21 +13,37 @@ builder.Services.AddOpenTelemetry()
 
 ### Traces
 
-A trace follows a message end to end, across the database commit and the broker:
+A trace follows a message end to end, across the database commit and the broker. Span names and attributes follow
+the OpenTelemetry messaging semantic conventions:
 
-1. `outbox.Send` captures the current W3C trace context (for example the incoming HTTP request's span) and stores it
-   with the outbox row.
-2. The dispatcher starts a **producer** span as a child of that context, named `{destination} send`. Its id goes out
-   in the `traceparent` header.
-3. The receiving side starts a **consumer** span from `traceparent`, named `{source} process`. Handler work, database
-   calls and messages sent from the handler nest under it.
+1. `outbox.Send` records a short **producer** span, `create {destination}`, under the current span (for example the
+   incoming HTTP request), so the request's trace shows the message being queued. Its context is stored with the
+   outbox row, together with the current `tracestate` and baggage.
+2. The dispatcher starts a **producer** span `send {destination}` as a child of the create span. Its context goes out
+   in the `traceparent` header, with `tracestate` and `baggage` alongside.
+3. The receiving side starts a **consumer** span `process {destination}` from those headers. Handler work, database
+   calls and messages sent from the handler nest under it, and the sender's baggage is available from
+   `Activity.Current.GetBaggageItem(key)`.
 
-| Span | Kind | Tags |
+| Span | Kind | Attributes |
 |---|---|---|
-| `{destination} send` | Producer | `messaging.system` (transport name), `messaging.destination.name`, `messaging.message.id` |
-| `{source} process` | Consumer | `messaging.message.id`, `messaging.source.name` |
+| `create {destination}` | Producer | `messaging.operation.type` = `create`, `messaging.system` (transport name), `messaging.destination.name`, `messaging.message.id` |
+| `send {destination}` | Producer | `messaging.operation.type` = `send`, `messaging.system`, `messaging.destination.name`, `messaging.message.id`, `messaging.message.conversation_id` (correlation id), `twinbox.delivery_attempt` |
+| `process {destination}` | Consumer | `messaging.operation.type` = `process`, `messaging.destination.name`, `messaging.message.id`, `messaging.message.conversation_id`, `twinbox.delivery_attempt` |
 
-A failed send marks the producer span with an error status.
+Every span also carries `messaging.operation.name`. A retry is a new `send` span under the same create span, so all
+attempts of one message sit together in its trace, numbered by `twinbox.delivery_attempt`.
+
+**Failures** set the span's status to error and record `error.type` (the exception's type) plus an `exception` event
+with the message and stack trace, for both a failed send and a failing handler.
+
+**Batches.** A [batch handler](concepts/batch-handlers.md) gets one `process {destination}` span per batch, with
+`messaging.batch.message_count`. A batch has no single parent, so the span links to each message's own trace
+instead.
+
+> [!NOTE]
+> Before 1.3, spans were named `{destination} send` and `{source} process`, and the consumer span carried
+> `messaging.source.name`. Update dashboards or alerts that filter on those names.
 
 ### Metrics
 

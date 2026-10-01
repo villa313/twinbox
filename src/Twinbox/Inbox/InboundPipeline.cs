@@ -28,21 +28,43 @@ internal sealed partial class InboundPipeline(
     {
         ArgumentNullException.ThrowIfNull(message);
         using var activity = StartActivity(message);
-        if (Prepare(message) is not { } prepared)
+        try
         {
-            return;
-        }
+            if (Prepare(message) is not { } prepared)
+            {
+                return;
+            }
 
-        using var _ = TenantScope.Enter(prepared.Tenant);
-        foreach (var handler in prepared.Handlers)
+            using var _ = TenantScope.Enter(prepared.Tenant);
+            foreach (var handler in prepared.Handlers)
+            {
+                await InvokeAsync(handler, prepared.Message, prepared.Body, prepared.Context, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (Exception ex)
         {
-            await InvokeAsync(handler, prepared.Message, prepared.Body, prepared.Context, cancellationToken).ConfigureAwait(false);
+            TwinboxDiagnostics.RecordError(activity, ex);
+            throw;
         }
     }
 
     public async Task ProcessBatchAsync(IReadOnlyList<IncomingMessage> messages, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(messages);
+        using var activity = StartBatchActivity(messages);
+        try
+        {
+            await ProcessPreparedBatchAsync(messages, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            TwinboxDiagnostics.RecordError(activity, ex);
+            throw;
+        }
+    }
+
+    private async Task ProcessPreparedBatchAsync(IReadOnlyList<IncomingMessage> messages, CancellationToken cancellationToken)
+    {
         var prepared = new List<PreparedMessage>(messages.Count);
         foreach (var message in messages)
         {
@@ -114,11 +136,52 @@ internal sealed partial class InboundPipeline(
 
     private static Activity? StartActivity(IncomingMessage message)
     {
-        message.Headers.TryGetValue(TransportHeaders.TraceParent, out var traceParent);
-        var activity = TwinboxDiagnostics.StartActivity($"{message.Source} process", ActivityKind.Consumer, traceParent);
+        var activity = TwinboxDiagnostics.StartActivity(
+            $"process {message.Source}",
+            ActivityKind.Consumer,
+            message.Headers.GetValueOrDefault(TransportHeaders.TraceParent),
+            message.Headers.GetValueOrDefault(TransportHeaders.TraceState));
+        TagProcess(activity, message.Source);
         activity?.SetTag("messaging.message.id", message.MessageId);
-        activity?.SetTag("messaging.source.name", message.Source);
+        activity?.SetTag("messaging.message.conversation_id", message.Headers.GetValueOrDefault(TransportHeaders.CorrelationId));
+        activity?.SetTag("twinbox.delivery_attempt", message.DeliveryAttempt);
+        W3CBaggage.Restore(activity, message.Headers);
         return activity;
+    }
+
+    /// <summary>A batch has no single parent, so per the messaging conventions it links to each message's trace instead.</summary>
+    private static Activity? StartBatchActivity(IReadOnlyList<IncomingMessage> messages)
+    {
+        if (messages.Count == 0)
+        {
+            return null;
+        }
+
+        var links = new List<ActivityLink>(messages.Count);
+        foreach (var message in messages)
+        {
+            if (ActivityContext.TryParse(
+                message.Headers.GetValueOrDefault(TransportHeaders.TraceParent),
+                message.Headers.GetValueOrDefault(TransportHeaders.TraceState),
+                out var context))
+            {
+                links.Add(new ActivityLink(context));
+            }
+        }
+
+        var source = messages[0].Source;
+        var activity = TwinboxDiagnostics.ActivitySource.StartActivity(
+            $"process {source}", ActivityKind.Consumer, parentContext: default, links: links);
+        TagProcess(activity, source);
+        activity?.SetTag("messaging.batch.message_count", messages.Count);
+        return activity;
+    }
+
+    private static void TagProcess(Activity? activity, string source)
+    {
+        activity?.SetTag("messaging.operation.type", "process");
+        activity?.SetTag("messaging.operation.name", "process");
+        activity?.SetTag("messaging.destination.name", source);
     }
 
     private async Task InvokeBatchAsync(BatchHandlerDescriptor handler, PreparedMessage[] items, CancellationToken cancellationToken)

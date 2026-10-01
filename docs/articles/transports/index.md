@@ -55,7 +55,8 @@ counters carry `transport` and `source` tags and come from the `Twinbox` meter (
 - **Identity**: the message id travels with the message (as a broker property or a `twinbox-message-id` header). For
   messages from other producers without one, most transports fall back to something stable across redeliveries (the
   broker's message id or the record's coordinates), so deduplication still works.
-- **Tracing**: `traceparent` is sent and picked up on the other side. See [Observability](../observability.md).
+- **Tracing**: `traceparent`, `tracestate` and `baggage` are sent and picked up on the other side. See
+  [Observability](../observability.md).
 - **Startup**: listeners keep retrying with backoff when the broker is unreachable, rather than failing the host.
 
 ## Choosing destination names

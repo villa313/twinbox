@@ -65,6 +65,27 @@ public sealed class MappingTests
     }
 
     [Fact]
+    public void ToIncomingMessage_RoundTripsTraceStateAndBaggage()
+    {
+        var outgoing = Outgoing(partitionKey: null) with
+        {
+            Headers = new Dictionary<string, string>
+            {
+                [TransportHeaders.TraceState] = "vendor=abc,other=xyz",
+                [TransportHeaders.Baggage] = "tenant=acme%20corp,plan=gold",
+            },
+        };
+
+        var headers = NatsMapping.ToHeaders(outgoing);
+        var incoming = NatsMapping.ToIncomingMessage("orders.placed", outgoing.Body, headers, 1, "ORDERS:12");
+
+        Assert.Equal("vendor=abc,other=xyz", headers[TransportHeaders.TraceState].ToString());
+        Assert.Equal("tenant=acme%20corp,plan=gold", headers[TransportHeaders.Baggage].ToString());
+        Assert.Equal("vendor=abc,other=xyz", incoming.Headers[TransportHeaders.TraceState]);
+        Assert.Equal("tenant=acme%20corp,plan=gold", incoming.Headers[TransportHeaders.Baggage]);
+    }
+
+    [Fact]
     public void ToIncomingMessage_WithOnlyNatsMsgId_UsesIt()
     {
         var headers = new NatsHeaders { [NatsMapping.MsgIdHeader] = "external-9" };

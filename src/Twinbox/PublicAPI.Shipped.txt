@@ -454,6 +454,7 @@ Twinbox.UnknownMessagePolicy.Ignore = 1 -> Twinbox.UnknownMessagePolicy
 const Twinbox.Diagnostics.TwinboxDiagnostics.SourceName = "Twinbox" -> string!
 const Twinbox.InMemory.InMemoryTransport.TransportName = "inmemory" -> string!
 const Twinbox.Transport.LocalTransport.TransportName = "local" -> string!
+const Twinbox.Transport.TransportHeaders.Baggage = "baggage" -> string!
 const Twinbox.Transport.TransportHeaders.CorrelationId = "twinbox-correlation-id" -> string!
 const Twinbox.Transport.TransportHeaders.DeliveryAttempt = "twinbox-delivery-attempt" -> string!
 const Twinbox.Transport.TransportHeaders.MessageId = "twinbox-message-id" -> string!
@@ -462,6 +463,7 @@ const Twinbox.Transport.TransportHeaders.PartitionKey = "twinbox-partition-key" 
 const Twinbox.Transport.TransportHeaders.ReplyTo = "twinbox-reply-to" -> string!
 const Twinbox.Transport.TransportHeaders.TenantId = "twinbox-tenant" -> string!
 const Twinbox.Transport.TransportHeaders.TraceParent = "traceparent" -> string!
+const Twinbox.Transport.TransportHeaders.TraceState = "tracestate" -> string!
 const Twinbox.TwinboxOptions.SectionName = "Twinbox" -> string!
 override Twinbox.OutboxMessage.Equals(object? obj) -> bool
 override Twinbox.OutboxMessage.GetHashCode() -> int

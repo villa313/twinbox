@@ -30,9 +30,27 @@ public static class TwinboxDiagnostics
     internal static readonly Counter<long> DuplicatesSkipped =
         Meter.CreateCounter<long>("twinbox.inbox.duplicates", description: "Incoming messages skipped as already processed.");
 
-    internal static Activity? StartActivity(string name, ActivityKind kind, string? traceParent)
+    internal static Activity? StartActivity(string name, ActivityKind kind, string? traceParent, string? traceState = null)
     {
-        ActivityContext.TryParse(traceParent, null, out var parent);
+        ActivityContext.TryParse(traceParent, traceState, out var parent);
         return ActivitySource.StartActivity(name, kind, parent);
+    }
+
+    /// <summary>Follows the OpenTelemetry convention by hand, since Activity.AddException needs .NET 9.</summary>
+    internal static void RecordError(Activity? activity, Exception error)
+    {
+        if (activity is null)
+        {
+            return;
+        }
+
+        activity.SetStatus(ActivityStatusCode.Error, error.Message);
+        activity.SetTag("error.type", error.GetType().FullName);
+        activity.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection
+        {
+            ["exception.type"] = error.GetType().FullName,
+            ["exception.message"] = error.Message,
+            ["exception.stacktrace"] = error.ToString(),
+        }));
     }
 }

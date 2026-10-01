@@ -69,6 +69,26 @@ public sealed class MappingTests
     }
 
     [Fact]
+    public void ToIncomingMessage_RoundTripsTraceStateAndBaggage()
+    {
+        var message = KafkaMapping.ToKafkaMessage(Outgoing(partitionKey: null) with
+        {
+            Headers = new Dictionary<string, string>
+            {
+                [TransportHeaders.TraceState] = "vendor=abc,other=xyz",
+                [TransportHeaders.Baggage] = "tenant=acme%20corp,plan=gold",
+            },
+        });
+
+        var incoming = KafkaMapping.ToIncomingMessage(Record(message));
+
+        Assert.Equal("vendor=abc,other=xyz", Header(message, TransportHeaders.TraceState));
+        Assert.Equal("tenant=acme%20corp,plan=gold", Header(message, TransportHeaders.Baggage));
+        Assert.Equal("vendor=abc,other=xyz", incoming.Headers[TransportHeaders.TraceState]);
+        Assert.Equal("tenant=acme%20corp,plan=gold", incoming.Headers[TransportHeaders.Baggage]);
+    }
+
+    [Fact]
     public void ToIncomingMessage_WithoutIdHeader_FallsBackToRecordCoordinates()
     {
         var incoming = KafkaMapping.ToIncomingMessage(Record(new Message<string?, byte[]> { Value = [1], Headers = [] }, partition: 2, offset: 42));

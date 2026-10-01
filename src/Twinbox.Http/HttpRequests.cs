@@ -23,9 +23,13 @@ internal static class HttpRequests
             AddHeader(request, options.IdempotencyKeyHeader, message.MessageId);
         }
 
-        if (message.Headers.TryGetValue(TransportHeaders.TraceParent, out var traceParent))
+        // The W3C trace context always goes, as HttpClient's own propagation does; other message headers only when asked.
+        foreach (var name in (string[])[TransportHeaders.TraceParent, TransportHeaders.TraceState, TransportHeaders.Baggage])
         {
-            AddHeader(request, TransportHeaders.TraceParent, traceParent);
+            if (message.Headers.TryGetValue(name, out var value))
+            {
+                AddHeader(request, name, value);
+            }
         }
 
         foreach (var (name, value) in options.Headers)

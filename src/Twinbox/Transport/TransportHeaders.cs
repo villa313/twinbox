@@ -7,6 +7,8 @@ public static class TransportHeaders
     public const string MessageName = "twinbox-message-name";
     public const string PartitionKey = "twinbox-partition-key";
     public const string TraceParent = "traceparent";
+    public const string TraceState = "tracestate";
+    public const string Baggage = "baggage";
     public const string TenantId = "twinbox-tenant";
     public const string DeliveryAttempt = "twinbox-delivery-attempt";
     public const string CorrelationId = "twinbox-correlation-id";

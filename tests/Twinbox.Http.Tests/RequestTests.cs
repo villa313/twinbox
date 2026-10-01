@@ -91,6 +91,35 @@ public sealed class RequestTests
     }
 
     [Fact]
+    public async Task Send_AlwaysForwardsTraceStateAndBaggage()
+    {
+        await using var host = HttpTestHost.Create(o => o
+            .AddEndpoint("vendor", e => e.Url = new Uri("https://api.vendor.test/orders"))
+            .AddEndpoint("hooks", e =>
+            {
+                e.Url = new Uri("https://hooks.test/in");
+                e.ForwardHeaders = true;
+            }));
+        var headers = new Dictionary<string, string>
+        {
+            [TransportHeaders.TraceParent] = TraceParent,
+            [TransportHeaders.TraceState] = "vendor=abc,other=xyz",
+            [TransportHeaders.Baggage] = "tenant=acme%20corp,plan=gold",
+        };
+
+        await host.SendAsync(HttpTestHost.Message("vendor", headers: headers));
+        await host.SendAsync(HttpTestHost.Message("hooks", headers: headers));
+
+        var vendor = host.Handler.Requests[0].Headers;
+        Assert.Equal("vendor=abc,other=xyz", vendor["tracestate"]);
+        Assert.Equal("tenant=acme%20corp,plan=gold", vendor["baggage"]);
+
+        var hooks = host.Handler.Requests[1].Headers;
+        Assert.Equal("vendor=abc,other=xyz", hooks["tracestate"]);
+        Assert.Equal("tenant=acme%20corp,plan=gold", hooks["baggage"]);
+    }
+
+    [Fact]
     public async Task Send_AppliesStaticHeadersMethodContentTypeAndIdempotencyHeaderName()
     {
         await using var host = HttpTestHost.Create(o => o.AddEndpoint("vendor", e =>

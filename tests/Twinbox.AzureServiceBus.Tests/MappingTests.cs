@@ -161,6 +161,34 @@ public sealed class MappingTests
         }
     }
 
+    [Fact]
+    public void SentMessage_RoundTripsTraceStateAndBaggage()
+    {
+        var outgoing = Outgoing(partitionKey: null) with
+        {
+            Headers = new Dictionary<string, string>
+            {
+                [TransportHeaders.TraceState] = "vendor=abc,other=xyz",
+                [TransportHeaders.Baggage] = "tenant=acme%20corp,plan=gold",
+            },
+        };
+        var sent = AzureServiceBusMapping.ToServiceBusMessage(outgoing, sendSessionIds: false);
+        var received = ServiceBusModelFactory.ServiceBusReceivedMessage(
+            body: sent.Body,
+            messageId: sent.MessageId,
+            subject: sent.Subject,
+            contentType: sent.ContentType,
+            properties: sent.ApplicationProperties,
+            deliveryCount: 1);
+
+        var incoming = AzureServiceBusMapping.ToIncomingMessage(received, outgoing.Destination);
+
+        Assert.Equal("vendor=abc,other=xyz", sent.ApplicationProperties[TransportHeaders.TraceState]);
+        Assert.Equal("tenant=acme%20corp,plan=gold", sent.ApplicationProperties[TransportHeaders.Baggage]);
+        Assert.Equal("vendor=abc,other=xyz", incoming.Headers[TransportHeaders.TraceState]);
+        Assert.Equal("tenant=acme%20corp,plan=gold", incoming.Headers[TransportHeaders.Baggage]);
+    }
+
     internal static TransportMessage Outgoing(string? partitionKey) => new(
         "msg-1",
         "OrderPlaced",
