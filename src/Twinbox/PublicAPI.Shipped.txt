@@ -44,6 +44,10 @@ Twinbox.IOutboxDispatcher.DispatchBatchAsync(System.Threading.CancellationToken 
 Twinbox.ITwinboxMaintenance
 Twinbox.ITwinboxMaintenance.DispatchPendingAsync(System.TimeSpan budget, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
 Twinbox.ITwinboxMaintenance.RunCleanupAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<int>!
+Twinbox.ITwinboxTopology
+Twinbox.ITwinboxTopology.ConsumersOf(System.Type! messageType) -> System.Collections.Generic.IReadOnlyList<string!>!
+Twinbox.ITwinboxTopology.DestinationsOf(System.Type! messageType) -> System.Collections.Generic.IReadOnlyList<string!>!
+Twinbox.ITwinboxTopology.IsKnown(System.Type! messageType) -> bool
 Twinbox.InMemory.InMemoryInboxStore
 Twinbox.InMemory.InMemoryInboxStore.HasProcessed(string! messageId, string! consumer) -> bool
 Twinbox.InMemory.InMemoryInboxStore.InMemoryInboxStore(Twinbox.Storage.IOutboxStore! outbox, Twinbox.Storage.IDispatchSignal! signal, System.TimeProvider! time) -> void
@@ -414,8 +418,10 @@ Twinbox.TwinboxBuilder.AddFilter<TFilter>() -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.AddHandler<THandler, TMessage>(string? consumerName = null) -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.AddHandler<THandler>(string? consumerName = null) -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.AddOutgoingFilter<TFilter>() -> Twinbox.TwinboxBuilder!
+Twinbox.TwinboxBuilder.AddSubtypesOf<TBase>(params System.Reflection.Assembly![]! assemblies) -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.Configure(System.Action<Twinbox.TwinboxOptions!>! configure) -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.Route<TMessage>() -> Twinbox.RouteBuilder<TMessage!>!
+Twinbox.TwinboxBuilder.SendOnly() -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 Twinbox.TwinboxBuilder.UseHeaderProfile(Twinbox.Transport.HeaderProfile! profile) -> Twinbox.TwinboxBuilder!
 Twinbox.TwinboxBuilder.UseJsonTypeInfoResolver(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver! typeInfoResolver) -> Twinbox.TwinboxBuilder!
@@ -491,7 +497,10 @@ override Twinbox.Transport.TransportMessage.Equals(object? obj) -> bool
 override Twinbox.Transport.TransportMessage.GetHashCode() -> int
 override Twinbox.Transport.TransportMessage.ToString() -> string!
 static Microsoft.Extensions.DependencyInjection.TwinboxHealthChecksBuilderExtensions.AddTwinbox(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder! builder, string! name = "twinbox", System.TimeSpan? maxPendingAge = null, long maxDeadMessages = 0, Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus failureStatus = Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Degraded, System.Collections.Generic.IEnumerable<string!>? tags = null, Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus? deadLetterStatus = null) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
+static Microsoft.Extensions.DependencyInjection.TwinboxHealthChecksBuilderExtensions.AddTwinboxBacklog(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder! builder, string! name = "twinbox-backlog", System.TimeSpan? maxPendingAge = null, Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus failureStatus = Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Degraded, System.Collections.Generic.IEnumerable<string!>? tags = null) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
+static Microsoft.Extensions.DependencyInjection.TwinboxHealthChecksBuilderExtensions.AddTwinboxDeadLetters(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder! builder, string! name = "twinbox-dead-letters", long maxDeadMessages = 0, Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus failureStatus = Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy, System.Collections.Generic.IEnumerable<string!>? tags = null) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
 static Microsoft.Extensions.DependencyInjection.TwinboxServiceCollectionExtensions.AddTwinbox(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Twinbox.TwinboxBuilder!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Microsoft.Extensions.DependencyInjection.TwinboxServiceCollectionExtensions.EnableTwinboxDispatcher(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Twinbox.InMemoryTwinboxBuilderExtensions.UseInMemory(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.InMemory.InMemoryTransportOptions!>? configure = null) -> Twinbox.TwinboxBuilder!
 static Twinbox.InMemoryTwinboxBuilderExtensions.UseInMemoryStore(this Twinbox.TwinboxBuilder! builder) -> Twinbox.TwinboxBuilder!
 static Twinbox.InMemoryTwinboxBuilderExtensions.UseInMemoryTransport(this Twinbox.TwinboxBuilder! builder, System.Action<Twinbox.InMemory.InMemoryTransportOptions!>? configure = null) -> Twinbox.TwinboxBuilder!

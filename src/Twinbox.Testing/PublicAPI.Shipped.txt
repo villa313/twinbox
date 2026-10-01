@@ -13,6 +13,21 @@ Twinbox.Testing.Conformance.ConformanceException
 Twinbox.Testing.Conformance.ConformanceException.ConformanceException(string! message) -> void
 Twinbox.Testing.Conformance.OutboxAdminConformance
 Twinbox.Testing.Conformance.OutboxStoreConformance
+Twinbox.Testing.RecordedSend
+Twinbox.Testing.RecordedSend.<Clone>$() -> Twinbox.Testing.RecordedSend!
+Twinbox.Testing.RecordedSend.Deconstruct(out object! Message, out Twinbox.SendOptions? Options) -> void
+Twinbox.Testing.RecordedSend.Equals(Twinbox.Testing.RecordedSend? other) -> bool
+Twinbox.Testing.RecordedSend.Message.get -> object!
+Twinbox.Testing.RecordedSend.Message.init -> void
+Twinbox.Testing.RecordedSend.Options.get -> Twinbox.SendOptions?
+Twinbox.Testing.RecordedSend.Options.init -> void
+Twinbox.Testing.RecordedSend.RecordedSend(object! Message, Twinbox.SendOptions? Options) -> void
+Twinbox.Testing.RecordingOutbox
+Twinbox.Testing.RecordingOutbox.Messages<TMessage>() -> System.Collections.Generic.IReadOnlyList<TMessage!>!
+Twinbox.Testing.RecordingOutbox.RecordingOutbox() -> void
+Twinbox.Testing.RecordingOutbox.Send<TMessage>(TMessage! message, Twinbox.SendOptions? options = null) -> void
+Twinbox.Testing.RecordingOutbox.Sent.get -> System.Collections.Generic.IReadOnlyList<Twinbox.Testing.RecordedSend!>!
+Twinbox.Testing.TopologyChecks
 Twinbox.Testing.TwinboxTestHarness
 Twinbox.Testing.TwinboxTestHarness.DeadLetteredOutgoing() -> System.Collections.Generic.IReadOnlyList<Twinbox.OutboxMessage!>!
 Twinbox.Testing.TwinboxTestHarness.DrainAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
@@ -22,9 +37,16 @@ Twinbox.Testing.TwinboxTestHarness.Transport.get -> Twinbox.InMemory.InMemoryTra
 override Twinbox.Testing.Conformance.ConformanceCase<TStore>.Equals(object? obj) -> bool
 override Twinbox.Testing.Conformance.ConformanceCase<TStore>.GetHashCode() -> int
 override Twinbox.Testing.Conformance.ConformanceCase<TStore>.ToString() -> string!
+override Twinbox.Testing.RecordedSend.Equals(object? obj) -> bool
+override Twinbox.Testing.RecordedSend.GetHashCode() -> int
+override Twinbox.Testing.RecordedSend.ToString() -> string!
 static Twinbox.TestHarnessExtensions.GetTwinboxHarness(this System.IServiceProvider! services) -> Twinbox.Testing.TwinboxTestHarness!
 static Twinbox.TestHarnessExtensions.UseTestHarness(this Twinbox.TwinboxBuilder! builder) -> Twinbox.TwinboxBuilder!
 static Twinbox.Testing.Conformance.ConformanceCase<TStore>.operator !=(Twinbox.Testing.Conformance.ConformanceCase<TStore>? left, Twinbox.Testing.Conformance.ConformanceCase<TStore>? right) -> bool
 static Twinbox.Testing.Conformance.ConformanceCase<TStore>.operator ==(Twinbox.Testing.Conformance.ConformanceCase<TStore>? left, Twinbox.Testing.Conformance.ConformanceCase<TStore>? right) -> bool
 static Twinbox.Testing.Conformance.OutboxAdminConformance.Cases.get -> System.Collections.Generic.IReadOnlyList<Twinbox.Testing.Conformance.ConformanceCase<Twinbox.Storage.IOutboxStore!>!>!
 static Twinbox.Testing.Conformance.OutboxStoreConformance.Cases.get -> System.Collections.Generic.IReadOnlyList<Twinbox.Testing.Conformance.ConformanceCase<Twinbox.Storage.IOutboxStore!>!>!
+static Twinbox.Testing.RecordedSend.operator !=(Twinbox.Testing.RecordedSend? left, Twinbox.Testing.RecordedSend? right) -> bool
+static Twinbox.Testing.RecordedSend.operator ==(Twinbox.Testing.RecordedSend? left, Twinbox.Testing.RecordedSend? right) -> bool
+static Twinbox.Testing.TopologyChecks.FindUnhandledSubtypes<TBase>(this System.IServiceProvider! services, params System.Reflection.Assembly![]! assemblies) -> System.Collections.Generic.IReadOnlyList<System.Type!>!
+static Twinbox.Testing.TopologyChecks.FindUnroutedSubtypes<TBase>(this System.IServiceProvider! services, params System.Reflection.Assembly![]! assemblies) -> System.Collections.Generic.IReadOnlyList<System.Type!>!

@@ -8,3 +8,11 @@
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
 TWBX001 | Twinbox | Info | HandlerRegistrationGenerator
+
+## Release 1.2.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+TWBX002 | Twinbox | Warning | OutboxSetAnalyzer
