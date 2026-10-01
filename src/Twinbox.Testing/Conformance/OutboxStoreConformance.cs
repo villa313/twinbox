@@ -30,6 +30,7 @@ public static class OutboxStoreConformance
         new("Purge removes expired sent messages only", PurgeRemovesExpiredSent),
         new("Statistics count pending and dead messages", StatisticsCountMessages),
         new("Payload, headers and metadata round-trip", RoundTripsFields),
+        new("Append keeps status, attempts and last error, so imports carry their history", AppendKeepsHistory),
         new("Name identifies the store", HasName),
     ];
 
@@ -246,6 +247,19 @@ public static class OutboxStoreConformance
         Expect(row.TraceParent == message.TraceParent, "trace parent did not round-trip");
         Expect(row.CreatedAt == message.CreatedAt, $"created-at did not round-trip ({row.CreatedAt} vs {message.CreatedAt})");
         Expect(row.Headers.Count == 2 && row.Headers["x-correlation-id"] == "abc" && row.Headers["x-empty"] == "", "headers did not round-trip");
+    }
+
+    private static async Task AppendKeepsHistory(IOutboxStore store)
+    {
+        var retried = NewMessage() with { Attempts = 2, LastError = "timeout" };
+        var dead = NewMessage() with { Attempts = 10, LastError = "gave up", Status = OutboxMessageStatus.Dead };
+        await store.AppendAsync([retried, dead], default);
+
+        var stats = await store.GetStatisticsAsync(default);
+        Expect(stats.PendingCount == 1 && stats.DeadCount == 1, $"expected 1 pending and 1 dead, got {stats.PendingCount} and {stats.DeadCount}");
+        var claimed = (await ClaimAsync(store, Owner, T0)).Single();
+        Expect(claimed.Id == retried.Id, "claimed a message appended as dead");
+        Expect(claimed.Attempts == 2 && claimed.LastError == "timeout", $"expected 2 attempts and 'timeout', got {claimed.Attempts} and '{claimed.LastError}'");
     }
 
     private static Task<IReadOnlyList<OutboxMessage>> ClaimAsync(IOutboxStore store, string owner, DateTimeOffset now, int batchSize = 100) =>

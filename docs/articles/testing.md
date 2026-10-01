@@ -86,6 +86,37 @@ await pipeline.ProcessAsync(new IncomingMessage(
 
 Process the same message twice to check that your handler runs once.
 
+### Code that only needs an `IOutbox`
+
+To construct something that takes an `IOutbox` (a `DbContext` that raises domain events, say) without running
+Twinbox, pass a `RecordingOutbox`. It keeps what was sent and nothing else:
+
+```csharp
+var outbox = new RecordingOutbox();
+var db = new AppDbContext(options, outbox);
+
+// ... act ...
+
+var placed = Assert.Single(outbox.Messages<OrderPlaced>());
+Assert.Equal("customer-7", outbox.Sent[0].Options?.PartitionKey);
+```
+
+### Checking that a hierarchy is covered
+
+With [base-type routes and handlers](concepts/handlers.md#polymorphic-handlers), adding a new subtype can leave it
+without a route or without a handler, which only shows when one is sent or delivered. Check every concrete subtype in
+a test instead:
+
+```csharp
+using var provider = services.BuildServiceProvider();   // your real AddTwinbox registration
+
+Assert.Empty(provider.FindUnroutedSubtypes<DomainEvent>());     // sending one would throw
+Assert.Empty(provider.FindUnhandledSubtypes<DomainEvent>());    // unknown by name, or no handler
+```
+
+Both scan `DomainEvent`'s assembly by default; pass other assemblies to widen it. They read `ITwinboxTopology`, which
+you can also resolve yourself, for example in a startup check.
+
 ## Integration tests with a real database
 
 The harness replaces the store. To test against your real schema, keep your store registration and use

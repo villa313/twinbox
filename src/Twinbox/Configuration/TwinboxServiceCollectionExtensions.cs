@@ -16,6 +16,13 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class TwinboxServiceCollectionExtensions
 {
+    /// <summary>Runs the dispatcher in this host even where shared setup called <see cref="TwinboxBuilder.SendOnly"/>, whatever the registration order.</summary>
+    public static IServiceCollection EnableTwinboxDispatcher(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        return services.PostConfigure<TwinboxOptions>(options => options.Dispatcher.Enabled = true);
+    }
+
     public static IServiceCollection AddTwinbox(this IServiceCollection services, Action<TwinboxBuilder> configure)
     {
         ArgumentNullException.ThrowIfNull(services);
@@ -42,6 +49,7 @@ public static class TwinboxServiceCollectionExtensions
         services.TryAddSingleton<TenantDirectory>();
         services.TryAddSingleton<MessagePreparer>();
         services.TryAddSingleton<HandlerRegistry>();
+        services.TryAddSingleton<ITwinboxTopology, TwinboxTopology>();
         services.TryAddSingleton<IInboundPipeline, InboundPipeline>();
         services.TryAddSingleton<DispatchSignal>();
         services.TryAddSingleton<IDispatchSignal>(sp => sp.GetRequiredService<DispatchSignal>());

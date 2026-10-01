@@ -1,1 +1,23 @@
 #nullable enable
+Twinbox.Testing.RecordedSend
+Twinbox.Testing.RecordedSend.<Clone>$() -> Twinbox.Testing.RecordedSend!
+Twinbox.Testing.RecordedSend.Deconstruct(out object! Message, out Twinbox.SendOptions? Options) -> void
+Twinbox.Testing.RecordedSend.Equals(Twinbox.Testing.RecordedSend? other) -> bool
+Twinbox.Testing.RecordedSend.Message.get -> object!
+Twinbox.Testing.RecordedSend.Message.init -> void
+Twinbox.Testing.RecordedSend.Options.get -> Twinbox.SendOptions?
+Twinbox.Testing.RecordedSend.Options.init -> void
+Twinbox.Testing.RecordedSend.RecordedSend(object! Message, Twinbox.SendOptions? Options) -> void
+Twinbox.Testing.RecordingOutbox
+Twinbox.Testing.RecordingOutbox.Messages<TMessage>() -> System.Collections.Generic.IReadOnlyList<TMessage!>!
+Twinbox.Testing.RecordingOutbox.RecordingOutbox() -> void
+Twinbox.Testing.RecordingOutbox.Send<TMessage>(TMessage! message, Twinbox.SendOptions? options = null) -> void
+Twinbox.Testing.RecordingOutbox.Sent.get -> System.Collections.Generic.IReadOnlyList<Twinbox.Testing.RecordedSend!>!
+Twinbox.Testing.TopologyChecks
+override Twinbox.Testing.RecordedSend.Equals(object? obj) -> bool
+override Twinbox.Testing.RecordedSend.GetHashCode() -> int
+override Twinbox.Testing.RecordedSend.ToString() -> string!
+static Twinbox.Testing.RecordedSend.operator !=(Twinbox.Testing.RecordedSend? left, Twinbox.Testing.RecordedSend? right) -> bool
+static Twinbox.Testing.RecordedSend.operator ==(Twinbox.Testing.RecordedSend? left, Twinbox.Testing.RecordedSend? right) -> bool
+static Twinbox.Testing.TopologyChecks.FindUnhandledSubtypes<TBase>(this System.IServiceProvider! services, params System.Reflection.Assembly![]! assemblies) -> System.Collections.Generic.IReadOnlyList<System.Type!>!
+static Twinbox.Testing.TopologyChecks.FindUnroutedSubtypes<TBase>(this System.IServiceProvider! services, params System.Reflection.Assembly![]! assemblies) -> System.Collections.Generic.IReadOnlyList<System.Type!>!

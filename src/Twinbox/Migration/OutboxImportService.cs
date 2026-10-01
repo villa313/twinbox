@@ -82,8 +82,9 @@ internal sealed partial class OutboxImportService(
 
                 try
                 {
-                    var messages = preparer.PrepareImported(
-                        messageType, row.Name, row.Id, row.Content, tenant, HeaderCodec.Decode(row.Headers), row.PartitionKey);
+                    IReadOnlyList<OutboxMessage> messages = [.. preparer.PrepareImported(
+                            messageType, row.Name, row.Id, row.Content, tenant, HeaderCodec.Decode(row.Headers), row.PartitionKey)
+                        .Select(row.CarryHistory)];
                     await AppendMissingAsync(messages, cancellationToken).ConfigureAwait(false);
                     await MarkImportedAsync(connection, row.Key, cancellationToken).ConfigureAwait(false);
                     imported++;
@@ -140,7 +141,10 @@ internal sealed partial class OutboxImportService(
                 reader.GetString(columns["Name"]),
                 content as byte[] ?? Encoding.UTF8.GetBytes(Convert.ToString(content, CultureInfo.InvariantCulture)!),
                 OptionalText(reader, columns, "Headers"),
-                OptionalText(reader, columns, "PartitionKey")));
+                OptionalText(reader, columns, "PartitionKey"),
+                Optional(reader, columns, "Attempts", value => Convert.ToInt32(value, CultureInfo.InvariantCulture)) ?? 0,
+                OptionalText(reader, columns, "LastError"),
+                Optional(reader, columns, "Dead", value => Convert.ToBoolean(value, CultureInfo.InvariantCulture)) ?? false));
         }
 
         return rows;
@@ -181,6 +185,10 @@ internal sealed partial class OutboxImportService(
         return columns;
     }
 
+    private static T? Optional<T>(DbDataReader reader, Dictionary<string, int> columns, string column, Func<object, T> convert)
+        where T : struct =>
+        columns.TryGetValue(column, out var ordinal) && !reader.IsDBNull(ordinal) ? convert(reader.GetValue(ordinal)) : null;
+
     private static string? OptionalText(DbDataReader reader, Dictionary<string, int> columns, string column) =>
         columns.TryGetValue(column, out var ordinal) && !reader.IsDBNull(ordinal)
             ? Convert.ToString(reader.GetValue(ordinal), CultureInfo.InvariantCulture)
@@ -208,5 +216,23 @@ internal sealed partial class OutboxImportService(
     [LoggerMessage(Level = LogLevel.Error, Message = "Importing from the existing outbox failed; will retry.")]
     private partial void LogImportFailed(Exception error);
 
-    private sealed record ImportedRow(object Key, string Id, string Name, byte[] Content, string? Headers, string? PartitionKey);
+    private sealed record ImportedRow(
+        object Key,
+        string Id,
+        string Name,
+        byte[] Content,
+        string? Headers,
+        string? PartitionKey,
+        int Attempts,
+        string? LastError,
+        bool Dead)
+    {
+        /// <summary>Keeps the old system's delivery history, so a row it gave up on arrives dead instead of retrying from zero.</summary>
+        public OutboxMessage CarryHistory(OutboxMessage message) => message with
+        {
+            Attempts = Attempts,
+            LastError = LastError,
+            Status = Dead ? OutboxMessageStatus.Dead : OutboxMessageStatus.Pending,
+        };
+    }
 }

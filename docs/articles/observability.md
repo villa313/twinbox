@@ -66,6 +66,21 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = c => c
 | `deadLetterStatus` | same as `failureStatus` | Status for too many dead messages. |
 | `tags` | none | Tags for filtering, e.g. `ready`. |
 
+### One check per concern
+
+A stale backlog usually recovers once a broker comes back; dead letters never do. To alert on them differently,
+register one check for each instead of `AddTwinbox`:
+
+```csharp
+builder.Services.AddHealthChecks()
+    .AddTwinboxBacklog(maxPendingAge: TimeSpan.FromMinutes(10))   // "twinbox-backlog", Degraded
+    .AddTwinboxDeadLetters();                                     // "twinbox-dead-letters", Unhealthy
+```
+
+`AddTwinboxBacklog` takes `name`, `maxPendingAge`, `failureStatus` (default `Degraded`) and `tags`;
+`AddTwinboxDeadLetters` takes `name`, `maxDeadMessages` (default `0`), `failureStatus` (default `Unhealthy`) and
+`tags`. Each looks only at its own concern.
+
 The check reads statistics from every store and tenant and reports `pending` and `dead` counts in its data. Pending
 age is measured from when a message became due (its `AvailableAt`), so [delayed sends](concepts/delayed-send.md) don't
 count as backlog until their time comes. A retried message becomes due again at its next attempt, so a destination that

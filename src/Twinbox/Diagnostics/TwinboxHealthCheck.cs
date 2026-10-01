@@ -8,8 +8,8 @@ internal sealed class TwinboxHealthCheck(
     IEnumerable<IOutboxStore> stores,
     TenantDirectory tenants,
     TimeProvider time,
-    TimeSpan maxPendingAge,
-    long maxDeadMessages,
+    TimeSpan? maxPendingAge,
+    long? maxDeadMessages,
     HealthStatus? deadLetterStatus) : IHealthCheck
 {
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
@@ -34,9 +34,9 @@ internal sealed class TwinboxHealthCheck(
             ["dead"] = stats.DeadCount,
         };
 
-        if (stats.OldestPendingAvailableAt is { } oldest && time.GetUtcNow() - oldest > maxPendingAge)
+        if (maxPendingAge is { } maxAge && stats.OldestPendingAvailableAt is { } oldest && time.GetUtcNow() - oldest > maxAge)
         {
-            return new HealthCheckResult(context.Registration.FailureStatus, $"Oldest pending outbox message is older than {maxPendingAge}.", data: data);
+            return new HealthCheckResult(context.Registration.FailureStatus, $"Oldest pending outbox message is older than {maxAge}.", data: data);
         }
 
         return stats.DeadCount > maxDeadMessages

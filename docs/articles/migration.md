@@ -161,7 +161,7 @@ twinbox.ImportFromExistingOutbox(o =>
 | Option | Description |
 |---|---|
 | `CreateConnection` | Opens a connection to the database holding the old table. Required. |
-| `SelectPending` | Returns up to `@batch` unsent rows with columns `Id`, `Name` and `Content`, and optionally `Headers` and `PartitionKey`. Required. |
+| `SelectPending` | Returns up to `@batch` unsent rows with columns `Id`, `Name` and `Content`, and optionally `Headers`, `PartitionKey`, `Attempts`, `LastError` and `Dead`. Required. |
 | `MarkImported` | Marks one row so it isn't selected again; receives `@id`. Required. |
 | `Store` | The outbox store to import into, by name. Only needed when several stores are registered (several EF Core contexts use their class names). |
 | `BatchSize` | Rows per select; a full batch is followed right away by the next. Default 100. |
@@ -180,6 +180,10 @@ How it behaves:
 - **Ids are deterministic**, derived from the old `Id` and the destination, and receivers deduplicate on them. If the
   process stops after a row was copied but before it was marked, the next poll finds the copy by its id, skips it and
   marks the old row, so nothing is imported twice and the row doesn't get stuck.
+- **Delivery history is optional too.** Return `Attempts` (a number), `LastError` (text) and `Dead` (a boolean, or
+  0/1) to carry what the old system knew: a row it had given up on arrives dead, so the
+  [dead-letter health check](observability.md#health-checks) reports it and it can be replayed from the
+  [dashboard](dashboard.md), instead of being retried from zero.
 - **Headers and partition key are optional.** Return a `Headers` column holding a JSON object of strings (build it
   with your database's JSON functions if the old system stores them differently) and a `PartitionKey` column to keep
   per-key ordering. Without them, imported rows carry no headers and are sent unordered.
@@ -196,6 +200,32 @@ How it behaves:
 > A row the old system's dispatcher is sending at the same moment can go out twice: once from the old dispatcher with
 > its old id, once from Twinbox with the derived id. Receivers can't match the two. Select only rows older than the old
 > dispatcher's normal latency (as above), or stop the old dispatcher before the import starts where you can.
+
+### A hand-rolled outbox in the same database
+
+Many apps start with a home-grown table: an id, the event's type name, a JSON payload, a processed timestamp and an
+attempt counter. Point the import at it directly, carrying the attempts so rows the old dispatcher gave up on arrive
+dead:
+
+```csharp
+twinbox.ImportFromExistingOutbox(o =>
+{
+    o.CreateConnection = sp => new SqlConnection(connectionString);
+    o.SelectPending = """
+        SELECT TOP (@batch) id AS Id, type AS Name, payload AS Content,
+            attempts AS Attempts, error AS LastError, CASE WHEN attempts >= 10 THEN 1 ELSE 0 END AS Dead
+        FROM outbox_messages
+        WHERE processed_utc IS NULL AND created_date < DATEADD(second, -30, SYSDATETIMEOFFSET())
+        ORDER BY created_date
+        """;
+    o.MarkImported = "UPDATE outbox_messages SET processed_utc = SYSDATETIMEOFFSET() WHERE id = @id";
+});
+```
+
+The old `type` column usually holds the class name, which is Twinbox's default message name, so no
+`[MessageName]` is needed. Payloads written with `System.Text.Json`'s defaults (PascalCase) read fine with Twinbox's
+default serializer, which matches property names case-insensitively. Once the old table has stayed empty through a
+deploy, remove the import and drop the table.
 
 ## 4. Seed the inbox
 

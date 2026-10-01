@@ -1,1 +1,10 @@
 #nullable enable
+Twinbox.ITwinboxTopology
+Twinbox.ITwinboxTopology.ConsumersOf(System.Type! messageType) -> System.Collections.Generic.IReadOnlyList<string!>!
+Twinbox.ITwinboxTopology.DestinationsOf(System.Type! messageType) -> System.Collections.Generic.IReadOnlyList<string!>!
+Twinbox.ITwinboxTopology.IsKnown(System.Type! messageType) -> bool
+Twinbox.TwinboxBuilder.AddSubtypesOf<TBase>(params System.Reflection.Assembly![]! assemblies) -> Twinbox.TwinboxBuilder!
+Twinbox.TwinboxBuilder.SendOnly() -> Twinbox.TwinboxBuilder!
+static Microsoft.Extensions.DependencyInjection.TwinboxHealthChecksBuilderExtensions.AddTwinboxBacklog(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder! builder, string! name = "twinbox-backlog", System.TimeSpan? maxPendingAge = null, Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus failureStatus = Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Degraded, System.Collections.Generic.IEnumerable<string!>? tags = null) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
+static Microsoft.Extensions.DependencyInjection.TwinboxHealthChecksBuilderExtensions.AddTwinboxDeadLetters(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder! builder, string! name = "twinbox-dead-letters", long maxDeadMessages = 0, Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus failureStatus = Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy, System.Collections.Generic.IEnumerable<string!>? tags = null) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
+static Microsoft.Extensions.DependencyInjection.TwinboxServiceCollectionExtensions.EnableTwinboxDispatcher(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

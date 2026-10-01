@@ -11,4 +11,12 @@ internal static class Diagnostics
         category: "Twinbox",
         defaultSeverity: DiagnosticSeverity.Info,
         isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor UseTwinboxOutbox = new(
+        id: "TWBX002",
+        title: "Query the outbox with TwinboxOutbox()",
+        messageFormat: "Twinbox maps OutboxMessage as a shared-type entity, so Set<OutboxMessage>() throws at runtime; use TwinboxOutbox() instead",
+        category: "Twinbox",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
 }

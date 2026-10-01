@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -207,6 +208,35 @@ public abstract class RelationalTests<TDatabase>(TDatabase database) : IClassFix
         Assert.Equal("yes", sent.Headers["x-legacy"]);
     }
 
+    [Fact]
+    public async Task Import_CarriesAttemptsLastErrorAndDeadStatus()
+    {
+        var legacy = database.Legacy;
+        await using (var connection = database.Connect())
+        {
+            await connection.ExecuteAsync(legacy.Create);
+            await connection.ExecuteAsync("DELETE FROM legacy_outbox");
+            await connection.ExecuteAsync(legacy.Insert, new
+            {
+                id = legacy.NewId,
+                name = nameof(OrderPlaced),
+                content = """{"reference":"L-2"}""",
+                headers = (string?)null,
+                partitionKey = (string?)null,
+            });
+        }
+
+        // The old system had given up on this row; the optional columns say so.
+        var select = Regex.Replace(legacy.SelectPending, @"AS ""?PartitionKey""?", "$0, 3 AS attempts, 'gave up' AS lasterror, 1 AS dead");
+        await using var services = await StartAsync(importMark: legacy.MarkImported, importSelect: select);
+        Assert.Equal(1, await services.GetRequiredService<OutboxImportService>().ImportBatchAsync(default));
+
+        var admin = services.GetServices<IOutboxStore>().OfType<IOutboxAdmin>().Single();
+        var dead = Assert.Single((await admin.QueryAsync(new OutboxQuery { Status = OutboxMessageStatus.Dead }, default)).Messages);
+        Assert.Equal((3, "gave up"), (dead.Attempts, dead.LastError));
+        Assert.Equal(0, (await services.GetServices<IOutboxStore>().Single().GetStatisticsAsync(default)).PendingCount);
+    }
+
     private static async Task DrainAsync(IServiceProvider services)
     {
         var dispatcher = services.GetRequiredService<IOutboxDispatcher>();
@@ -215,7 +245,7 @@ public abstract class RelationalTests<TDatabase>(TDatabase database) : IClassFix
         }
     }
 
-    protected async Task<ServiceProvider> StartAsync(string? instanceId = null, string? importMark = null)
+    protected async Task<ServiceProvider> StartAsync(string? instanceId = null, string? importMark = null, string? importSelect = null)
     {
         var collection = new ServiceCollection().AddLogging().AddSingleton<Database>(database);
         collection.AddTwinbox(b =>
@@ -226,7 +256,7 @@ public abstract class RelationalTests<TDatabase>(TDatabase database) : IClassFix
                 b.ImportFromExistingOutbox(o =>
                 {
                     o.CreateConnection = _ => database.Connect();
-                    o.SelectPending = database.Legacy.SelectPending;
+                    o.SelectPending = importSelect ?? database.Legacy.SelectPending;
                     o.MarkImported = importMark;
                 });
             }

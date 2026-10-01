@@ -64,6 +64,11 @@ var dead = await db.TwinboxOutbox()
     .ToListAsync();
 ```
 
+`db.Set<OutboxMessage>()` doesn't work: the outbox is mapped as a shared-type entity, so EF Core throws "Cannot
+create a DbSet for 'OutboxMessage' because it is configured as a shared-type entity type". Twinbox's analyzer flags the
+call at build time as `TWBX002`. The `Sequence` column is a shadow property; order by it with
+`EF.Property<long>(m, "Sequence")`.
+
 ## Claiming by provider
 
 | Provider | Claim |

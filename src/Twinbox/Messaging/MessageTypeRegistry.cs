@@ -33,6 +33,8 @@ internal sealed class MessageTypeRegistry : IMessageNames
 
     public string GetName(Type messageType) => GetOrAdd(messageType);
 
+    public bool IsRegistered(Type messageType) => _names.ContainsKey(messageType);
+
     public bool TryResolve(string name, out Type messageType) =>
         _types.TryGetValue(name, out messageType!);
 }

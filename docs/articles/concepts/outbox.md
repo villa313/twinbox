@@ -63,6 +63,18 @@ mid-batch, its leases expire and another instance picks the rows up again, so a 
 receiving [inbox](inbox.md) absorbs that. A graceful shutdown is gentler: the messages already sent are recorded as
 sent, and the rest of the batch is released right away instead of waiting for the lease to expire.
 
+When several hosts share one Twinbox setup but only one of them should dispatch (say a web API, a worker and a
+functions app over the same database), mark the shared setup `SendOnly()` and turn the dispatcher back on in the one
+host that delivers:
+
+```csharp
+// Shared registration, used by every host.
+services.AddTwinbox(twinbox => twinbox.UseEntityFrameworkCore<AppDbContext>().SendOnly() /* routes, handlers */);
+
+// Only in the host that dispatches; it wins whatever order the two calls run in.
+builder.Services.EnableTwinboxDispatcher();
+```
+
 To dispatch from somewhere other than the background service (a timer function, a scheduled job, a test), set
 `Twinbox:Dispatcher:Enabled` to `false` and call `ITwinboxMaintenance.DispatchPendingAsync(budget, ct)`, which
 dispatches until the outbox is empty or the budget runs out, or `IOutboxDispatcher.DispatchBatchAsync` for a single

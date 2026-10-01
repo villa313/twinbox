@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.DependencyInjection;
@@ -81,6 +82,27 @@ public sealed class TwinboxBuilder
         return this;
     }
 
+    /// <summary>Registers every concrete subtype of <typeparamref name="TBase"/> by name, so base-type routes and handlers resolve subtypes this process never sent.</summary>
+    /// <param name="assemblies">Where to look; <typeparamref name="TBase"/>'s own assembly when empty.</param>
+    [RequiresUnreferencedCode("Scans assemblies for subtypes. Register each type with Route<T>() or AddHandler<THandler, T>() for trimmed apps.")]
+    public TwinboxBuilder AddSubtypesOf<TBase>(params Assembly[] assemblies)
+        where TBase : class
+    {
+        ArgumentNullException.ThrowIfNull(assemblies);
+        foreach (var assembly in assemblies.Length == 0 ? [typeof(TBase).Assembly] : assemblies)
+        {
+            foreach (var type in assembly.GetTypes())
+            {
+                if (type is { IsClass: true, IsAbstract: false, ContainsGenericParameters: false } && typeof(TBase).IsAssignableFrom(type))
+                {
+                    MessageTypes.GetOrAdd(type);
+                }
+            }
+        }
+
+        return this;
+    }
+
     /// <summary>
     /// Adds the "local" transport: messages routed to it are delivered to this app's own handlers by the dispatcher,
     /// giving durable, retried in-process events.
@@ -135,6 +157,10 @@ public sealed class TwinboxBuilder
         Services.AddSingleton(tenancy);
         return this;
     }
+
+    /// <summary>Saves messages without dispatching them here, for hosts that share the setup but leave delivery to another.</summary>
+    /// <remarks>The dispatching host turns it back on with <c>services.EnableTwinboxDispatcher()</c>.</remarks>
+    public TwinboxBuilder SendOnly() => Configure(options => options.Dispatcher.Enabled = false);
 
     public TwinboxBuilder Configure(Action<TwinboxOptions> configure)
     {

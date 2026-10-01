@@ -19,9 +19,9 @@ the edges are.
 
 ## Where the guarantee stops
 
-- **Side effects outside the transaction.** An email sent or an HTTP API called directly from a handler isn't rolled
-  back and can happen twice. Send a message instead (for example through the [HTTP transport](../transports/http.md),
-  which adds an idempotency key), or make the call idempotent.
+- **Side effects outside the transaction.** An email sent, an HTTP API called or a background job queued directly from
+  a handler isn't rolled back and can happen twice. Send a message instead (for example through the
+  [HTTP transport](../transports/http.md), which adds an idempotency key), or make the call idempotent, as below.
 - **The deduplication window.** Inbox entries are purged after `Retention:InboxEntries` (7 days). A redelivery after
   that runs the handler again.
 - **Handlers without an inbox.** With `Inbox:Enabled = false`, or with no store registered, handlers run at least
@@ -33,6 +33,23 @@ the edges are.
 - **Receivers that aren't Twinbox.** Other consumers see at-least-once delivery. They should deduplicate on the
   message id: the `twinbox-message-id` header, or the broker's own message id property where it has one (Service Bus,
   RabbitMQ), which Twinbox sets to the same value.
+
+### Making an outside call idempotent
+
+`MessageContext.MessageId` is the same on every redelivery of a message, so it makes a good idempotency key for
+whatever the handler starts outside the database:
+
+```csharp
+public async Task HandleAsync(OrderPlaced message, MessageContext context, CancellationToken ct)
+{
+    // The payment provider ignores a second request with the same key.
+    await payments.CaptureAsync(message.OrderId, idempotencyKey: context.MessageId, ct);
+}
+```
+
+Where the other side has no such key, check your own state first: skip the call when the work it would do is already
+recorded (a referral code already issued, an email already marked sent). The check and the record must be in the
+handler's transaction for this to hold.
 
 ## Brokers with their own deduplication
 

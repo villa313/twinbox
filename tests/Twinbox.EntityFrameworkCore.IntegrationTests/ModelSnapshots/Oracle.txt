@@ -1,0 +1,31 @@
+table messaging.TwinboxInbox
+  column Consumer NVARCHAR2(256)
+  column MessageId NVARCHAR2(256)
+  column ProcessedAt TIMESTAMP(6) WITH TIME ZONE
+  column Source NVARCHAR2(256)
+  key PK_TwinboxInbox (MessageId, Consumer)
+  index IX_TwinboxInbox_ProcessedAt (ProcessedAt)
+table messaging.TwinboxOutbox
+  column Attempts NUMBER(10)
+  column AvailableAt TIMESTAMP(6) WITH TIME ZONE
+  column ContentType NVARCHAR2(128)
+  column CreatedAt TIMESTAMP(6) WITH TIME ZONE
+  column Destination NVARCHAR2(256)
+  column Headers NCLOB
+  column Id RAW(16)
+  column LastError NVARCHAR2(2000) null
+  column LeaseOwner NVARCHAR2(256) null
+  column LeaseUntil TIMESTAMP(6) WITH TIME ZONE null
+  column MessageName NVARCHAR2(256)
+  column PartitionKey NVARCHAR2(256) null
+  column Payload BLOB
+  column SentAt TIMESTAMP(6) WITH TIME ZONE null
+  column Sequence NUMBER(19)
+  column Status NUMBER(10)
+  column TenantId NVARCHAR2(128) null
+  column TraceParent NVARCHAR2(64) null
+  column Transport NVARCHAR2(64)
+  key PK_TwinboxOutbox (Sequence)
+  index IX_TwinboxOutbox_Id (Id) unique
+  index IX_TwinboxOutbox_PartitionKey_Status (PartitionKey, Status)
+  index IX_TwinboxOutbox_Status_AvailableAt (Status, AvailableAt)

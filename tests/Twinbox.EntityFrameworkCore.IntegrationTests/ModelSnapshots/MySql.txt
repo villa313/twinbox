@@ -1,0 +1,31 @@
+table messaging.TwinboxInbox
+  column Consumer varchar(256)
+  column MessageId varchar(256)
+  column ProcessedAt datetime(6)
+  column Source varchar(256)
+  key PK_TwinboxInbox (MessageId, Consumer)
+  index IX_TwinboxInbox_ProcessedAt (ProcessedAt)
+table messaging.TwinboxOutbox
+  column Attempts int
+  column AvailableAt datetime(6)
+  column ContentType varchar(128)
+  column CreatedAt datetime(6)
+  column Destination varchar(256)
+  column Headers longtext
+  column Id char(36)
+  column LastError varchar(2000) null
+  column LeaseOwner varchar(256) null
+  column LeaseUntil datetime(6) null
+  column MessageName varchar(256)
+  column PartitionKey varchar(256) null
+  column Payload longblob
+  column SentAt datetime(6) null
+  column Sequence bigint
+  column Status int
+  column TenantId varchar(128) null
+  column TraceParent varchar(64) null
+  column Transport varchar(64)
+  key PK_TwinboxOutbox (Sequence)
+  index IX_TwinboxOutbox_Id (Id) unique
+  index IX_TwinboxOutbox_PartitionKey_Status (PartitionKey, Status)
+  index IX_TwinboxOutbox_Status_AvailableAt (Status, AvailableAt)

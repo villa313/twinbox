@@ -63,8 +63,17 @@ public record OrderPlaced(Guid OrderId) : IDomainEvent;
 public class AuditTrail : IHandle<IDomainEvent> { /* sees OrderPlaced too */ }
 ```
 
-The receiver must still know the concrete type by its wire name (`OrderPlaced` here). A route or handler for it
-registers the name; otherwise call `IMessageNames.GetName(typeof(OrderPlaced))` at startup.
+The receiver must still know the concrete type by its wire name (`OrderPlaced` here), including after a restart,
+before it has sent one itself. A route or handler for the exact type registers the name; for a whole hierarchy, register
+every concrete subtype at once:
+
+```csharp
+twinbox.AddHandler<AuditTrail, IDomainEvent>()
+    .AddSubtypesOf<IDomainEvent>();                 // scans IDomainEvent's assembly; pass others to widen it
+```
+
+`AddSubtypesOf` scans with reflection, so trimmed apps should register each type instead. A test can check that
+nothing slipped through with `FindUnhandledSubtypes<TBase>()` from `Twinbox.Testing` (see [Testing](../testing.md)).
 
 ## Several handlers for one message
 
@@ -80,3 +89,34 @@ never pass). The message is dead-lettered instead of redelivered. Any other exce
 
 `UseLocalDelivery()` adds a transport named `"local"` that calls your own handlers from the dispatcher. It gives you
 durable, retried in-process events with no broker. See [Local delivery](../transports/local.md).
+
+### Handing domain events to an in-process mediator
+
+An app that already handles domain events with a mediator (MediatR's `INotificationHandler`, for example) can keep
+those handlers and let Twinbox make the events durable. One polymorphic handler forwards every event:
+
+```csharp
+public sealed class MediatorRelay(IPublisher publisher) : IHandle<DomainEvent>
+{
+    // Publish dispatches on the runtime type, so each event reaches its own notification handlers.
+    public Task HandleAsync(DomainEvent message, MessageContext context, CancellationToken ct) =>
+        publisher.Publish(message, ct);
+}
+
+builder.Services.AddTwinbox(twinbox => twinbox
+    .UseEntityFrameworkCore<AppDbContext>()
+    .UseLocalDelivery()
+    .Route<DomainEvent>().To("domain-events", transport: "local")
+    .AddHandler<MediatorRelay, DomainEvent>(consumerName: "domain-events.mediator")
+    .AddSubtypesOf<DomainEvent>());
+```
+
+Raise events by calling `IOutbox.Send` in the same unit of work as the change (for EF Core, before
+`SaveChangesAsync`). Things to know:
+
+- **One inbox entry covers every notification handler** of an event, because Twinbox sees a single consumer. If one
+  of them throws, the whole delivery is retried and the others run again, so keep them idempotent or give each its
+  own Twinbox handler instead.
+- **Give the relay a fixed `consumerName`.** It is the inbox key; a fixed name survives renaming the class.
+- **Work a notification handler starts elsewhere** (a background job, an HTTP call) isn't covered by the inbox. See
+  [Where the guarantee stops](delivery-guarantees.md#where-the-guarantee-stops).

@@ -5,4 +5,4 @@
 
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
-TWBX001 | Twinbox | Info | HandlerRegistrationGenerator
+TWBX002 | Twinbox | Warning | OutboxSetAnalyzer
