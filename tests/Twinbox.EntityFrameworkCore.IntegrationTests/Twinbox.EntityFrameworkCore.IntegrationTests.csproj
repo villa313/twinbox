@@ -23,4 +23,7 @@
     <ProjectReference Include="../../src/Twinbox.EntityFrameworkCore/Twinbox.EntityFrameworkCore.csproj" />
     <ProjectReference Include="../../src/Twinbox.Testing/Twinbox.Testing.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="ModelSnapshots/*.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

@@ -20,13 +20,14 @@ public sealed class ModelSnapshotTests
     public void TwinboxTables_MatchTheSnapshot(string provider)
     {
         var actual = Describe(ModelFor(provider));
-        var path = SnapshotPath(provider);
-
         if (Environment.GetEnvironmentVariable("TWINBOX_UPDATE_MODEL_SNAPSHOTS") == "1")
         {
-            File.WriteAllText(path, actual);
+            File.WriteAllText(SourceSnapshotPath(provider), actual);
+            return;
         }
 
+        // Read from the build output: CI maps source paths to /_/, so the caller's file path doesn't exist there.
+        var path = Path.Combine(AppContext.BaseDirectory, "ModelSnapshots", $"{provider}.txt");
         Assert.True(File.Exists(path), $"No snapshot at {path}; run with TWINBOX_UPDATE_MODEL_SNAPSHOTS=1 to create it.");
         Assert.Equal(File.ReadAllText(path).ReplaceLineEndings(), actual.ReplaceLineEndings());
     }
@@ -70,6 +71,6 @@ public sealed class ModelSnapshotTests
         return text.ToString();
     }
 
-    private static string SnapshotPath(string provider, [CallerFilePath] string thisFile = "") =>
+    private static string SourceSnapshotPath(string provider, [CallerFilePath] string thisFile = "") =>
         Path.Combine(Path.GetDirectoryName(thisFile)!, "ModelSnapshots", $"{provider}.txt");
 }
